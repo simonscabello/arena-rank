@@ -83,7 +83,7 @@ export class MatchPlayerSchema extends BaseModel {
 }
 
 export class MatchSchema extends BaseModel {
-  static $columns = ['arenaId', 'createdAt', 'createdByUserId', 'groupId', 'id', 'status', 'updatedAt', 'winnerSide'] as const
+  static $columns = ['arenaId', 'createdAt', 'createdByUserId', 'groupId', 'id', 'status', 'statusChangedAt', 'updatedAt', 'winnerSide'] as const
   $columns = MatchSchema.$columns
   @column()
   declare arenaId: number
@@ -97,6 +97,8 @@ export class MatchSchema extends BaseModel {
   declare id: number
   @column()
   declare status: string
+  @column.dateTime()
+  declare statusChangedAt: DateTime
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()

@@ -139,6 +139,7 @@ function applyBetFilters(query: DatabaseQueryBuilderContract, filters: HistoryFi
     .innerJoin('groups as g', 'g.id', 'm.group_id')
     .innerJoin('arenas as a', 'a.id', 'm.arena_id')
     .where('b.user_id', userId)
+    .where('m.status', 'finalizada')
 
   if (filters.groupId) {
     query.where('m.group_id', filters.groupId)
@@ -181,6 +182,7 @@ export async function getHistoryFilterOptions(userId: number): Promise<HistoryFi
     })
     .innerJoin('arenas as a', 'a.id', 'm.arena_id')
     .where('b.user_id', userId)
+    .where('m.status', 'finalizada')
     .groupBy('a.id', 'a.name', 'a.city', 'm.group_id')
     .select('a.id as id', 'a.name as name', 'a.city as city', 'm.group_id as groupId')
 

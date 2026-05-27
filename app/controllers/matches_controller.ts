@@ -1,8 +1,15 @@
 import ForbiddenException from '#exceptions/forbidden_exception'
 import { assertGroupMember } from '#helpers/group_access'
 import { assertMatchCreator, isMatchCreator } from '#helpers/match_access'
+import { clearMatchResult } from '#helpers/match_lifecycle'
+import {
+  isManageWindowOpen,
+  manageWindowExpiresAt,
+  markStatusChanged,
+  rejectExpiredManageWindow,
+} from '#helpers/match_manage_window'
 import { canHaveBets } from '#helpers/match_bets'
-import { getGroupRanking, getMatchWithRelations, isMatchPlayer } from '#helpers/ranking'
+import { getBetParticipation, getGroupRanking, getMatchWithRelations, getRankContext, isMatchPlayer } from '#helpers/ranking'
 import Arena from '#models/arena'
 import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
@@ -15,6 +22,7 @@ import {
 } from '#validators/match'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
+import { DateTime } from 'luxon'
 
 const POINTS_CORRECT = 10
 
@@ -74,12 +82,14 @@ export default class MatchesController {
     const initialStatus = skipBets ? 'em_andamento' : 'palpites_abertos'
 
     const match = await db.transaction(async (trx) => {
+      const now = DateTime.now()
       const created = await GameMatch.create(
         {
           groupId,
           arenaId,
           createdByUserId: user.id,
           status: initialStatus,
+          statusChangedAt: now,
         },
         { client: trx }
       )
@@ -106,13 +116,18 @@ export default class MatchesController {
     const match = await getMatchWithRelations(Number(params.id))
     await assertGroupMember(match.groupId, user)
 
-    const ranking = await getGroupRanking(match.groupId)
-    const isPlayer = await isMatchPlayer(match.id, user.id)
-    const userBet = match.bets.find((b) => b.userId === user.id)
-    const canManageMatch = isMatchCreator(match, user.id)
     const playerUserIds = match.players.map((p) => p.userId)
     const betsPossible = await canHaveBets(match.groupId, playerUserIds)
     const skipsBets = !betsPossible
+    const ranking = await getGroupRanking(match.groupId)
+    const rankContext = getRankContext(ranking, user.id)
+    const betParticipation =
+      match.status === 'palpites_abertos' && betsPossible
+        ? await getBetParticipation(match.id, match.groupId, playerUserIds)
+        : null
+    const isPlayer = await isMatchPlayer(match.id, user.id)
+    const userBet = match.bets.find((b) => b.userId === user.id)
+    const canManageMatch = isMatchCreator(match, user.id)
 
     return inertia.render('matches/show', {
       match: {
@@ -121,6 +136,8 @@ export default class MatchesController {
         winnerSide: match.winnerSide,
         arenaName: match.arena.name,
         groupId: match.groupId,
+        manageWindowOpen: isManageWindowOpen(match.statusChangedAt),
+        manageWindowExpiresAt: manageWindowExpiresAt(match.statusChangedAt).toISO(),
       },
       players: match.players.map((p) => ({
         userId: p.userId,
@@ -142,6 +159,8 @@ export default class MatchesController {
         funLabel: b.user.funLabel,
       })),
       ranking,
+      rankContext,
+      betParticipation,
       isPlayer,
       userBet: userBet
         ? { predictedSide: userBet.predictedSide, pointsAwarded: userBet.pointsAwarded }
@@ -195,6 +214,7 @@ export default class MatchesController {
     const match = await GameMatch.findOrFail(Number(params.id))
     await assertGroupMember(match.groupId, user)
     await assertMatchCreator(match, user)
+    if (rejectExpiredManageWindow(match, { session, response })) return
 
     if (match.status !== 'palpites_abertos') {
       session.flash('error', 'Partida não está aberta para palpites')
@@ -203,6 +223,7 @@ export default class MatchesController {
     }
 
     match.status = 'em_andamento'
+    markStatusChanged(match)
     await match.save()
 
     session.flash('success', 'Partida iniciada — palpites fechados')
@@ -235,6 +256,7 @@ export default class MatchesController {
       match.useTransaction(trx)
       match.status = 'finalizada'
       match.winnerSide = winnerSide
+      markStatusChanged(match)
       await match.save()
 
       const bets = await Bet.query({ client: trx }).where('match_id', match.id)
@@ -247,5 +269,91 @@ export default class MatchesController {
 
     session.flash('success', 'Partida finalizada')
     response.redirect().back()
+  }
+
+  async reopenBets({ response, auth, session, params }: HttpContext) {
+    const user = auth.user!
+    const match = await GameMatch.findOrFail(Number(params.id))
+    await assertGroupMember(match.groupId, user)
+    await assertMatchCreator(match, user)
+    if (rejectExpiredManageWindow(match, { session, response })) return
+
+    if (match.status !== 'em_andamento') {
+      session.flash('error', 'Só é possível reabrir palpites em partida em andamento')
+      response.redirect().back()
+      return
+    }
+
+    const playerIds = (
+      await MatchPlayer.query().where('match_id', match.id).select('user_id')
+    ).map((p) => p.userId)
+    const betsPossible = await canHaveBets(match.groupId, playerIds)
+
+    if (!betsPossible) {
+      session.flash('error', 'Esta partida não aceita palpites')
+      response.redirect().back()
+      return
+    }
+
+    match.status = 'palpites_abertos'
+    markStatusChanged(match)
+    await match.save()
+
+    session.flash('success', 'Palpites reabertos')
+    response.redirect().back()
+  }
+
+  async undoFinalize({ response, auth, session, params }: HttpContext) {
+    const user = auth.user!
+    const match = await GameMatch.findOrFail(Number(params.id))
+    await assertGroupMember(match.groupId, user)
+    await assertMatchCreator(match, user)
+    if (rejectExpiredManageWindow(match, { session, response })) return
+
+    if (match.status !== 'finalizada') {
+      session.flash('error', 'Só é possível desfazer resultado de partida finalizada')
+      response.redirect().back()
+      return
+    }
+
+    await db.transaction(async (trx) => {
+      match.useTransaction(trx)
+      await clearMatchResult(match, trx)
+      match.status = 'em_andamento'
+      markStatusChanged(match)
+      await match.save()
+    })
+
+    session.flash('success', 'Resultado desfeito — partida em andamento')
+    response.redirect().back()
+  }
+
+  async cancel({ response, auth, session, params }: HttpContext) {
+    const user = auth.user!
+    const match = await GameMatch.findOrFail(Number(params.id))
+    await assertGroupMember(match.groupId, user)
+    await assertMatchCreator(match, user)
+    if (rejectExpiredManageWindow(match, { session, response })) return
+
+    if (match.status === 'cancelada') {
+      session.flash('error', 'Partida já está cancelada')
+      response.redirect().back()
+      return
+    }
+
+    const groupId = match.groupId
+
+    await db.transaction(async (trx) => {
+      match.useTransaction(trx)
+      if (match.status === 'finalizada') {
+        await clearMatchResult(match, trx)
+      }
+      match.status = 'cancelada'
+      markStatusChanged(match)
+      await match.save()
+    })
+
+    session.flash('success', 'Partida cancelada')
+    response.redirect().toRoute('groups.show', { id: groupId })
   }
 }

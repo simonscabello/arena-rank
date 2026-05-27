@@ -30,6 +30,9 @@ export interface ApiDefinition {
     bet: typeof routes['matches.bet']
     start: typeof routes['matches.start']
     finalize: typeof routes['matches.finalize']
+    reopenBets: typeof routes['matches.reopenBets']
+    undoFinalize: typeof routes['matches.undoFinalize']
+    cancel: typeof routes['matches.cancel']
   }
   profile: {
     show: typeof routes['profile.show']

@@ -21,6 +21,9 @@ export type ScannedRoutes = {
     'matches.bet': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'matches.start': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'matches.finalize': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.reopenBets': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.undoFinalize': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'profile.show': { paramsTuple?: []; params?: {} }
     'profile.update': { paramsTuple?: []; params?: {} }
     'profile.updateAccount': { paramsTuple?: []; params?: {} }
@@ -63,6 +66,9 @@ export type ScannedRoutes = {
     'matches.bet': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'matches.start': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'matches.finalize': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.reopenBets': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.undoFinalize': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'matches.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'profile.update': { paramsTuple?: []; params?: {} }
     'profile.updateAccount': { paramsTuple?: []; params?: {} }
   }

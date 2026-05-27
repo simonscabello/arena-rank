@@ -4,6 +4,7 @@ const variantStyles = {
   open: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
   live: 'bg-amber-50 text-amber-800 ring-amber-200',
   done: 'bg-stone-100 text-stone-600 ring-stone-200',
+  cancelled: 'bg-red-50 text-red-700 ring-red-200',
 }
 
 type Props = {

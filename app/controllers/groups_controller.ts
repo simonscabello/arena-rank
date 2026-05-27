@@ -79,7 +79,7 @@ export default class GroupsController {
 
     const matches = await GameMatch.query()
       .where('group_id', groupId)
-      .whereNot('status', 'finalizada')
+      .whereIn('status', ['palpites_abertos', 'em_andamento'])
       .preload('arena')
       .orderBy('created_at', 'desc')
 
@@ -104,6 +104,7 @@ export default class GroupsController {
       })),
       arenas: arenas.map((a) => ({ id: a.id, name: a.name })),
       ranking,
+      currentUserId: user.id,
     })
   }
 

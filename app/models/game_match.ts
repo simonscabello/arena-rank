@@ -4,13 +4,21 @@ import Bet from '#models/bet'
 import Group from '#models/group'
 import MatchPlayer from '#models/match_player'
 import User from '#models/user'
-import { belongsTo, hasMany } from '@adonisjs/lucid/orm'
+import { belongsTo, beforeCreate, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import { DateTime } from 'luxon'
 
-export type MatchStatus = 'palpites_abertos' | 'em_andamento' | 'finalizada'
+export type MatchStatus = 'palpites_abertos' | 'em_andamento' | 'finalizada' | 'cancelada'
 
 export default class GameMatch extends MatchSchema {
   static table = 'matches'
+
+  @beforeCreate()
+  static setInitialStatusChangedAt(match: GameMatch) {
+    if (!match.statusChangedAt) {
+      match.statusChangedAt = DateTime.now()
+    }
+  }
   @belongsTo(() => Group)
   declare group: BelongsTo<typeof Group>
 

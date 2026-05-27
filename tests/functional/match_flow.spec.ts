@@ -1,5 +1,6 @@
 import { generateInviteCode } from '#helpers/group_access'
 import { canHaveBets } from '#helpers/match_bets'
+import { getBetHistory, getMatchHistory } from '#helpers/player_history'
 import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
 import Group from '#models/group'
@@ -7,6 +8,7 @@ import GroupMember from '#models/group_member'
 import User from '#models/user'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
+import { DateTime } from 'luxon'
 
 test.group('Match flow', (group) => {
   group.each.setup(() => testUtils.db().truncate())
@@ -55,6 +57,18 @@ test.group('Match flow', (group) => {
     const redirects = response.redirects()
     const matchUrl = redirects[redirects.length - 1]
     return Number(matchUrl.split('/').pop())
+  }
+
+  async function expireManageWindow(matchId: number) {
+    const match = await GameMatch.findOrFail(matchId)
+    match.statusChangedAt = DateTime.now().minus({ minutes: 3 })
+    await match.save()
+  }
+
+  async function refreshManageWindow(matchId: number) {
+    const match = await GameMatch.findOrFail(matchId)
+    match.statusChangedAt = DateTime.now()
+    await match.save()
   }
 
   test('member creates match', async ({ client, assert }) => {
@@ -228,5 +242,184 @@ test.group('Match flow', (group) => {
     const match = await GameMatch.findOrFail(matchId)
     assert.equal(match.status, 'finalizada')
     assert.equal(match.winnerSide, 1)
+  })
+
+  test('creator can reopen bets after starting match', async ({ client, assert }) => {
+    const { owner, member, player1, player2, player3, player4, group } =
+      await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, owner, group.id, [
+      { userId: player1.id, side: 1 },
+      { userId: player2.id, side: 1 },
+      { userId: player3.id, side: 2 },
+      { userId: player4.id, side: 2 },
+    ])
+
+    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
+
+    const match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'em_andamento')
+
+    await client.post(`/partidas/${matchId}/reabrir-palpites`).loginAs(owner)
+    await match.refresh()
+    assert.equal(match.status, 'palpites_abertos')
+
+    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 2 })
+
+    const bet = await Bet.query()
+      .where('match_id', matchId)
+      .where('user_id', member.id)
+      .firstOrFail()
+    assert.equal(bet.predictedSide, 2)
+  })
+
+  test('creator can undo finalize and clear awarded points', async ({ client, assert }) => {
+    const { owner, member, player1, player2, player3, player4, group } =
+      await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, owner, group.id, [
+      { userId: player1.id, side: 1 },
+      { userId: player2.id, side: 1 },
+      { userId: player3.id, side: 2 },
+      { userId: player4.id, side: 2 },
+    ])
+
+    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
+    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json({ winnerSide: 1 })
+
+    await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(owner)
+
+    const match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'em_andamento')
+    assert.isNull(match.winnerSide)
+
+    const bet = await Bet.query()
+      .where('match_id', matchId)
+      .where('user_id', member.id)
+      .firstOrFail()
+    assert.isNull(bet.pointsAwarded)
+  })
+
+  test('cancelled open match disappears from active play list', async ({ client, assert }) => {
+    const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, owner, group.id, [
+      { userId: player1.id, side: 1 },
+      { userId: player2.id, side: 1 },
+      { userId: player3.id, side: 2 },
+      { userId: player4.id, side: 2 },
+    ])
+
+    await client.post(`/partidas/${matchId}/cancelar`).loginAs(owner)
+
+    const match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'cancelada')
+
+    const activeMatches = await GameMatch.query()
+      .where('group_id', group.id)
+      .whereIn('status', ['palpites_abertos', 'em_andamento'])
+
+    assert.lengthOf(activeMatches, 0)
+  })
+
+  test('cancelled finalized match is removed from history and clears points', async ({
+    client,
+    assert,
+  }) => {
+    const { owner, member, player1, player2, player3, player4, group } =
+      await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, owner, group.id, [
+      { userId: player1.id, side: 1 },
+      { userId: player2.id, side: 1 },
+      { userId: player3.id, side: 2 },
+      { userId: player4.id, side: 2 },
+    ])
+
+    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
+    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json({ winnerSide: 1 })
+
+    await client.post(`/partidas/${matchId}/cancelar`).loginAs(owner)
+
+    const match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'cancelada')
+    assert.isNull(match.winnerSide)
+
+    const bet = await Bet.query()
+      .where('match_id', matchId)
+      .where('user_id', member.id)
+      .firstOrFail()
+    assert.isNull(bet.pointsAwarded)
+
+    const betHistory = await getBetHistory(member.id, {})
+    assert.isFalse(betHistory.items.some((entry) => entry.matchId === matchId))
+
+    const matchHistory = await getMatchHistory(player1.id, {})
+    assert.isFalse(matchHistory.items.some((entry) => entry.matchId === matchId))
+  })
+
+  test('non-creator cannot reopen undo or cancel match', async ({ client }) => {
+    const { owner, member, player1, player2, player3, player4, group } =
+      await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, owner, group.id, [
+      { userId: player1.id, side: 1 },
+      { userId: player2.id, side: 1 },
+      { userId: player3.id, side: 2 },
+      { userId: player4.id, side: 2 },
+    ])
+
+    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
+
+    const reopen = await client.post(`/partidas/${matchId}/reabrir-palpites`).loginAs(member)
+    reopen.assertStatus(403)
+
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json({ winnerSide: 1 })
+
+    const undo = await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(member)
+    undo.assertStatus(403)
+
+    const cancel = await client.post(`/partidas/${matchId}/cancelar`).loginAs(member)
+    cancel.assertStatus(403)
+  })
+
+  test('manage actions are rejected after window expires', async ({ client, assert }) => {
+    const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, owner, group.id, [
+      { userId: player1.id, side: 1 },
+      { userId: player2.id, side: 1 },
+      { userId: player3.id, side: 2 },
+      { userId: player4.id, side: 2 },
+    ])
+
+    await expireManageWindow(matchId)
+
+    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
+
+    const match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'palpites_abertos')
+  })
+
+  test('manage window resets after status change', async ({ client, assert }) => {
+    const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, owner, group.id, [
+      { userId: player1.id, side: 1 },
+      { userId: player2.id, side: 1 },
+      { userId: player3.id, side: 2 },
+      { userId: player4.id, side: 2 },
+    ])
+
+    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
+
+    await expireManageWindow(matchId)
+
+    await client.post(`/partidas/${matchId}/reabrir-palpites`).loginAs(owner)
+
+    let match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'em_andamento')
+
+    await refreshManageWindow(matchId)
+
+    await client.post(`/partidas/${matchId}/reabrir-palpites`).loginAs(owner)
+
+    match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'palpites_abertos')
   })
 })

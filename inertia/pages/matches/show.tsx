@@ -1,14 +1,16 @@
 import { Form } from '@adonisjs/inertia/react'
 import { Target, Users } from 'lucide-react'
 import BackLink from '~/components/BackLink'
+import Avatar from '~/components/Avatar'
 import Badge from '~/components/Badge'
 import Card from '~/components/Card'
 import EmptyState from '~/components/EmptyState'
+import MatchManageCard from '~/components/MatchManageCard'
 import PageHeader from '~/components/PageHeader'
 import RankingList, { type RankingEntry } from '~/components/RankingList'
 import TeamCard from '~/components/TeamCard'
 import { buttonClassName } from '~/lib/button_styles'
-import { displayName } from '~/lib/match'
+import { cn, displayName } from '~/lib/match'
 
 type Player = {
   userId: number
@@ -29,6 +31,26 @@ type Bet = {
   email: string
 }
 
+type RankContext = {
+  position: number | null
+  totalPoints: number
+  pointsToNext: number | null
+  leaderPoints: number
+  nextRankName: string | null
+  nextRankPosition: number | null
+}
+
+type BetParticipation = {
+  eligibleCount: number
+  betCount: number
+  pendingMembers: {
+    userId: number
+    name: string
+    initials: string
+    avatarUrl: string | null
+  }[]
+}
+
 type Props = {
   match: {
     id: number
@@ -36,10 +58,14 @@ type Props = {
     winnerSide: number | null
     arenaName: string
     groupId: number
+    manageWindowOpen: boolean
+    manageWindowExpiresAt: string
   }
   players: Player[]
   bets: Bet[]
   ranking: RankingEntry[]
+  rankContext: RankContext
+  betParticipation: BetParticipation | null
   isPlayer: boolean
   userBet: { predictedSide: number; pointsAwarded: number | null } | null
   currentUserId: number
@@ -52,11 +78,29 @@ function playersBySide(players: Player[], side: number) {
   return players.filter((p) => p.side === side)
 }
 
+function rankContextMessage(rankContext: RankContext, hasUserBet: boolean) {
+  if (!hasUserBet && rankContext.position === null && rankContext.totalPoints === 0) {
+    return 'Faça seu primeiro palpite para entrar no ranking.'
+  }
+
+  if (rankContext.position === 1) {
+    return `Você lidera com ${rankContext.totalPoints} pts`
+  }
+
+  if (rankContext.position && rankContext.pointsToNext && rankContext.nextRankName) {
+    return `Faltam ${rankContext.pointsToNext} pts para alcançar ${rankContext.nextRankName} (${rankContext.nextRankPosition}º)`
+  }
+
+  return null
+}
+
 export default function MatchShow({
   match,
   players,
   bets,
   ranking,
+  rankContext,
+  betParticipation,
   isPlayer,
   userBet,
   currentUserId,
@@ -66,6 +110,38 @@ export default function MatchShow({
 }: Props) {
   const side1 = playersBySide(players, 1)
   const side2 = playersBySide(players, 2)
+  const rankMessage = rankContextMessage(rankContext, Boolean(userBet))
+  const pendingPreview = betParticipation?.pendingMembers.slice(0, 5) ?? []
+  const pendingOverflow =
+    betParticipation && betParticipation.pendingMembers.length > pendingPreview.length
+      ? betParticipation.pendingMembers.length - pendingPreview.length
+      : 0
+
+  if (match.status === 'cancelada') {
+    return (
+      <>
+        <PageHeader
+          back={
+            <BackLink route="groups.show" routeParams={{ id: match.groupId }} label="Play" />
+          }
+          title={match.arenaName}
+          subtitle={<Badge status={match.status} />}
+        />
+
+        <Card className="mb-6">
+          <div className="flex gap-3">
+            <TeamCard side={1} players={side1} />
+            <div className="flex shrink-0 items-center text-xs font-bold text-stone-400">VS</div>
+            <TeamCard side={2} players={side2} />
+          </div>
+        </Card>
+
+        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+          Esta partida foi cancelada e não conta no ranking nem no histórico.
+        </p>
+      </>
+    )
+  }
 
   return (
     <>
@@ -89,6 +165,34 @@ export default function MatchShow({
         <p className="mb-6 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700">
           Partida sem palpites — apenas histórico de vitórias e derrotas.
         </p>
+      )}
+
+      {match.status === 'palpites_abertos' && betsPossible && betParticipation && (
+        <Card className="mb-6 border-brand-100 bg-brand-50/30">
+          <p className="text-sm font-medium text-stone-900">
+            {betParticipation.betCount} de {betParticipation.eligibleCount} já palpitaram
+          </p>
+          {pendingPreview.length > 0 && (
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-xs text-stone-500">Faltam:</span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {pendingPreview.map((member) => (
+                  <span
+                    key={member.userId}
+                    title={member.name}
+                    className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2 py-0.5 text-xs text-stone-600"
+                  >
+                    <Avatar initials={member.initials} src={member.avatarUrl} size="sm" />
+                    {member.name}
+                  </span>
+                ))}
+                {pendingOverflow > 0 && (
+                  <span className="text-xs font-medium text-stone-500">+{pendingOverflow}</span>
+                )}
+              </div>
+            </div>
+          )}
+        </Card>
       )}
 
       {match.status === 'palpites_abertos' && betsPossible && !isPlayer && !userBet && (
@@ -115,16 +219,30 @@ export default function MatchShow({
       )}
 
       {userBet && (
-        <Card className="mb-6 border-brand-200 bg-brand-50/50">
+        <Card
+          className={cn(
+            'mb-6',
+            match.status === 'finalizada' && userBet.pointsAwarded !== null && userBet.pointsAwarded > 0
+              ? 'border-emerald-200 bg-emerald-50/80'
+              : match.status === 'finalizada'
+                ? 'border-stone-200 bg-stone-50'
+                : 'border-brand-200 bg-brand-50/50'
+          )}
+        >
           <div className="flex items-center gap-2">
             <Target className="h-5 w-5 text-brand-600" />
             <div>
               <p className="font-semibold text-stone-900">Seu palpite: Dupla {userBet.predictedSide}</p>
               {userBet.pointsAwarded !== null && (
-                <p className="text-sm text-stone-600">
+                <p
+                  className={cn(
+                    'text-sm',
+                    userBet.pointsAwarded > 0 ? 'font-medium text-emerald-700' : 'text-stone-600'
+                  )}
+                >
                   {userBet.pointsAwarded > 0
-                    ? `+${userBet.pointsAwarded} pontos`
-                    : '0 pontos nesta partida'}
+                    ? `+${userBet.pointsAwarded} pts — subiu no ranking!`
+                    : 'Errou desta vez — 0 pts nesta partida'}
                 </p>
               )}
             </div>
@@ -136,14 +254,6 @@ export default function MatchShow({
         <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Você está jogando — não pode palpitar nesta partida.
         </p>
-      )}
-
-      {match.status === 'palpites_abertos' && betsPossible && canManageMatch && (
-        <Form route="matches.start" routeParams={{ id: match.id }} className="mb-6">
-          <button type="submit" className={buttonClassName('secondary', 'lg', true)}>
-            Iniciar partida (fechar palpites)
-          </button>
-        </Form>
       )}
 
       {canManageMatch &&
@@ -168,6 +278,16 @@ export default function MatchShow({
             </Form>
           </div>
         </Card>
+      )}
+
+      {canManageMatch && (
+        <MatchManageCard
+          matchId={match.id}
+          status={match.status}
+          betsPossible={betsPossible}
+          manageWindowOpen={match.manageWindowOpen}
+          manageWindowExpiresAt={match.manageWindowExpiresAt}
+        />
       )}
 
       <div className="space-y-6">
@@ -200,6 +320,12 @@ export default function MatchShow({
             </ul>
           )}
         </Card>
+
+        {rankMessage && (
+          <Card className="border-brand-100 bg-brand-50/40">
+            <p className="text-sm font-medium text-brand-800">{rankMessage}</p>
+          </Card>
+        )}
 
         <Card title="Ranking da Play">
           <RankingList entries={ranking} highlightUserId={currentUserId} />

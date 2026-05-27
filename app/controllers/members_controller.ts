@@ -9,6 +9,7 @@ import {
 import { assertGroupMember, isGroupMember } from '#helpers/group_access'
 import ForbiddenException from '#exceptions/forbidden_exception'
 import { getMemberDisplay, getPlayerStats } from '#helpers/player_stats'
+import { getGroupRanking } from '#helpers/ranking'
 import Group from '#models/group'
 import type { HttpContext } from '@adonisjs/core/http'
 
@@ -27,6 +28,8 @@ export default class MembersController {
     const group = await Group.findOrFail(groupId)
     const member = await getMemberDisplay(userId)
     const stats = await getPlayerStats(groupId, userId)
+    const ranking = await getGroupRanking(groupId)
+    const betRanking = ranking.find((entry) => entry.userId === userId) ?? null
 
     return inertia.render('members/show', {
       group: { id: group.id, name: group.name },
@@ -43,6 +46,7 @@ export default class MembersController {
           : null,
       },
       stats,
+      betRanking,
       isSelf: viewer.id === userId,
     })
   }

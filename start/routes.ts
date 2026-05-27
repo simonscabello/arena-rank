@@ -44,6 +44,13 @@ router
     router.post('partidas/:id/palpite', [controllers.Matches, 'placeBet']).as('matches.bet')
     router.post('partidas/:id/iniciar', [controllers.Matches, 'start']).as('matches.start')
     router.post('partidas/:id/finalizar', [controllers.Matches, 'finalize']).as('matches.finalize')
+    router
+      .post('partidas/:id/reabrir-palpites', [controllers.Matches, 'reopenBets'])
+      .as('matches.reopenBets')
+    router
+      .post('partidas/:id/desfazer-resultado', [controllers.Matches, 'undoFinalize'])
+      .as('matches.undoFinalize')
+    router.post('partidas/:id/cancelar', [controllers.Matches, 'cancel']).as('matches.cancel')
 
     router.get('perfil', [controllers.Profile, 'show']).as('profile.show')
     router.post('perfil', [controllers.Profile, 'update']).as('profile.update')

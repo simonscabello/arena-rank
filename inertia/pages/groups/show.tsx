@@ -32,9 +32,10 @@ type Props = {
   members: Member[]
   matches: MatchItem[]
   ranking: RankingEntry[]
+  currentUserId: number
 }
 
-export default function GroupShow({ group, members, matches, ranking }: Props) {
+export default function GroupShow({ group, members, matches, ranking, currentUserId }: Props) {
   return (
     <>
       <PageHeader
@@ -91,7 +92,7 @@ export default function GroupShow({ group, members, matches, ranking }: Props) {
         </Card>
 
         <Card title="Ranking">
-          <RankingList entries={ranking} />
+          <RankingList entries={ranking} highlightUserId={currentUserId} />
         </Card>
 
         <Card title={`Membros (${members.length})`}>

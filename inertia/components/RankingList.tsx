@@ -6,7 +6,12 @@ export type RankingEntry = {
   userId: number
   fullName: string | null
   email: string
+  nickname?: string | null
   totalPoints: number
+  betsPlaced: number
+  betsCorrect: number
+  accuracyPercent: number | null
+  currentStreak: number
   initials?: string
   avatarUrl?: string | null
 }
@@ -22,6 +27,14 @@ const podiumStyles = [
   'border-stone-200 bg-gradient-to-r from-stone-100 to-white',
   'border-orange-200 bg-gradient-to-r from-orange-50/80 to-white',
 ]
+
+function rankingSubtitle(entry: RankingEntry) {
+  if (entry.betsPlaced === 0) {
+    return 'ainda não palpitou'
+  }
+
+  return `${entry.accuracyPercent}% acerto (${entry.betsCorrect}/${entry.betsPlaced})`
+}
 
 export default function RankingList({
   entries,
@@ -68,10 +81,18 @@ export default function RankingList({
               {index < 3 ? <Trophy className="h-3.5 w-3.5" /> : index + 1}
             </span>
             <Avatar initials={initials} src={entry.avatarUrl} size="sm" />
-            <span className="min-w-0 flex-1 truncate font-medium text-stone-800">
-              {displayName(entry)}
-              {isMe && <span className="ml-1 text-xs text-brand-600">(você)</span>}
-            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium text-stone-800">
+                {displayName(entry)}
+                {isMe && <span className="ml-1 text-xs text-brand-600">(você)</span>}
+                {entry.currentStreak >= 3 && (
+                  <span className="ml-1.5 text-xs font-semibold text-orange-600">
+                    🔥 {entry.currentStreak}
+                  </span>
+                )}
+              </p>
+              <p className="truncate text-xs text-stone-500">{rankingSubtitle(entry)}</p>
+            </div>
             <span className="shrink-0 font-semibold text-brand-700">{entry.totalPoints} pts</span>
           </li>
         )

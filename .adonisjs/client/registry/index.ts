@@ -108,6 +108,24 @@ const routes = {
     tokens: [{"old":"/partidas/:id/finalizar","type":0,"val":"partidas","end":""},{"old":"/partidas/:id/finalizar","type":1,"val":"id","end":""},{"old":"/partidas/:id/finalizar","type":0,"val":"finalizar","end":""}],
     types: placeholder as Registry['matches.finalize']['types'],
   },
+  'matches.reopenBets': {
+    methods: ["POST"],
+    pattern: '/partidas/:id/reabrir-palpites',
+    tokens: [{"old":"/partidas/:id/reabrir-palpites","type":0,"val":"partidas","end":""},{"old":"/partidas/:id/reabrir-palpites","type":1,"val":"id","end":""},{"old":"/partidas/:id/reabrir-palpites","type":0,"val":"reabrir-palpites","end":""}],
+    types: placeholder as Registry['matches.reopenBets']['types'],
+  },
+  'matches.undoFinalize': {
+    methods: ["POST"],
+    pattern: '/partidas/:id/desfazer-resultado',
+    tokens: [{"old":"/partidas/:id/desfazer-resultado","type":0,"val":"partidas","end":""},{"old":"/partidas/:id/desfazer-resultado","type":1,"val":"id","end":""},{"old":"/partidas/:id/desfazer-resultado","type":0,"val":"desfazer-resultado","end":""}],
+    types: placeholder as Registry['matches.undoFinalize']['types'],
+  },
+  'matches.cancel': {
+    methods: ["POST"],
+    pattern: '/partidas/:id/cancelar',
+    tokens: [{"old":"/partidas/:id/cancelar","type":0,"val":"partidas","end":""},{"old":"/partidas/:id/cancelar","type":1,"val":"id","end":""},{"old":"/partidas/:id/cancelar","type":0,"val":"cancelar","end":""}],
+    types: placeholder as Registry['matches.cancel']['types'],
+  },
   'profile.show': {
     methods: ["GET","HEAD"],
     pattern: '/perfil',

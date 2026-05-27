@@ -211,6 +211,42 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['finalize']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'matches.reopenBets': {
+    methods: ["POST"]
+    pattern: '/partidas/:id/reabrir-palpites'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['reopenBets']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['reopenBets']>>>
+    }
+  }
+  'matches.undoFinalize': {
+    methods: ["POST"]
+    pattern: '/partidas/:id/desfazer-resultado'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['undoFinalize']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['undoFinalize']>>>
+    }
+  }
+  'matches.cancel': {
+    methods: ["POST"]
+    pattern: '/partidas/:id/cancelar'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['cancel']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['cancel']>>>
+    }
+  }
   'profile.show': {
     methods: ["GET","HEAD"]
     pattern: '/perfil'

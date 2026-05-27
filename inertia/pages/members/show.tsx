@@ -54,10 +54,19 @@ type Stats = {
   }[]
 }
 
+type BetRanking = {
+  totalPoints: number
+  betsPlaced: number
+  betsCorrect: number
+  accuracyPercent: number | null
+  currentStreak: number
+} | null
+
 type Props = {
   group: { id: number; name: string }
   member: Member
   stats: Stats
+  betRanking: BetRanking
   isSelf: boolean
 }
 
@@ -65,7 +74,7 @@ function partnerName(partner: PartnerSummary) {
   return partner.nickname || partner.fullName || partner.email.split('@')[0]
 }
 
-export default function MemberShow({ group, member, stats, isSelf }: Props) {
+export default function MemberShow({ group, member, stats, betRanking, isSelf }: Props) {
   const winRate =
     stats.matchesPlayed > 0 ? Math.round((stats.wins / stats.matchesPlayed) * 100) : 0
 
@@ -124,6 +133,11 @@ export default function MemberShow({ group, member, stats, isSelf }: Props) {
         <Card title="Palpites na Play">
           <p className="text-2xl font-bold text-brand-700">{stats.betPoints}</p>
           <p className="text-sm text-stone-500">pontos acumulados</p>
+          {betRanking && betRanking.betsPlaced > 0 && (
+            <p className="mt-2 text-sm text-stone-600">
+              {betRanking.accuracyPercent}% de acerto · sequência atual: {betRanking.currentStreak}
+            </p>
+          )}
         </Card>
 
         {stats.bestPartner && (
