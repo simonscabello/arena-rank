@@ -1,6 +1,7 @@
 import GroupMember from '#models/group_member'
 import db from '@adonisjs/lucid/services/db'
-import type { DatabaseQueryBuilderContract } from '@adonisjs/lucid/types/database'
+import type { DatabaseQueryBuilderContract } from '@adonisjs/lucid/types/querybuilder'
+import type { Knex } from 'knex'
 
 export const HISTORY_PAGE_SIZE = 20
 
@@ -102,7 +103,7 @@ function applyMatchFilters(
 ) {
   query
     .innerJoin('matches as m', 'mp.match_id', 'm.id')
-    .innerJoin('group_members as gm', (join) => {
+    .innerJoin('group_members as gm', (join: Knex.JoinClause) => {
       join.on('gm.group_id', 'm.group_id').andOnVal('gm.user_id', userId)
     })
     .innerJoin('groups as g', 'g.id', 'm.group_id')
@@ -117,7 +118,7 @@ function applyMatchFilters(
     query.where('m.arena_id', filters.arenaId)
   }
   if (filters.partnerId) {
-    query.whereExists((sub) => {
+    query.whereExists((sub: DatabaseQueryBuilderContract) => {
       sub
         .from('match_players as partner_mp')
         .whereRaw('partner_mp.match_id = mp.match_id')
@@ -133,7 +134,7 @@ function applyMatchFilters(
 function applyBetFilters(query: DatabaseQueryBuilderContract, filters: HistoryFilters, userId: number) {
   query
     .innerJoin('matches as m', 'b.match_id', 'm.id')
-    .innerJoin('group_members as gm', (join) => {
+    .innerJoin('group_members as gm', (join: Knex.JoinClause) => {
       join.on('gm.group_id', 'm.group_id').andOnVal('gm.user_id', userId)
     })
     .innerJoin('groups as g', 'g.id', 'm.group_id')
@@ -165,7 +166,7 @@ export async function getHistoryFilterOptions(userId: number): Promise<HistoryFi
   const arenaRows = await db
     .from('match_players as mp')
     .innerJoin('matches as m', 'mp.match_id', 'm.id')
-    .innerJoin('group_members as gm', (join) => {
+    .innerJoin('group_members as gm', (join: Knex.JoinClause) => {
       join.on('gm.group_id', 'm.group_id').andOnVal('gm.user_id', userId)
     })
     .innerJoin('arenas as a', 'a.id', 'm.arena_id')
@@ -177,7 +178,7 @@ export async function getHistoryFilterOptions(userId: number): Promise<HistoryFi
   const betArenaRows = await db
     .from('bets as b')
     .innerJoin('matches as m', 'b.match_id', 'm.id')
-    .innerJoin('group_members as gm', (join) => {
+    .innerJoin('group_members as gm', (join: Knex.JoinClause) => {
       join.on('gm.group_id', 'm.group_id').andOnVal('gm.user_id', userId)
     })
     .innerJoin('arenas as a', 'a.id', 'm.arena_id')
@@ -199,7 +200,7 @@ export async function getHistoryFilterOptions(userId: number): Promise<HistoryFi
   const partnerRows = await db
     .from('match_players as mp')
     .innerJoin('matches as m', 'mp.match_id', 'm.id')
-    .innerJoin('group_members as gm', (join) => {
+    .innerJoin('group_members as gm', (join: Knex.JoinClause) => {
       join.on('gm.group_id', 'm.group_id').andOnVal('gm.user_id', userId)
     })
     .innerJoin('match_players as teammate', (join) => {

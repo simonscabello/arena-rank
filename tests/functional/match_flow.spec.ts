@@ -349,10 +349,10 @@ test.group('Match flow', (group) => {
       .firstOrFail()
     assert.isNull(bet.pointsAwarded)
 
-    const betHistory = await getBetHistory(member.id, {})
+    const betHistory = await getBetHistory(member.id, { tab: 'bets' })
     assert.isFalse(betHistory.items.some((entry) => entry.matchId === matchId))
 
-    const matchHistory = await getMatchHistory(player1.id, {})
+    const matchHistory = await getMatchHistory(player1.id, { tab: 'matches' })
     assert.isFalse(matchHistory.items.some((entry) => entry.matchId === matchId))
   })
 

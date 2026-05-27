@@ -1,4 +1,3 @@
-import { avatarUrl } from '#helpers/avatar_storage'
 import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
 import GroupMember from '#models/group_member'
