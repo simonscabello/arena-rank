@@ -13,8 +13,8 @@ export default function Home() {
       </div>
       <h1 className="text-3xl font-bold tracking-tight text-stone-900">Palpiteiro</h1>
       <p className="mt-3 max-w-sm text-base leading-relaxed text-stone-600">
-        Palpites entre amigos no beach tennis. Sem dinheiro — só diversão, rivalidade saudável e
-        ranking na quadra.
+        O app onde amizade vale menos que posição no ranking. Seu grupo nunca mais terá uma
+        convivência esportivamente saudável.
       </p>
 
       <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
