@@ -1,0 +1,81 @@
+import { Trophy } from 'lucide-react'
+import { cn, displayName } from '~/lib/match'
+import Avatar from '~/components/Avatar'
+
+export type RankingEntry = {
+  userId: number
+  fullName: string | null
+  email: string
+  totalPoints: number
+  initials?: string
+  avatarUrl?: string | null
+}
+
+type Props = {
+  entries: RankingEntry[]
+  highlightUserId?: number
+  emptyMessage?: string
+}
+
+const podiumStyles = [
+  'border-amber-200 bg-gradient-to-r from-amber-50 to-white',
+  'border-stone-200 bg-gradient-to-r from-stone-100 to-white',
+  'border-orange-200 bg-gradient-to-r from-orange-50/80 to-white',
+]
+
+export default function RankingList({
+  entries,
+  highlightUserId,
+  emptyMessage = 'Nenhum ponto ainda.',
+}: Props) {
+  if (entries.length === 0) {
+    return <p className="text-center text-sm text-stone-500 py-4">{emptyMessage}</p>
+  }
+
+  return (
+    <ol className="space-y-2">
+      {entries.map((entry, index) => {
+        const isMe = entry.userId === highlightUserId
+        const initials =
+          entry.initials ||
+          (entry.fullName
+            ? entry.fullName
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase()
+            : entry.email.slice(0, 2).toUpperCase())
+
+        return (
+          <li
+            key={entry.userId}
+            className={cn(
+              'flex items-center gap-3 rounded-xl border px-3 py-2.5',
+              index < 3 ? podiumStyles[index] : 'border-stone-100 bg-stone-50/50',
+              isMe && 'ring-2 ring-brand-500/30'
+            )}
+          >
+            <span
+              className={cn(
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                index === 0 && 'bg-amber-400 text-amber-950',
+                index === 1 && 'bg-stone-300 text-stone-800',
+                index === 2 && 'bg-orange-300 text-orange-950',
+                index > 2 && 'bg-stone-200 text-stone-600'
+              )}
+            >
+              {index < 3 ? <Trophy className="h-3.5 w-3.5" /> : index + 1}
+            </span>
+            <Avatar initials={initials} src={entry.avatarUrl} size="sm" />
+            <span className="min-w-0 flex-1 truncate font-medium text-stone-800">
+              {displayName(entry)}
+              {isMe && <span className="ml-1 text-xs text-brand-600">(você)</span>}
+            </span>
+            <span className="shrink-0 font-semibold text-brand-700">{entry.totalPoints} pts</span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}

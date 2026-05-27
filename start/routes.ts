@@ -13,6 +13,8 @@ import router from '@adonisjs/core/services/router'
 
 router.on('/').renderInertia('home', {}).as('home')
 
+router.get('uploads/avatars/:file', [controllers.Avatars, 'show']).as('avatars.show')
+
 router
   .group(() => {
     router.get('signup', [controllers.NewAccount, 'create'])
@@ -26,5 +28,28 @@ router
 router
   .group(() => {
     router.post('logout', [controllers.Session, 'destroy'])
+
+    router.get('grupos', [controllers.Groups, 'index']).as('groups.index')
+    router.post('grupos', [controllers.Groups, 'store']).as('groups.store')
+    router.post('grupos/entrar', [controllers.Groups, 'join']).as('groups.join')
+    router.get('grupos/:id', [controllers.Groups, 'show']).as('groups.show')
+    router
+      .get('grupos/:id/partidas/nova', [controllers.Groups, 'createMatchForm'])
+      .as('groups.matches.create')
+    router
+      .post('grupos/:groupId/partidas', [controllers.Matches, 'store'])
+      .as('matches.store')
+
+    router.get('partidas/:id', [controllers.Matches, 'show']).as('matches.show')
+    router.post('partidas/:id/palpite', [controllers.Matches, 'placeBet']).as('matches.bet')
+    router.post('partidas/:id/iniciar', [controllers.Matches, 'start']).as('matches.start')
+    router.post('partidas/:id/finalizar', [controllers.Matches, 'finalize']).as('matches.finalize')
+
+    router.get('perfil', [controllers.Profile, 'show']).as('profile.show')
+    router.post('perfil', [controllers.Profile, 'update']).as('profile.update')
+    router.post('perfil/conta', [controllers.Profile, 'updateAccount']).as('profile.updateAccount')
+    router
+      .get('grupos/:groupId/membros/:userId', [controllers.Members, 'show'])
+      .as('members.show')
   })
   .use(middleware.auth())

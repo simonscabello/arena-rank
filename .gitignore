@@ -4,6 +4,11 @@ build
 tmp/*
 !tmp/.gitkeep
 
+# User uploads
+storage/uploads/**
+!storage/uploads/avatars/
+!storage/uploads/avatars/.gitkeep
+
 # Secrets
 .env
 .env.local

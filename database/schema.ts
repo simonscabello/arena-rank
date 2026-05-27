@@ -7,19 +7,127 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
-export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'updatedAt'] as const
-  $columns = UserSchema.$columns
+export class ArenaSchema extends BaseModel {
+  static $columns = ['city', 'createdAt', 'id', 'name', 'updatedAt'] as const
+  $columns = ArenaSchema.$columns
+  @column()
+  declare city: string | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class BetSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'matchId', 'pointsAwarded', 'predictedSide', 'userId'] as const
+  $columns = BetSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare matchId: number
+  @column()
+  declare pointsAwarded: number | null
+  @column()
+  declare predictedSide: number
+  @column()
+  declare userId: number
+}
+
+export class GroupMemberSchema extends BaseModel {
+  static $columns = ['createdAt', 'groupId', 'id', 'role', 'userId'] as const
+  $columns = GroupMemberSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare groupId: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare role: string
+  @column()
+  declare userId: number
+}
+
+export class GroupSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'inviteCode', 'name', 'updatedAt'] as const
+  $columns = GroupSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare inviteCode: string
+  @column()
+  declare name: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class MatchPlayerSchema extends BaseModel {
+  static $columns = ['id', 'matchId', 'side', 'userId'] as const
+  $columns = MatchPlayerSchema.$columns
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare matchId: number
+  @column()
+  declare side: number
+  @column()
+  declare userId: number
+}
+
+export class MatchSchema extends BaseModel {
+  static $columns = ['arenaId', 'createdAt', 'createdByUserId', 'groupId', 'id', 'status', 'updatedAt', 'winnerSide'] as const
+  $columns = MatchSchema.$columns
+  @column()
+  declare arenaId: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: number
+  @column()
+  declare groupId: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare winnerSide: number | null
+}
+
+export class UserSchema extends BaseModel {
+  static $columns = ['avatarPath', 'courtSide', 'createdAt', 'dominantHand', 'email', 'fullName', 'funLabel', 'id', 'nickname', 'password', 'skillLevel', 'updatedAt'] as const
+  $columns = UserSchema.$columns
+  @column()
+  declare avatarPath: string | null
+  @column()
+  declare courtSide: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare dominantHand: string | null
   @column()
   declare email: string
   @column()
   declare fullName: string | null
+  @column()
+  declare funLabel: string | null
   @column({ isPrimary: true })
   declare id: number
+  @column()
+  declare nickname: string | null
   @column({ serializeAs: null })
   declare password: string
+  @column()
+  declare skillLevel: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

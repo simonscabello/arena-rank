@@ -12,6 +12,7 @@
     "build": "node ace build",
     "dev": "node ace serve --hmr",
     "test": "node ace test",
+    "db:seed:dev": "node ace db:seed --files database/seeders/dev_user_seeder",
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit && tsc --noEmit --project inertia/tsconfig.json"
@@ -32,6 +33,9 @@
     "#policies/*": "./app/policies/*.js",
     "#abilities/*": "./app/abilities/*.js",
     "#database/*": "./database/*.js",
+    "#helpers/*": "./app/helpers/*.js",
+    "#enums/*": "./app/enums/*.js",
+    "#constants/*": "./app/constants/*.js",
     "#tests/*": "./tests/*.js",
     "#start/*": "./start/*.js",
     "#config/*": "./config/*.js"
@@ -41,6 +45,7 @@
     "@adonisjs/eslint-config": "^3.0.0",
     "@adonisjs/prettier-config": "^1.4.5",
     "@adonisjs/tsconfig": "^2.0.0",
+    "@japa/api-client": "^3.2.1",
     "@japa/assert": "^4.2.0",
     "@japa/browser-client": "^2.3.0",
     "@japa/plugin-adonisjs": "^5.2.0",
@@ -70,16 +75,19 @@
     "@adonisjs/static": "^2.0.1",
     "@adonisjs/vite": "^5.1.0",
     "@inertiajs/react": "^2.3.18",
+    "@tailwindcss/vite": "^4.3.0",
     "@tuyau/core": "^1.2.2",
     "@vinejs/vine": "^4.3.1",
     "better-sqlite3": "^12.9.0",
     "edge.js": "^6.5.0",
+    "lucide-react": "^1.16.0",
     "luxon": "^3.7.2",
     "mysql2": "^3.22.3",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "reflect-metadata": "^0.2.2",
-    "sonner": "^2.0.7"
+    "sonner": "^2.0.7",
+    "tailwindcss": "^4.3.0"
   },
   "hotHook": {
     "boundaries": [

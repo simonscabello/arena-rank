@@ -1,73 +1,60 @@
-import { Form } from '@adonisjs/inertia/react'
+import { Form, Link } from '@adonisjs/inertia/react'
+import Input from '~/components/Input'
+import PasswordInput from '~/components/PasswordInput'
+import { buttonClassName } from '~/lib/button_styles'
 
 export default function Signup() {
   return (
-    <div className="form-container">
-      <div>
-        <h1> Signup </h1>
-        <p>Enter your details below to create your account</p>
+    <div className="mx-auto w-full max-w-sm py-4">
+      <div className="mb-8 text-center">
+        <h1 className="text-2xl font-bold text-stone-900">Cadastrar</h1>
+        <p className="mt-2 text-sm text-stone-500">Crie sua conta para participar dos palpites</p>
       </div>
 
-      <div>
-        <Form route="new_account.store">
+      <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+        <Form route="new_account.store" className="space-y-4">
           {({ errors }) => (
             <>
-              <div>
-                <label htmlFor="fullName">Full name</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  id="fullName"
-                  data-invalid={errors.fullName ? 'true' : undefined}
-                />
-                {errors.fullName && <div>{errors.fullName}</div>}
-              </div>
-
-              <div>
-                <label htmlFor="email">Email</label>
-                <input
+              <Input label="Nome" type="text" name="fullName" id="fullName" error={errors.fullName} />
+              <div className="space-y-1.5">
+                <Input
+                  label="Email"
                   type="email"
                   name="email"
                   id="email"
                   autoComplete="email"
-                  data-invalid={errors.email ? 'true' : undefined}
+                  error={errors.email}
                 />
-                {errors.email && <div>{errors.email}</div>}
+                <p className="text-xs text-stone-500">Será usado para fazer login no app</p>
               </div>
-
-              <div>
-                <label htmlFor="password">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  autoComplete="new-password"
-                  data-invalid={errors.password ? 'true' : undefined}
-                />
-                {errors.password && <div>{errors.password}</div>}
-              </div>
-
-              <div>
-                <label htmlFor="passwordConfirmation">Confirm password</label>
-                <input
-                  type="password"
-                  name="passwordConfirmation"
-                  id="passwordConfirmation"
-                  autoComplete="new-password"
-                  data-invalid={errors.passwordConfirmation ? 'true' : undefined}
-                />
-                {errors.passwordConfirmation && <div>{errors.passwordConfirmation}</div>}
-              </div>
-
-              <div>
-                <button type="submit" className="button">
-                  Sign up
-                </button>
-              </div>
+              <PasswordInput
+                label="Senha"
+                name="password"
+                id="password"
+                autoComplete="new-password"
+                error={errors.password}
+              />
+              <PasswordInput
+                label="Confirmar senha"
+                name="passwordConfirmation"
+                id="passwordConfirmation"
+                autoComplete="new-password"
+                error={errors.passwordConfirmation}
+              />
+              <button type="submit" className={buttonClassName('primary', 'lg', true)}>
+                Cadastrar
+              </button>
             </>
           )}
         </Form>
       </div>
+
+      <p className="mt-6 text-center text-sm text-stone-500">
+        Já tem conta?{' '}
+        <Link route="session.create" className="font-medium text-brand-600 hover:underline">
+          Entrar
+        </Link>
+      </p>
     </div>
   )
 }

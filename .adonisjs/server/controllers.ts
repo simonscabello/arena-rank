@@ -4,6 +4,11 @@
  */
 
 export const controllers = {
+  Avatars: () => import('#controllers/avatars_controller'),
+  Groups: () => import('#controllers/groups_controller'),
+  Matches: () => import('#controllers/matches_controller'),
+  Members: () => import('#controllers/members_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
+  Profile: () => import('#controllers/profile_controller'),
   Session: () => import('#controllers/session_controller'),
 }
