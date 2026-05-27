@@ -38,9 +38,7 @@ export default class MembersController {
         dominantHandLabel: member.dominantHand
           ? DOMINANT_HAND_LABELS[member.dominantHand as DominantHand]
           : null,
-        courtSideLabel: member.courtSide
-          ? COURT_SIDE_LABELS[member.courtSide as CourtSide]
-          : null,
+        courtSideLabel: member.courtSide ? COURT_SIDE_LABELS[member.courtSide as CourtSide] : null,
         skillLevelLabel: member.skillLevel
           ? SKILL_LEVEL_LABELS[member.skillLevel as SkillLevel]
           : null,

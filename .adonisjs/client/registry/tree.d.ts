@@ -6,6 +6,17 @@ export interface ApiDefinition {
   avatars: {
     show: typeof routes['avatars.show']
   }
+  groups: {
+    invite: typeof routes['groups.invite']
+    index: typeof routes['groups.index']
+    store: typeof routes['groups.store']
+    join: typeof routes['groups.join']
+    update: typeof routes['groups.update']
+    show: typeof routes['groups.show']
+    matches: {
+      create: typeof routes['groups.matches.create']
+    }
+  }
   newAccount: {
     create: typeof routes['new_account.create']
     store: typeof routes['new_account.store']
@@ -14,15 +25,6 @@ export interface ApiDefinition {
     create: typeof routes['session.create']
     store: typeof routes['session.store']
     destroy: typeof routes['session.destroy']
-  }
-  groups: {
-    index: typeof routes['groups.index']
-    store: typeof routes['groups.store']
-    join: typeof routes['groups.join']
-    show: typeof routes['groups.show']
-    matches: {
-      create: typeof routes['groups.matches.create']
-    }
   }
   matches: {
     store: typeof routes['matches.store']

@@ -9,8 +9,8 @@ import User from '#models/user'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
 
-test.group('History', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+test.group('History', (suite) => {
+  suite.each.setup(() => testUtils.db().truncate())
 
   async function createUser(email: string, nickname?: string) {
     return User.create({
@@ -58,13 +58,13 @@ test.group('History', (group) => {
     const arenaA = await Arena.create({ name: 'Arena A', city: 'Rio' })
     const arenaB = await Arena.create({ name: 'Arena B', city: 'SP' })
 
-    for (const [group, owner] of [
+    for (const [play, owner] of [
       [playA, owner1],
       [playB, owner2],
     ] as const) {
-      await GroupMember.create({ groupId: group.id, userId: owner.id, role: 'organizador' })
-      await GroupMember.create({ groupId: group.id, userId: user.id, role: 'membro' })
-      await GroupMember.create({ groupId: group.id, userId: partner.id, role: 'membro' })
+      await GroupMember.create({ groupId: play.id, userId: owner.id, role: 'organizador' })
+      await GroupMember.create({ groupId: play.id, userId: user.id, role: 'membro' })
+      await GroupMember.create({ groupId: play.id, userId: partner.id, role: 'membro' })
     }
 
     await createFinalizedMatch(
@@ -111,19 +111,19 @@ test.group('History', (group) => {
     const owner = await createUser('owner@test.com')
     const extra = await createUser('extra@test.com')
 
-    const group = await Group.create({ name: 'Play Filtro', inviteCode: generateInviteCode() })
+    const play = await Group.create({ name: 'Play Filtro', inviteCode: generateInviteCode() })
     const arena = await Arena.create({ name: 'Arena Filtro' })
 
     for (const member of [owner, user, partnerA, partnerB, extra]) {
       await GroupMember.create({
-        groupId: group.id,
+        groupId: play.id,
         userId: member.id,
         role: member.id === owner.id ? 'organizador' : 'membro',
       })
     }
 
     await createFinalizedMatch(
-      group.id,
+      play.id,
       owner.id,
       arena,
       [
@@ -136,7 +136,7 @@ test.group('History', (group) => {
     )
 
     await createFinalizedMatch(
-      group.id,
+      play.id,
       owner.id,
       arena,
       [
@@ -158,7 +158,7 @@ test.group('History', (group) => {
 
     const byGroup = await getMatchHistory(user.id, {
       tab: 'matches',
-      groupId: group.id,
+      groupId: play.id,
     })
 
     assert.equal(byGroup.items.length, 2)

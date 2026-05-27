@@ -10,6 +10,4 @@ export const historyFiltersValidator = vine.create({
   page: vine.number().withoutDecimals().min(1).optional(),
 })
 
-export type ValidatedHistoryFilters = Awaited<
-  ReturnType<typeof historyFiltersValidator.validate>
->
+export type ValidatedHistoryFilters = Awaited<ReturnType<typeof historyFiltersValidator.validate>>

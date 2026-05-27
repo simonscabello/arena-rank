@@ -1,4 +1,5 @@
 import User from '#models/user'
+import { consumePendingInvite } from '#helpers/group_access'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class SessionController {
@@ -6,11 +7,14 @@ export default class SessionController {
     return inertia.render('auth/login', {})
   }
 
-  async store({ request, auth, response }: HttpContext) {
+  async store({ request, auth, response, session }: HttpContext) {
     const { email, password } = request.all()
     const user = await User.verifyCredentials(email, password)
 
     await auth.use('web').login(user)
+
+    if (await consumePendingInvite(session, user, response)) return
+
     response.redirect().toRoute('groups.index')
   }
 

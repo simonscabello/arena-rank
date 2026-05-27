@@ -23,7 +23,14 @@ export class ArenaSchema extends BaseModel {
 }
 
 export class BetSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'matchId', 'pointsAwarded', 'predictedSide', 'userId'] as const
+  static $columns = [
+    'createdAt',
+    'id',
+    'matchId',
+    'pointsAwarded',
+    'predictedSide',
+    'userId',
+  ] as const
   $columns = BetSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -83,7 +90,17 @@ export class MatchPlayerSchema extends BaseModel {
 }
 
 export class MatchSchema extends BaseModel {
-  static $columns = ['arenaId', 'createdAt', 'createdByUserId', 'groupId', 'id', 'status', 'statusChangedAt', 'updatedAt', 'winnerSide'] as const
+  static $columns = [
+    'arenaId',
+    'createdAt',
+    'createdByUserId',
+    'groupId',
+    'id',
+    'status',
+    'statusChangedAt',
+    'updatedAt',
+    'winnerSide',
+  ] as const
   $columns = MatchSchema.$columns
   @column()
   declare arenaId: number
@@ -106,7 +123,20 @@ export class MatchSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['avatarPath', 'courtSide', 'createdAt', 'dominantHand', 'email', 'fullName', 'funLabel', 'id', 'nickname', 'password', 'skillLevel', 'updatedAt'] as const
+  static $columns = [
+    'avatarPath',
+    'courtSide',
+    'createdAt',
+    'dominantHand',
+    'email',
+    'fullName',
+    'funLabel',
+    'id',
+    'nickname',
+    'password',
+    'skillLevel',
+    'updatedAt',
+  ] as const
   $columns = UserSchema.$columns
   @column()
   declare avatarPath: string | null

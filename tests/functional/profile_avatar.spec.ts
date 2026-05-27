@@ -54,10 +54,7 @@ test.group('Profile avatar', (group) => {
     const absolutePath = avatarStoragePath(user.avatarPath!)
     assert.isTrue(existsSync(absolutePath))
 
-    const removeResponse = await client
-      .post('/perfil')
-      .loginAs(user)
-      .field('removeAvatar', '1')
+    const removeResponse = await client.post('/perfil').loginAs(user).field('removeAvatar', '1')
 
     removeResponse.assertRedirectsTo('/perfil')
 

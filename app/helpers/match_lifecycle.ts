@@ -1,5 +1,5 @@
 import Bet from '#models/bet'
-import GameMatch from '#models/game_match'
+import type GameMatch from '#models/game_match'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 
 export async function clearMatchResult(match: GameMatch, trx: TransactionClientContract) {

@@ -63,7 +63,11 @@ async function buildStreakMap(groupId: number) {
     .where('matches.group_id', groupId)
     .where('matches.status', 'finalizada')
     .whereNotNull('bets.points_awarded')
-    .select('bets.user_id as userId', 'bets.points_awarded as pointsAwarded', 'matches.created_at as playedAt')
+    .select(
+      'bets.user_id as userId',
+      'bets.points_awarded as pointsAwarded',
+      'matches.created_at as playedAt'
+    )
     .orderBy('matches.created_at', 'desc')
     .orderBy('matches.id', 'desc')
 
@@ -212,9 +216,8 @@ export async function getBetParticipation(
   playerUserIds: number[]
 ): Promise<BetParticipation> {
   const members = await GroupMember.query().where('group_id', groupId).preload('user')
-  const bettorIds = new Set(
-    (await Bet.query().where('match_id', matchId).select('user_id')).map((bet) => bet.userId)
-  )
+  const bets = await Bet.query().where('match_id', matchId).select('user_id')
+  const bettorIds = new Set(bets.map((bet) => bet.userId))
   const playerSet = new Set(playerUserIds)
 
   const eligible = members.filter((membership) => !playerSet.has(membership.userId))

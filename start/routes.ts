@@ -15,6 +15,8 @@ router.on('/').renderInertia('home', {}).as('home')
 
 router.get('uploads/avatars/:file', [controllers.Avatars, 'show']).as('avatars.show')
 
+router.get('convite/:code', [controllers.Groups, 'invite']).as('groups.invite')
+
 router
   .group(() => {
     router.get('signup', [controllers.NewAccount, 'create'])
@@ -32,13 +34,12 @@ router
     router.get('grupos', [controllers.Groups, 'index']).as('groups.index')
     router.post('grupos', [controllers.Groups, 'store']).as('groups.store')
     router.post('grupos/entrar', [controllers.Groups, 'join']).as('groups.join')
+    router.post('grupos/:id', [controllers.Groups, 'update']).as('groups.update')
     router.get('grupos/:id', [controllers.Groups, 'show']).as('groups.show')
     router
       .get('grupos/:id/partidas/nova', [controllers.Groups, 'createMatchForm'])
       .as('groups.matches.create')
-    router
-      .post('grupos/:groupId/partidas', [controllers.Matches, 'store'])
-      .as('matches.store')
+    router.post('grupos/:groupId/partidas', [controllers.Matches, 'store']).as('matches.store')
 
     router.get('partidas/:id', [controllers.Matches, 'show']).as('matches.show')
     router.post('partidas/:id/palpite', [controllers.Matches, 'placeBet']).as('matches.bet')
@@ -56,8 +57,6 @@ router
     router.post('perfil', [controllers.Profile, 'update']).as('profile.update')
     router.post('perfil/conta', [controllers.Profile, 'updateAccount']).as('profile.updateAccount')
     router.get('historico', [controllers.History, 'show']).as('history.show')
-    router
-      .get('grupos/:groupId/membros/:userId', [controllers.Members, 'show'])
-      .as('members.show')
+    router.get('grupos/:groupId/membros/:userId', [controllers.Members, 'show']).as('members.show')
   })
   .use(middleware.auth())

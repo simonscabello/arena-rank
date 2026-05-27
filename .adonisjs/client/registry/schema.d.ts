@@ -31,6 +31,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/avatars_controller').default['show']>>>
     }
   }
+  'groups.invite': {
+    methods: ["GET","HEAD"]
+    pattern: '/convite/:code'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { code: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['invite']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['invite']>>>
+    }
+  }
   'new_account.create': {
     methods: ["GET","HEAD"]
     pattern: '/signup'
@@ -125,6 +137,18 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/group').joinGroupValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['join']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['join']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'groups.update': {
+    methods: ["POST"]
+    pattern: '/grupos/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/group').updateGroupValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/group').updateGroupValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'groups.show': {

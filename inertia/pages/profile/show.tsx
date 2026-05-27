@@ -36,7 +36,10 @@ type Props = {
 
 const MAX_FUN_LABEL_LENGTH = 60
 
+type ProfileTab = 'profile' | 'account'
+
 export default function ProfileShow({ account, profile, funLabelSuggestions, options }: Props) {
+  const [activeTab, setActiveTab] = useState<ProfileTab>('profile')
   const [funLabel, setFunLabel] = useState(profile.funLabel ?? '')
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile.avatarUrl)
   const [removeAvatar, setRemoveAvatar] = useState(false)
@@ -83,63 +86,35 @@ export default function ProfileShow({ account, profile, funLabelSuggestions, opt
         subtitle="Conta e preferências no court"
       />
 
-      <Card title="Dados da conta" className="mb-4">
-        <Form route="profile.updateAccount" className="space-y-4">
-          {({ errors }) => (
-            <>
-              <Input
-                label="Nome"
-                type="text"
-                name="fullName"
-                id="accountFullName"
-                defaultValue={account.fullName ?? ''}
-                error={errors.fullName}
-              />
-              <div className="space-y-1.5">
-                <Input
-                  label="Email"
-                  type="email"
-                  name="email"
-                  id="accountEmail"
-                  autoComplete="email"
-                  defaultValue={account.email}
-                  error={errors.email}
-                />
-                <p className="text-xs text-stone-500">Usado para fazer login no app</p>
-              </div>
-              <p className="text-xs text-stone-500">
-                Deixe as senhas em branco se não quiser alterar
-              </p>
-              <PasswordInput
-                label="Senha atual"
-                name="currentPassword"
-                id="currentPassword"
-                autoComplete="current-password"
-                error={errors.currentPassword}
-              />
-              <PasswordInput
-                label="Nova senha"
-                name="password"
-                id="newPassword"
-                autoComplete="new-password"
-                error={errors.password}
-              />
-              <PasswordInput
-                label="Confirmar nova senha"
-                name="passwordConfirmation"
-                id="passwordConfirmation"
-                autoComplete="new-password"
-                error={errors.passwordConfirmation}
-              />
-              <button type="submit" className={buttonClassName('primary', 'lg', true)}>
-                Salvar conta
-              </button>
-            </>
+      <div className="mb-4 flex rounded-xl border border-stone-200 bg-stone-50 p-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('profile')}
+          className={cn(
+            'flex-1 rounded-lg py-2 text-sm font-medium transition',
+            activeTab === 'profile'
+              ? 'bg-white text-brand-700 shadow-sm'
+              : 'text-stone-600 hover:text-stone-900'
           )}
-        </Form>
-      </Card>
+        >
+          Perfil
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('account')}
+          className={cn(
+            'flex-1 rounded-lg py-2 text-sm font-medium transition',
+            activeTab === 'account'
+              ? 'bg-white text-brand-700 shadow-sm'
+              : 'text-stone-600 hover:text-stone-900'
+          )}
+        >
+          Conta
+        </button>
+      </div>
 
-      <Card>
+      {activeTab === 'profile' && (
+      <Card title="Perfil na Play">
         <Form route="profile.update" encType="multipart/form-data" className="space-y-4">
           {({ errors }) => (
             <>
@@ -274,6 +249,65 @@ export default function ProfileShow({ account, profile, funLabelSuggestions, opt
           )}
         </Form>
       </Card>
+      )}
+
+      {activeTab === 'account' && (
+      <Card title="Dados da conta">
+        <Form route="profile.updateAccount" className="space-y-4">
+          {({ errors }) => (
+            <>
+              <Input
+                label="Nome"
+                type="text"
+                name="fullName"
+                id="accountFullName"
+                defaultValue={account.fullName ?? ''}
+                error={errors.fullName}
+              />
+              <div className="space-y-1.5">
+                <Input
+                  label="Email"
+                  type="email"
+                  name="email"
+                  id="accountEmail"
+                  autoComplete="email"
+                  defaultValue={account.email}
+                  error={errors.email}
+                />
+                <p className="text-xs text-stone-500">Usado para fazer login no app</p>
+              </div>
+              <p className="text-xs text-stone-500">
+                Deixe as senhas em branco se não quiser alterar
+              </p>
+              <PasswordInput
+                label="Senha atual"
+                name="currentPassword"
+                id="currentPassword"
+                autoComplete="current-password"
+                error={errors.currentPassword}
+              />
+              <PasswordInput
+                label="Nova senha"
+                name="password"
+                id="newPassword"
+                autoComplete="new-password"
+                error={errors.password}
+              />
+              <PasswordInput
+                label="Confirmar nova senha"
+                name="passwordConfirmation"
+                id="passwordConfirmation"
+                autoComplete="new-password"
+                error={errors.passwordConfirmation}
+              />
+              <button type="submit" className={buttonClassName('primary', 'lg', true)}>
+                Salvar conta
+              </button>
+            </>
+          )}
+        </Form>
+      </Card>
+      )}
     </>
   )
 }

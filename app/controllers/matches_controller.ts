@@ -9,17 +9,19 @@ import {
   rejectExpiredManageWindow,
 } from '#helpers/match_manage_window'
 import { canHaveBets } from '#helpers/match_bets'
-import { getBetParticipation, getGroupRanking, getMatchWithRelations, getRankContext, isMatchPlayer } from '#helpers/ranking'
+import {
+  getBetParticipation,
+  getGroupRanking,
+  getMatchWithRelations,
+  getRankContext,
+  isMatchPlayer,
+} from '#helpers/ranking'
 import Arena from '#models/arena'
 import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
 import GroupMember from '#models/group_member'
 import MatchPlayer from '#models/match_player'
-import {
-  createMatchValidator,
-  finalizeMatchValidator,
-  placeBetValidator,
-} from '#validators/match'
+import { createMatchValidator, finalizeMatchValidator, placeBetValidator } from '#validators/match'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
@@ -50,9 +52,7 @@ export default class MatchesController {
       return
     }
 
-    const members = await GroupMember.query()
-      .where('group_id', groupId)
-      .whereIn('user_id', userIds)
+    const members = await GroupMember.query().where('group_id', groupId).whereIn('user_id', userIds)
     if (members.length !== 4) {
       session.flash('error', 'Todos os jogadores devem fazer parte da Play')
       response.redirect().back()
@@ -189,10 +189,7 @@ export default class MatchesController {
 
     const { predictedSide } = await request.validateUsing(placeBetValidator)
 
-    const existing = await Bet.query()
-      .where('match_id', match.id)
-      .where('user_id', user.id)
-      .first()
+    const existing = await Bet.query().where('match_id', match.id).where('user_id', user.id).first()
     if (existing) {
       session.flash('error', 'Você já fez seu palpite nesta partida')
       response.redirect().back()
@@ -236,13 +233,11 @@ export default class MatchesController {
     await assertGroupMember(match.groupId, user)
     await assertMatchCreator(match, user)
 
-    const playerIds = (
-      await MatchPlayer.query().where('match_id', match.id).select('user_id')
-    ).map((p) => p.userId)
+    const matchPlayers = await MatchPlayer.query().where('match_id', match.id).select('user_id')
+    const playerIds = matchPlayers.map((p) => p.userId)
     const betsPossible = await canHaveBets(match.groupId, playerIds)
     const canFinalizeNow =
-      match.status === 'em_andamento' ||
-      (match.status === 'palpites_abertos' && !betsPossible)
+      match.status === 'em_andamento' || (match.status === 'palpites_abertos' && !betsPossible)
 
     if (!canFinalizeNow) {
       session.flash('error', 'Partida precisa estar em andamento para finalizar')
@@ -284,9 +279,8 @@ export default class MatchesController {
       return
     }
 
-    const playerIds = (
-      await MatchPlayer.query().where('match_id', match.id).select('user_id')
-    ).map((p) => p.userId)
+    const matchPlayers = await MatchPlayer.query().where('match_id', match.id).select('user_id')
+    const playerIds = matchPlayers.map((p) => p.userId)
     const betsPossible = await canHaveBets(match.groupId, playerIds)
 
     if (!betsPossible) {

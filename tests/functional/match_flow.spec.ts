@@ -10,8 +10,8 @@ import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
 import { DateTime } from 'luxon'
 
-test.group('Match flow', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+test.group('Match flow', (suite) => {
+  suite.each.setup(() => testUtils.db().truncate())
 
   async function createUser(email: string) {
     return User.create({
@@ -43,7 +43,6 @@ test.group('Match flow', (group) => {
   }
 
   async function createMatchViaHttp(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     client: any,
     owner: User,
     groupId: number,

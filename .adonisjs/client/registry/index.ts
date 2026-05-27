@@ -18,6 +18,12 @@ const routes = {
     tokens: [{"old":"/uploads/avatars/:file","type":0,"val":"uploads","end":""},{"old":"/uploads/avatars/:file","type":0,"val":"avatars","end":""},{"old":"/uploads/avatars/:file","type":1,"val":"file","end":""}],
     types: placeholder as Registry['avatars.show']['types'],
   },
+  'groups.invite': {
+    methods: ["GET","HEAD"],
+    pattern: '/convite/:code',
+    tokens: [{"old":"/convite/:code","type":0,"val":"convite","end":""},{"old":"/convite/:code","type":1,"val":"code","end":""}],
+    types: placeholder as Registry['groups.invite']['types'],
+  },
   'new_account.create': {
     methods: ["GET","HEAD"],
     pattern: '/signup',
@@ -65,6 +71,12 @@ const routes = {
     pattern: '/grupos/entrar',
     tokens: [{"old":"/grupos/entrar","type":0,"val":"grupos","end":""},{"old":"/grupos/entrar","type":0,"val":"entrar","end":""}],
     types: placeholder as Registry['groups.join']['types'],
+  },
+  'groups.update': {
+    methods: ["POST"],
+    pattern: '/grupos/:id',
+    tokens: [{"old":"/grupos/:id","type":0,"val":"grupos","end":""},{"old":"/grupos/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['groups.update']['types'],
   },
   'groups.show': {
     methods: ["GET","HEAD"],

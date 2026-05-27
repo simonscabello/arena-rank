@@ -131,7 +131,11 @@ function applyMatchFilters(
   applyDateFilters(query, filters, 'm.created_at')
 }
 
-function applyBetFilters(query: DatabaseQueryBuilderContract, filters: HistoryFilters, userId: number) {
+function applyBetFilters(
+  query: DatabaseQueryBuilderContract,
+  filters: HistoryFilters,
+  userId: number
+) {
   query
     .innerJoin('matches as m', 'b.match_id', 'm.id')
     .innerJoin('group_members as gm', (join: Knex.JoinClause) => {
@@ -187,7 +191,10 @@ export async function getHistoryFilterOptions(userId: number): Promise<HistoryFi
     .groupBy('a.id', 'a.name', 'a.city', 'm.group_id')
     .select('a.id as id', 'a.name as name', 'a.city as city', 'm.group_id as groupId')
 
-  const arenaMap = new Map<number, { id: number; name: string; city: string | null; groupId: number }>()
+  const arenaMap = new Map<
+    number,
+    { id: number; name: string; city: string | null; groupId: number }
+  >()
   for (const row of [...arenaRows, ...betArenaRows]) {
     arenaMap.set(Number(row.id), {
       id: Number(row.id),
@@ -382,8 +389,7 @@ export async function getBetHistory(
         arenaName: row.arenaName,
         predictedSide: Number(row.predictedSide),
         pointsAwarded,
-        correct:
-          pointsAwarded === null ? null : pointsAwarded > 0,
+        correct: pointsAwarded === null ? null : pointsAwarded > 0,
         playedAt: String(row.playedAt),
       }
     }),

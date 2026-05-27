@@ -1,11 +1,13 @@
-import { Link } from '@adonisjs/inertia/react'
-import { Calendar, Plus, Users } from 'lucide-react'
+import { Form, Link } from '@adonisjs/inertia/react'
+import { Calendar, Pencil, Plus, Users, X } from 'lucide-react'
+import { useState } from 'react'
 import BackLink from '~/components/BackLink'
 import Badge from '~/components/Badge'
 import Card from '~/components/Card'
 import CopyInviteCode from '~/components/CopyInviteCode'
+import CopyInviteLink from '~/components/CopyInviteLink'
 import EmptyState from '~/components/EmptyState'
-import PageHeader from '~/components/PageHeader'
+import Input from '~/components/Input'
 import RankingList, { type RankingEntry } from '~/components/RankingList'
 import Avatar from '~/components/Avatar'
 import { buttonClassName } from '~/lib/button_styles'
@@ -28,28 +30,90 @@ type MatchItem = {
 }
 
 type Props = {
-  group: { id: number; name: string; inviteCode: string }
+  group: { id: number; name: string; inviteCode: string; inviteUrl: string }
   members: Member[]
   matches: MatchItem[]
   ranking: RankingEntry[]
   currentUserId: number
+  canManageGroup: boolean
 }
 
-export default function GroupShow({ group, members, matches, ranking, currentUserId }: Props) {
+export default function GroupShow({
+  group,
+  members,
+  matches,
+  ranking,
+  currentUserId,
+  canManageGroup,
+}: Props) {
+  const [isEditingName, setIsEditingName] = useState(false)
+
   return (
     <>
-      <PageHeader
-        back={<BackLink route="groups.index" label="Plays" />}
-        title={group.name}
-        subtitle={
-          <span className="block text-sm text-stone-500">
-            Convide amigos com o código abaixo
-          </span>
-        }
-      />
+      <div className="mb-6">
+        <BackLink route="groups.index" label="Plays" />
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+        {isEditingName ? (
+          <Form
+            route="groups.update"
+            routeParams={{ id: group.id }}
+            className="space-y-4"
+            onSuccess={() => setIsEditingName(false)}
+          >
+            {({ errors }) => (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-stone-700">Editar nome</p>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingName(false)}
+                    className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+                    aria-label="Cancelar edição"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <Input
+                  label="Nome da Play"
+                  name="name"
+                  id="group-name"
+                  defaultValue={group.name}
+                  required
+                  minLength={2}
+                  maxLength={100}
+                  error={errors.name}
+                />
+                <button type="submit" className={buttonClassName('primary', 'md', true)}>
+                  Salvar
+                </button>
+              </>
+            )}
+          </Form>
+        ) : (
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-stone-900">{group.name}</p>
+              <p className="mt-0.5 font-mono text-xs text-stone-500">{group.inviteCode}</p>
+            </div>
+            {canManageGroup && (
+              <button
+                type="button"
+                onClick={() => setIsEditingName(true)}
+                className="shrink-0 rounded-lg p-2 text-stone-400 transition hover:bg-stone-100 hover:text-brand-600"
+                aria-label="Editar nome da Play"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="mb-6 space-y-4">
         <CopyInviteCode code={group.inviteCode} />
+        <CopyInviteLink url={group.inviteUrl} />
         <Link
           route="groups.matches.create"
           routeParams={{ id: group.id }}

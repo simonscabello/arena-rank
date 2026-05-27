@@ -6,6 +6,7 @@ export type ScannedRoutes = {
   ALL: {
     'home': { paramsTuple?: []; params?: {} }
     'avatars.show': { paramsTuple: [ParamValue]; params: {'file': ParamValue} }
+    'groups.invite': { paramsTuple: [ParamValue]; params: {'code': ParamValue} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'new_account.store': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
@@ -14,6 +15,7 @@ export type ScannedRoutes = {
     'groups.index': { paramsTuple?: []; params?: {} }
     'groups.store': { paramsTuple?: []; params?: {} }
     'groups.join': { paramsTuple?: []; params?: {} }
+    'groups.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'groups.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'groups.matches.create': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'matches.store': { paramsTuple: [ParamValue]; params: {'groupId': ParamValue} }
@@ -33,6 +35,7 @@ export type ScannedRoutes = {
   GET: {
     'home': { paramsTuple?: []; params?: {} }
     'avatars.show': { paramsTuple: [ParamValue]; params: {'file': ParamValue} }
+    'groups.invite': { paramsTuple: [ParamValue]; params: {'code': ParamValue} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
     'groups.index': { paramsTuple?: []; params?: {} }
@@ -46,6 +49,7 @@ export type ScannedRoutes = {
   HEAD: {
     'home': { paramsTuple?: []; params?: {} }
     'avatars.show': { paramsTuple: [ParamValue]; params: {'file': ParamValue} }
+    'groups.invite': { paramsTuple: [ParamValue]; params: {'code': ParamValue} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
     'groups.index': { paramsTuple?: []; params?: {} }
@@ -62,6 +66,7 @@ export type ScannedRoutes = {
     'session.destroy': { paramsTuple?: []; params?: {} }
     'groups.store': { paramsTuple?: []; params?: {} }
     'groups.join': { paramsTuple?: []; params?: {} }
+    'groups.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'matches.store': { paramsTuple: [ParamValue]; params: {'groupId': ParamValue} }
     'matches.bet': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'matches.start': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }

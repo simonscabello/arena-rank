@@ -1,6 +1,6 @@
-import User from '#models/user'
+import type User from '#models/user'
 import app from '@adonisjs/core/services/app'
-import { MultipartFile } from '@adonisjs/bodyparser/types'
+import { type MultipartFile } from '@adonisjs/bodyparser/types'
 import { unlink } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path from 'node:path'

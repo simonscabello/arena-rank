@@ -92,9 +92,12 @@ test.group('Player stats and profile', (group) => {
   test('profile rejects fun label over 60 characters', async ({ client, assert }) => {
     const user = await createUser('longlabel@test.com')
 
-    await client.post('/perfil').loginAs(user).form({
-      funLabel: 'A'.repeat(61),
-    })
+    await client
+      .post('/perfil')
+      .loginAs(user)
+      .form({
+        funLabel: 'A'.repeat(61),
+      })
 
     await user.refresh()
     assert.isNull(user.funLabel)
@@ -145,7 +148,10 @@ test.group('Player stats and profile', (group) => {
     assert.equal(playerStats.matchesPlayed, 1)
     assert.equal(memberStats.betPoints, 10)
 
-    const bet = await Bet.query().where('match_id', matchId).where('user_id', member.id).firstOrFail()
+    const bet = await Bet.query()
+      .where('match_id', matchId)
+      .where('user_id', member.id)
+      .firstOrFail()
     assert.equal(bet.pointsAwarded, 10)
   })
 })
