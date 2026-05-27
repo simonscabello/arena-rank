@@ -254,9 +254,9 @@ export interface Registry {
       body: {}
       paramsTuple: []
       params: {}
-      query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/members_controller').default['historyRedirect']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/members_controller').default['historyRedirect']>>>
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/history').historyFiltersValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/history_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/history_controller').default['show']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'members.show': {

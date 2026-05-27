@@ -48,7 +48,7 @@ router
     router.get('perfil', [controllers.Profile, 'show']).as('profile.show')
     router.post('perfil', [controllers.Profile, 'update']).as('profile.update')
     router.post('perfil/conta', [controllers.Profile, 'updateAccount']).as('profile.updateAccount')
-    router.get('historico', [controllers.Members, 'historyRedirect']).as('history.show')
+    router.get('historico', [controllers.History, 'show']).as('history.show')
     router
       .get('grupos/:groupId/membros/:userId', [controllers.Members, 'show'])
       .as('members.show')
