@@ -24,6 +24,7 @@ export type ScannedRoutes = {
     'profile.show': { paramsTuple?: []; params?: {} }
     'profile.update': { paramsTuple?: []; params?: {} }
     'profile.updateAccount': { paramsTuple?: []; params?: {} }
+    'history.show': { paramsTuple?: []; params?: {} }
     'members.show': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'userId': ParamValue} }
   }
   GET: {
@@ -36,6 +37,7 @@ export type ScannedRoutes = {
     'groups.matches.create': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'matches.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'profile.show': { paramsTuple?: []; params?: {} }
+    'history.show': { paramsTuple?: []; params?: {} }
     'members.show': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'userId': ParamValue} }
   }
   HEAD: {
@@ -48,6 +50,7 @@ export type ScannedRoutes = {
     'groups.matches.create': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'matches.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'profile.show': { paramsTuple?: []; params?: {} }
+    'history.show': { paramsTuple?: []; params?: {} }
     'members.show': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'userId': ParamValue} }
   }
   POST: {

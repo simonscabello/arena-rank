@@ -36,6 +36,9 @@ export interface ApiDefinition {
     update: typeof routes['profile.update']
     updateAccount: typeof routes['profile.updateAccount']
   }
+  history: {
+    show: typeof routes['history.show']
+  }
   members: {
     show: typeof routes['members.show']
   }

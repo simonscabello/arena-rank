@@ -126,6 +126,12 @@ const routes = {
     tokens: [{"old":"/perfil/conta","type":0,"val":"perfil","end":""},{"old":"/perfil/conta","type":0,"val":"conta","end":""}],
     types: placeholder as Registry['profile.updateAccount']['types'],
   },
+  'history.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/historico',
+    tokens: [{"old":"/historico","type":0,"val":"historico","end":""}],
+    types: placeholder as Registry['history.show']['types'],
+  },
   'members.show': {
     methods: ["GET","HEAD"],
     pattern: '/grupos/:groupId/membros/:userId',

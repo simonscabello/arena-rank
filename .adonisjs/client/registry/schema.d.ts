@@ -247,6 +247,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['updateAccount']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'history.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/historico'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/members_controller').default['historyRedirect']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/members_controller').default['historyRedirect']>>>
+    }
+  }
   'members.show': {
     methods: ["GET","HEAD"]
     pattern: '/grupos/:groupId/membros/:userId'
