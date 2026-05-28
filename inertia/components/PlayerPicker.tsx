@@ -18,7 +18,7 @@ type Slot = {
 type Props = {
   members: Member[]
   slots: Slot[]
-  onSelect: (slotIndex: number, userId: number) => void
+  onSelect: (slotIndex: number, userId: number | null) => void
 }
 
 function SlotPicker({
@@ -34,7 +34,7 @@ function SlotPicker({
   members: Member[]
   selectedUserId: number | null
   disabledIds: Set<number>
-  onSelect: (userId: number) => void
+  onSelect: (userId: number | null) => void
 }) {
   return (
     <div>
@@ -49,7 +49,7 @@ function SlotPicker({
               key={member.id}
               type="button"
               disabled={disabled}
-              onClick={() => onSelect(member.id)}
+              onClick={() => onSelect(selected ? null : member.id)}
               className={cn(
                 'inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition active:scale-[0.98]',
                 selected

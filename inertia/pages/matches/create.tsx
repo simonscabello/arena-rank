@@ -34,7 +34,7 @@ export default function MatchCreate({ group, memberCount, members, arenas }: Pro
     { userId: null as number | null, side: 2 as const, slotIndex: 3 },
   ])
 
-  function setSlotUser(slotIndex: number, userId: number) {
+  function setSlotUser(slotIndex: number, userId: number | null) {
     setSlots((prev) => prev.map((s) => (s.slotIndex === slotIndex ? { ...s, userId } : s)))
   }
 
