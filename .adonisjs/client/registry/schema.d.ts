@@ -43,6 +43,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['invite']>>>
     }
   }
+  'guest_invites.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/convite-jogador/:token'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { token: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/guest_invites_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/guest_invites_controller').default['show']>>>
+    }
+  }
   'new_account.create': {
     methods: ["GET","HEAD"]
     pattern: '/signup'
@@ -125,18 +137,6 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/group').createGroupValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['store']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
-    }
-  }
-  'groups.join': {
-    methods: ["POST"]
-    pattern: '/grupos/entrar'
-    types: {
-      body: ExtractBody<InferInput<(typeof import('#validators/group').joinGroupValidator)>>
-      paramsTuple: []
-      params: {}
-      query: ExtractQuery<InferInput<(typeof import('#validators/group').joinGroupValidator)>>
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['join']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/groups_controller').default['join']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'groups.update': {
@@ -377,6 +377,18 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/members_controller').default['show']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/members_controller').default['show']>>>
+    }
+  }
+  'guest_invites.member': {
+    methods: ["GET","HEAD"]
+    pattern: '/grupos/:groupId/convidados/:inviteId'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue]
+      params: { groupId: ParamValue; inviteId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/guest_invites_controller').default['member']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/guest_invites_controller').default['member']>>>
     }
   }
 }

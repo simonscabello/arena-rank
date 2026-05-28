@@ -243,7 +243,7 @@ export async function getMatchWithRelations(matchId: number) {
   return GameMatch.query()
     .where('id', matchId)
     .preload('arena')
-    .preload('players', (query) => query.preload('user'))
+    .preload('players', (query) => query.preload('user').preload('guestInvite'))
     .preload('bets', (query) => query.preload('user'))
     .firstOrFail()
 }

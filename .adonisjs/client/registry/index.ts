@@ -24,6 +24,12 @@ const routes = {
     tokens: [{"old":"/convite/:code","type":0,"val":"convite","end":""},{"old":"/convite/:code","type":1,"val":"code","end":""}],
     types: placeholder as Registry['groups.invite']['types'],
   },
+  'guest_invites.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/convite-jogador/:token',
+    tokens: [{"old":"/convite-jogador/:token","type":0,"val":"convite-jogador","end":""},{"old":"/convite-jogador/:token","type":1,"val":"token","end":""}],
+    types: placeholder as Registry['guest_invites.show']['types'],
+  },
   'new_account.create': {
     methods: ["GET","HEAD"],
     pattern: '/signup',
@@ -65,12 +71,6 @@ const routes = {
     pattern: '/grupos',
     tokens: [{"old":"/grupos","type":0,"val":"grupos","end":""}],
     types: placeholder as Registry['groups.store']['types'],
-  },
-  'groups.join': {
-    methods: ["POST"],
-    pattern: '/grupos/entrar',
-    tokens: [{"old":"/grupos/entrar","type":0,"val":"grupos","end":""},{"old":"/grupos/entrar","type":0,"val":"entrar","end":""}],
-    types: placeholder as Registry['groups.join']['types'],
   },
   'groups.update': {
     methods: ["POST"],
@@ -191,6 +191,12 @@ const routes = {
     pattern: '/grupos/:groupId/membros/:userId',
     tokens: [{"old":"/grupos/:groupId/membros/:userId","type":0,"val":"grupos","end":""},{"old":"/grupos/:groupId/membros/:userId","type":1,"val":"groupId","end":""},{"old":"/grupos/:groupId/membros/:userId","type":0,"val":"membros","end":""},{"old":"/grupos/:groupId/membros/:userId","type":1,"val":"userId","end":""}],
     types: placeholder as Registry['members.show']['types'],
+  },
+  'guest_invites.member': {
+    methods: ["GET","HEAD"],
+    pattern: '/grupos/:groupId/convidados/:inviteId',
+    tokens: [{"old":"/grupos/:groupId/convidados/:inviteId","type":0,"val":"grupos","end":""},{"old":"/grupos/:groupId/convidados/:inviteId","type":1,"val":"groupId","end":""},{"old":"/grupos/:groupId/convidados/:inviteId","type":0,"val":"convidados","end":""},{"old":"/grupos/:groupId/convidados/:inviteId","type":1,"val":"inviteId","end":""}],
+    types: placeholder as Registry['guest_invites.member']['types'],
   },
 } as const satisfies Record<string, AdonisEndpoint>
 

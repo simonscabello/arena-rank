@@ -1,3 +1,4 @@
+import { listPendingGuestInvites } from '#helpers/guest_player_invite'
 import {
   assertGroupMember,
   assertGroupOrganizer,
@@ -13,7 +14,7 @@ import Arena from '#models/arena'
 import Group from '#models/group'
 import GroupMember from '#models/group_member'
 import GameMatch from '#models/game_match'
-import { createGroupValidator, joinGroupValidator, updateGroupValidator } from '#validators/group'
+import { createGroupValidator, updateGroupValidator } from '#validators/group'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 
@@ -29,7 +30,6 @@ export default class GroupsController {
       groups: memberships.map((m) => ({
         id: m.group.id,
         name: m.group.name,
-        inviteCode: m.group.inviteCode,
       })),
     })
   }
@@ -68,15 +68,6 @@ export default class GroupsController {
     response.redirect().toRoute('groups.show', { id: group.id })
   }
 
-  async join({ request, response, auth, session }: HttpContext) {
-    const user = auth.user!
-    const { inviteCode } = await request.validateUsing(joinGroupValidator)
-
-    const { group, alreadyMember } = await joinGroupByCode(user, inviteCode)
-    session.flash('success', alreadyMember ? 'Você já faz parte desta Play' : 'Você entrou na Play')
-    response.redirect().toRoute('groups.show', { id: group.id })
-  }
-
   async invite({ inertia, auth, session, params, response }: HttpContext) {
     const group = await findGroupByInviteCode(params.code)
     if (!group) {
@@ -106,10 +97,6 @@ export default class GroupsController {
     await assertGroupMember(groupId, user)
 
     const group = await Group.findOrFail(groupId)
-    const members = await GroupMember.query()
-      .where('group_id', groupId)
-      .preload('user')
-      .orderBy('created_at', 'asc')
 
     const matches = await GameMatch.query()
       .where('group_id', groupId)
@@ -125,18 +112,8 @@ export default class GroupsController {
       group: {
         id: group.id,
         name: group.name,
-        inviteCode: group.inviteCode,
         inviteUrl: buildInviteUrl(group.inviteCode),
       },
-      members: members.map((m) => ({
-        id: m.user.id,
-        fullName: m.user.fullName,
-        email: m.user.email,
-        nickname: m.user.nickname,
-        funLabel: m.user.funLabel,
-        avatarUrl: m.user.avatarUrl,
-        initials: m.user.initials,
-      })),
       matches: matches.map((m) => ({
         id: m.id,
         status: m.status,
@@ -172,6 +149,7 @@ export default class GroupsController {
         avatarUrl: m.user.avatarUrl,
         initials: m.user.initials,
       })),
+      pendingGuestInvites: await listPendingGuestInvites(groupId),
       arenas: arenas.map((a) => ({ id: a.id, name: a.name })),
     })
   }

@@ -89,6 +89,24 @@ test.group('Player stats and profile', (group) => {
     assert.equal(user.initials, 'BE')
   })
 
+  test('profile update persists cone and pro skill levels', async ({ client, assert }) => {
+    const user = await createUser('levels@test.com')
+
+    const coneResponse = await client.post('/perfil').loginAs(user).form({
+      skillLevel: 'cone',
+    })
+    coneResponse.assertRedirectsTo('/perfil')
+    await user.refresh()
+    assert.equal(user.skillLevel, 'cone')
+
+    const proResponse = await client.post('/perfil').loginAs(user).form({
+      skillLevel: 'pro',
+    })
+    proResponse.assertRedirectsTo('/perfil')
+    await user.refresh()
+    assert.equal(user.skillLevel, 'pro')
+  })
+
   test('profile rejects fun label over 60 characters', async ({ client, assert }) => {
     const user = await createUser('longlabel@test.com')
 

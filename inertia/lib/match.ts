@@ -24,6 +24,16 @@ export function displayName(person: {
   return person.nickname || person.fullName || person.email.split('@')[0]
 }
 
+export function initialsFromName(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
 export function cn(...classes: (string | false | undefined | null)[]) {
   return classes.filter(Boolean).join(' ')
 }

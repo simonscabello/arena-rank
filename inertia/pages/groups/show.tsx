@@ -1,27 +1,14 @@
 import { Form, Link } from '@adonisjs/inertia/react'
-import { Calendar, Pencil, Plus, Users, X } from 'lucide-react'
+import { Calendar, Pencil, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import BackLink from '~/components/BackLink'
 import Badge from '~/components/Badge'
 import Card from '~/components/Card'
-import CopyInviteCode from '~/components/CopyInviteCode'
 import CopyInviteLink from '~/components/CopyInviteLink'
 import EmptyState from '~/components/EmptyState'
 import Input from '~/components/Input'
 import RankingList, { type RankingEntry } from '~/components/RankingList'
-import Avatar from '~/components/Avatar'
 import { buttonClassName } from '~/lib/button_styles'
-import { displayName } from '~/lib/match'
-
-type Member = {
-  id: number
-  fullName: string | null
-  email: string
-  nickname: string | null
-  funLabel: string | null
-  initials: string
-  avatarUrl: string | null
-}
 
 type MatchItem = {
   id: number
@@ -30,8 +17,7 @@ type MatchItem = {
 }
 
 type Props = {
-  group: { id: number; name: string; inviteCode: string; inviteUrl: string }
-  members: Member[]
+  group: { id: number; name: string; inviteUrl: string }
   matches: MatchItem[]
   ranking: RankingEntry[]
   currentUserId: number
@@ -40,7 +26,6 @@ type Props = {
 
 export default function GroupShow({
   group,
-  members,
   matches,
   ranking,
   currentUserId,
@@ -93,10 +78,7 @@ export default function GroupShow({
           </Form>
         ) : (
           <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate font-semibold text-stone-900">{group.name}</p>
-              <p className="mt-0.5 font-mono text-xs text-stone-500">{group.inviteCode}</p>
-            </div>
+            <p className="min-w-0 truncate font-semibold text-stone-900">{group.name}</p>
             {canManageGroup && (
               <button
                 type="button"
@@ -112,7 +94,6 @@ export default function GroupShow({
       </div>
 
       <div className="mb-6 space-y-4">
-        <CopyInviteCode code={group.inviteCode} />
         <CopyInviteLink url={group.inviteUrl} />
         <Link
           route="groups.matches.create"
@@ -156,34 +137,7 @@ export default function GroupShow({
         </Card>
 
         <Card title="Ranking">
-          <RankingList entries={ranking} highlightUserId={currentUserId} />
-        </Card>
-
-        <Card title={`Membros (${members.length})`}>
-          <ul className="flex flex-wrap gap-2">
-            {members.map((member) => (
-              <li key={member.id}>
-                <Link
-                  route="members.show"
-                  routeParams={{ groupId: group.id, userId: member.id }}
-                  className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-sm transition hover:border-brand-200 hover:bg-brand-50/50"
-                >
-                  <Avatar initials={member.initials} src={member.avatarUrl} size="sm" />
-                  <span className="min-w-0">
-                    <span className="block truncate">{displayName(member)}</span>
-                    {member.funLabel && (
-                      <span className="block max-w-[140px] truncate text-xs italic text-stone-500">
-                        {member.funLabel}
-                      </span>
-                    )}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {members.length === 0 && (
-            <EmptyState icon={Users} title="Sem membros" description="Convide amigos pelo código." />
-          )}
+          <RankingList entries={ranking} highlightUserId={currentUserId} groupId={group.id} />
         </Card>
       </div>
     </>

@@ -3,7 +3,7 @@ import { cn } from '~/lib/match'
 type Props = {
   initials: string
   src?: string | null
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'preview'
   className?: string
   frameSrc?: string | null
   photoInset?: number
@@ -14,6 +14,8 @@ const SIZE_PX = {
   md: 40,
   lg: 48,
   xl: 80,
+  '2xl': 112,
+  preview: 160,
 } as const
 
 const textSizeClasses = {
@@ -21,6 +23,8 @@ const textSizeClasses = {
   md: 'text-sm',
   lg: 'text-base',
   xl: 'text-lg',
+  '2xl': 'text-xl',
+  preview: 'text-2xl',
 }
 
 const DEFAULT_PHOTO_INSET = 18

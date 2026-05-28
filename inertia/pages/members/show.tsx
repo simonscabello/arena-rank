@@ -1,11 +1,12 @@
 import { Link } from '@adonisjs/inertia/react'
 import { MapPin, Trophy } from 'lucide-react'
+import { useState } from 'react'
 import BackLink from '~/components/BackLink'
 import Avatar from '~/components/Avatar'
+import AvatarPreviewModal from '~/components/AvatarPreviewModal'
 import ProfileBadge from '~/components/ProfileBadge'
 import Card from '~/components/Card'
 import EmptyState from '~/components/EmptyState'
-import PageHeader from '~/components/PageHeader'
 import { displayName } from '~/lib/match'
 
 type Member = {
@@ -81,60 +82,102 @@ function partnerName(partner: PartnerSummary) {
 }
 
 export default function MemberShow({ group, member, stats, betRanking, isSelf }: Props) {
+  const [previewOpen, setPreviewOpen] = useState(false)
   const winRate =
     stats.matchesPlayed > 0 ? Math.round((stats.wins / stats.matchesPlayed) * 100) : 0
 
+  const hasSportInfo =
+    member.skillLevelLabel || member.dominantHandLabel || member.courtSideLabel
+
   return (
     <>
-      <PageHeader
-        back={<BackLink route="groups.show" routeParams={{ id: group.id }} label={group.name} />}
-        title={displayName(member)}
-        subtitle={
-          <span className="block space-y-1">
-            {(member.funLabel || member.equippedTitles.length > 0) && (
-              <span className="block text-sm text-brand-700">
-                {member.funLabel && (
-                  <span className="block italic">Status: {member.funLabel}</span>
-                )}
-                {member.equippedTitles.length > 0 && (
-                  <span className="mt-1 flex flex-wrap gap-1 not-italic">
-                    {member.equippedTitles.map((title) => (
-                      <ProfileBadge key={title.name} icon={title.icon} title={title.name} />
-                    ))}
-                  </span>
-                )}
-              </span>
-            )}
-            <span className="block text-xs text-stone-500">
-              {member.lifetimeBetPoints} pts acumulados no Palpiteiro
-            </span>
-            {isSelf ? (
-              <Link route="profile.show" className="text-sm font-medium text-brand-600 hover:underline">
-                Editar meu perfil
-              </Link>
-            ) : (
-              !member.funLabel && member.equippedTitles.length === 0 && (
-                <span className="text-sm text-stone-500">Perfil na Play</span>
-              )
-            )}
-          </span>
-        }
-      />
+      <div className="mb-3">
+        <BackLink route="groups.show" routeParams={{ id: group.id }} label={group.name} />
+      </div>
 
-      <div className="mb-6 flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-        <Avatar
-          initials={member.initials}
-          src={member.avatarUrl}
-          size="lg"
-          frameSrc={member.avatarFrameSrc}
-          photoInset={member.avatarFrameInset}
-        />
-        <div className="min-w-0 flex-1 text-sm text-stone-600">
-          {member.skillLevelLabel && <p>Nível: {member.skillLevelLabel}</p>}
-          {member.dominantHandLabel && <p>{member.dominantHandLabel}</p>}
-          {member.courtSideLabel && <p>{member.courtSideLabel}</p>}
+      <div className="mb-6 flex items-start gap-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="flex shrink-0 flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            aria-label={`Ampliar foto de ${displayName(member)}`}
+          >
+            <Avatar
+              initials={member.initials}
+              src={member.avatarUrl}
+              size="2xl"
+              frameSrc={member.avatarFrameSrc}
+              photoInset={member.avatarFrameInset}
+            />
+          </button>
+          {isSelf && (
+            <Link
+              route="profile.show"
+              className="text-center text-xs font-medium text-brand-600 hover:underline"
+            >
+              Editar perfil
+            </Link>
+          )}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+          <h1 className="truncate text-xl font-bold tracking-tight text-stone-900">
+            {displayName(member)}
+          </h1>
+
+          {member.funLabel && (
+            <p className="text-sm italic text-brand-700">Status: {member.funLabel}</p>
+          )}
+
+          {member.equippedTitles.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {member.equippedTitles.map((title) => (
+                <ProfileBadge key={title.name} icon={title.icon} title={title.name} />
+              ))}
+            </div>
+          )}
+
+          {hasSportInfo && (
+            <div className="flex flex-wrap gap-2 border-t border-stone-100 pt-2.5">
+              {member.skillLevelLabel && (
+                <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-bold text-brand-700 ring-1 ring-brand-200 ring-inset">
+                  {member.skillLevelLabel}
+                </span>
+              )}
+              {member.dominantHandLabel && (
+                <span className="rounded-full bg-stone-100 px-3 py-1 text-sm font-semibold text-stone-800 ring-1 ring-stone-200 ring-inset">
+                  {member.dominantHandLabel}
+                </span>
+              )}
+              {member.courtSideLabel && (
+                <span className="rounded-full bg-stone-100 px-3 py-1 text-sm font-semibold text-stone-800 ring-1 ring-stone-200 ring-inset">
+                  {member.courtSideLabel}
+                </span>
+              )}
+            </div>
+          )}
+
+          <p className="text-xs text-stone-500">
+            {member.lifetimeBetPoints} pts acumulados no Palpiteiro
+          </p>
+
+          {!isSelf && !member.funLabel && member.equippedTitles.length === 0 && (
+            <span className="text-sm text-stone-500">Perfil na Play</span>
+          )}
         </div>
       </div>
+
+      <AvatarPreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        initials={member.initials}
+        src={member.avatarUrl}
+        frameSrc={member.avatarFrameSrc}
+        photoInset={member.avatarFrameInset}
+        name={displayName(member)}
+        avatarSize="preview"
+      />
 
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-3">

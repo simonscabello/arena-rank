@@ -19,6 +19,8 @@ declare module '@adonisjs/inertia/types' {
     'groups/index': ExtractProps<(typeof import('../../inertia/pages/groups/index.tsx'))['default']>
     'groups/invite': ExtractProps<(typeof import('../../inertia/pages/groups/invite.tsx'))['default']>
     'groups/show': ExtractProps<(typeof import('../../inertia/pages/groups/show.tsx'))['default']>
+    'guest_invites/member': ExtractProps<(typeof import('../../inertia/pages/guest_invites/member.tsx'))['default']>
+    'guest_invites/show': ExtractProps<(typeof import('../../inertia/pages/guest_invites/show.tsx'))['default']>
     'history/show': ExtractProps<(typeof import('../../inertia/pages/history/show.tsx'))['default']>
     'home': ExtractProps<(typeof import('../../inertia/pages/home.tsx'))['default']>
     'matches/create': ExtractProps<(typeof import('../../inertia/pages/matches/create.tsx'))['default']>

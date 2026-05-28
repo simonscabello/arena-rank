@@ -10,12 +10,15 @@ export interface ApiDefinition {
     invite: typeof routes['groups.invite']
     index: typeof routes['groups.index']
     store: typeof routes['groups.store']
-    join: typeof routes['groups.join']
     update: typeof routes['groups.update']
     show: typeof routes['groups.show']
     matches: {
       create: typeof routes['groups.matches.create']
     }
+  }
+  guestInvites: {
+    show: typeof routes['guest_invites.show']
+    member: typeof routes['guest_invites.member']
   }
   newAccount: {
     create: typeof routes['new_account.create']

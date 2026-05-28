@@ -7,7 +7,9 @@ export const createMatchValidator = vine.create({
   players: vine
     .array(
       vine.object({
-        userId: vine.number(),
+        userId: vine.number().optional(),
+        displayName: vine.string().trim().minLength(2).maxLength(50).optional(),
+        guestInviteId: vine.number().optional(),
         side: vine.number().in([1, 2]),
       })
     )

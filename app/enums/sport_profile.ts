@@ -4,7 +4,7 @@ export type DominantHand = (typeof DOMINANT_HANDS)[number]
 export const COURT_SIDES = ['direita', 'esquerda'] as const
 export type CourtSide = (typeof COURT_SIDES)[number]
 
-export const SKILL_LEVELS = ['iniciante', 'intermediario', 'avancado'] as const
+export const SKILL_LEVELS = ['cone', 'iniciante', 'intermediario', 'avancado', 'pro'] as const
 export type SkillLevel = (typeof SKILL_LEVELS)[number]
 
 export const DOMINANT_HAND_LABELS: Record<DominantHand, string> = {
@@ -18,7 +18,9 @@ export const COURT_SIDE_LABELS: Record<CourtSide, string> = {
 }
 
 export const SKILL_LEVEL_LABELS: Record<SkillLevel, string> = {
+  cone: 'Cone',
   iniciante: 'Iniciante',
   intermediario: 'Intermediário',
   avancado: 'Avançado',
+  pro: 'PRO',
 }

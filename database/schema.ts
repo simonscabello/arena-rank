@@ -76,9 +76,46 @@ export class GroupSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class GuestPlayerInviteSchema extends BaseModel {
+  static $columns = [
+    'claimedAt',
+    'claimedUserId',
+    'createdAt',
+    'createdByUserId',
+    'displayName',
+    'groupId',
+    'id',
+    'token',
+    'updatedAt',
+  ] as const
+  $columns = GuestPlayerInviteSchema.$columns
+  @column.dateTime()
+  declare claimedAt: DateTime | null
+  @column()
+  declare claimedUserId: number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare createdByUserId: number
+  @column()
+  declare displayName: string
+  @column()
+  declare groupId: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare token: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class MatchPlayerSchema extends BaseModel {
-  static $columns = ['id', 'matchId', 'side', 'userId'] as const
+  static $columns = ['displayName', 'guestInviteId', 'id', 'matchId', 'side', 'userId'] as const
   $columns = MatchPlayerSchema.$columns
+  @column()
+  declare displayName: string | null
+  @column()
+  declare guestInviteId: number | null
   @column({ isPrimary: true })
   declare id: number
   @column()
@@ -86,7 +123,7 @@ export class MatchPlayerSchema extends BaseModel {
   @column()
   declare side: number
   @column()
-  declare userId: number
+  declare userId: number | null
 }
 
 export class MatchSchema extends BaseModel {

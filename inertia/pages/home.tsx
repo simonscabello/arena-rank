@@ -37,8 +37,7 @@ export default function Home() {
 
       <ul className="mt-10 grid w-full gap-3 text-left text-sm text-stone-600">
         <li className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <strong className="text-stone-900">1.</strong> Crie ou entre em uma Play com código de
-          convite
+          <strong className="text-stone-900">1.</strong> Crie uma Play ou entre via link de convite
         </li>
         <li className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
           <strong className="text-stone-900">2.</strong> Cadastre a partida 2x2 na hora

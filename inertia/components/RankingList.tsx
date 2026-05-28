@@ -1,3 +1,4 @@
+import { Link } from '@adonisjs/inertia/react'
 import { Trophy } from 'lucide-react'
 import { cn, displayName } from '~/lib/match'
 import Avatar from '~/components/Avatar'
@@ -23,6 +24,7 @@ export type RankingEntry = {
 type Props = {
   entries: RankingEntry[]
   highlightUserId?: number
+  groupId?: number
   emptyMessage?: string
 }
 
@@ -43,6 +45,7 @@ function rankingSubtitle(entry: RankingEntry) {
 export default function RankingList({
   entries,
   highlightUserId,
+  groupId,
   emptyMessage = 'Nenhum ponto ainda.',
 }: Props) {
   if (entries.length === 0) {
@@ -64,15 +67,15 @@ export default function RankingList({
                 .toUpperCase()
             : entry.email.slice(0, 2).toUpperCase())
 
-        return (
-          <li
-            key={entry.userId}
-            className={cn(
-              'flex items-center gap-3 rounded-xl border px-3 py-2.5',
-              index < 3 ? podiumStyles[index] : 'border-stone-100 bg-stone-50/50',
-              isMe && 'ring-2 ring-brand-500/30'
-            )}
-          >
+        const rowClassName = cn(
+          'flex items-center gap-3 rounded-xl border px-3 py-2.5',
+          index < 3 ? podiumStyles[index] : 'border-stone-100 bg-stone-50/50',
+          isMe && 'ring-2 ring-brand-500/30',
+          groupId && 'transition hover:border-brand-200 hover:bg-brand-50/30'
+        )
+
+        const content = (
+          <>
             <span
               className={cn(
                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
@@ -109,6 +112,22 @@ export default function RankingList({
               <p className="truncate text-xs text-stone-500">{rankingSubtitle(entry)}</p>
             </div>
             <span className="shrink-0 font-semibold text-brand-700">{entry.totalPoints} pts</span>
+          </>
+        )
+
+        return (
+          <li key={entry.userId}>
+            {groupId ? (
+              <Link
+                route="members.show"
+                routeParams={{ groupId, userId: entry.userId }}
+                className={rowClassName}
+              >
+                {content}
+              </Link>
+            ) : (
+              <div className={rowClassName}>{content}</div>
+            )}
           </li>
         )
       })}

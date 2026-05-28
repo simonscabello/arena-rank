@@ -232,7 +232,7 @@ export default function ProfileShow({
                 <Avatar
                   initials={profile.initials}
                   src={displayAvatarSrc}
-                  size="xl"
+                  size="2xl"
                   frameSrc={profile.avatarFrameSrc}
                   photoInset={profile.avatarFrameInset}
                 />

@@ -58,7 +58,7 @@ function isPurchaseBlocked(item: ShopItem, shopBalance: number) {
 
 function itemPreview(item: ShopItem, viewer: { avatarUrl: string | null; initials: string }) {
   if (item.itemType === 'title' && typeof item.payload.icon === 'string') {
-    return <ProfileBadge icon={item.payload.icon} title={item.name} />
+    return <ProfileBadge icon={item.payload.icon} title={item.name} showLabel={false} />
   }
   if (item.itemType === 'avatar_frame' && typeof item.payload.frameSrc === 'string') {
     return (

@@ -5,7 +5,11 @@ import BackLink from '~/components/BackLink'
 import Card from '~/components/Card'
 import Input from '~/components/Input'
 import PageHeader from '~/components/PageHeader'
-import PlayerPicker, { type Member } from '~/components/PlayerPicker'
+import PlayerPicker, {
+  type Member,
+  type PendingGuestInvite,
+  type Slot,
+} from '~/components/PlayerPicker'
 import Select from '~/components/Select'
 import { buttonClassName } from '~/lib/button_styles'
 
@@ -18,30 +22,57 @@ type Props = {
   group: { id: number; name: string }
   memberCount: number
   members: Member[]
+  pendingGuestInvites: PendingGuestInvite[]
   arenas: Arena[]
 }
 
-export default function MatchCreate({ group, memberCount, members, arenas }: Props) {
+function createInitialSlots(): Slot[] {
+  return [
+    { slotIndex: 0, side: 1, userId: null, displayName: null, guestInviteId: null, guestInviteUrl: null, isDummy: false },
+    { slotIndex: 1, side: 1, userId: null, displayName: null, guestInviteId: null, guestInviteUrl: null, isDummy: false },
+    { slotIndex: 2, side: 2, userId: null, displayName: null, guestInviteId: null, guestInviteUrl: null, isDummy: false },
+    { slotIndex: 3, side: 2, userId: null, displayName: null, guestInviteId: null, guestInviteUrl: null, isDummy: false },
+  ]
+}
+
+function isSlotFilled(slot: Slot) {
+  if (slot.isDummy) {
+    return (slot.displayName?.trim().length ?? 0) >= 2 || slot.guestInviteId !== null
+  }
+
+  return slot.userId !== null
+}
+
+export default function MatchCreate({
+  group,
+  memberCount,
+  members,
+  pendingGuestInvites,
+  arenas,
+}: Props) {
   const [arenaId, setArenaId] = useState<number | ''>(arenas[0]?.id ?? '')
   const [arenaName, setArenaName] = useState('')
   const [arenaCity, setArenaCity] = useState('')
   const [useNewArena, setUseNewArena] = useState(arenas.length === 0)
   const [skipBets, setSkipBets] = useState(memberCount === 4)
-  const [slots, setSlots] = useState([
-    { userId: null as number | null, side: 1 as const, slotIndex: 0 },
-    { userId: null as number | null, side: 1 as const, slotIndex: 1 },
-    { userId: null as number | null, side: 2 as const, slotIndex: 2 },
-    { userId: null as number | null, side: 2 as const, slotIndex: 3 },
-  ])
+  const [slots, setSlots] = useState<Slot[]>(createInitialSlots)
 
-  function setSlotUser(slotIndex: number, userId: number | null) {
-    setSlots((prev) => prev.map((s) => (s.slotIndex === slotIndex ? { ...s, userId } : s)))
+  function updateSlot(slotIndex: number, patch: Partial<Slot>) {
+    setSlots((prev) =>
+      prev.map((slot) => (slot.slotIndex === slotIndex ? { ...slot, ...patch } : slot))
+    )
   }
 
   function submit() {
     const players = slots
-      .filter((s) => s.userId !== null)
-      .map((s) => ({ userId: s.userId!, side: s.side }))
+      .filter(isSlotFilled)
+      .map((slot) => ({
+        userId: slot.isDummy ? undefined : slot.userId ?? undefined,
+        displayName:
+          slot.isDummy && !slot.guestInviteId ? slot.displayName?.trim() || undefined : undefined,
+        guestInviteId: slot.isDummy && slot.guestInviteId ? slot.guestInviteId : undefined,
+        side: slot.side,
+      }))
 
     if (players.length !== 4) return
 
@@ -55,7 +86,7 @@ export default function MatchCreate({ group, memberCount, members, arenas }: Pro
   }
 
   const canSubmit =
-    slots.every((s) => s.userId !== null) && (!useNewArena || arenaName.trim().length > 0)
+    slots.every(isSlotFilled) && (!useNewArena || arenaName.trim().length > 0)
 
   return (
     <>
@@ -111,7 +142,17 @@ export default function MatchCreate({ group, memberCount, members, arenas }: Pro
         </Card>
 
         <Card title="Jogadores">
-          <PlayerPicker members={members} slots={slots} onSelect={setSlotUser} />
+          <p className="mb-4 text-sm text-stone-500">
+            Use <span className="font-medium text-stone-700">Convidado</span> para quem não tem
+            conta. Envie o link para cadastro — quando criar conta, o histórico será vinculado
+            automaticamente.
+          </p>
+          <PlayerPicker
+            members={members}
+            pendingGuestInvites={pendingGuestInvites}
+            slots={slots}
+            onChange={updateSlot}
+          />
         </Card>
 
         <Card title="Palpites">

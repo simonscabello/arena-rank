@@ -16,6 +16,7 @@ router.on('/').renderInertia('home', {}).as('home')
 router.get('uploads/avatars/:file', [controllers.Avatars, 'show']).as('avatars.show')
 
 router.get('convite/:code', [controllers.Groups, 'invite']).as('groups.invite')
+router.get('convite-jogador/:token', [controllers.GuestInvites, 'show']).as('guest_invites.show')
 
 router
   .group(() => {
@@ -33,7 +34,6 @@ router
 
     router.get('grupos', [controllers.Groups, 'index']).as('groups.index')
     router.post('grupos', [controllers.Groups, 'store']).as('groups.store')
-    router.post('grupos/entrar', [controllers.Groups, 'join']).as('groups.join')
     router.post('grupos/:id', [controllers.Groups, 'update']).as('groups.update')
     router.get('grupos/:id', [controllers.Groups, 'show']).as('groups.show')
     router
@@ -62,5 +62,8 @@ router
     router.post('loja/equipar', [controllers.Shop, 'equip']).as('shop.equip')
     router.post('loja/desequipar', [controllers.Shop, 'unequip']).as('shop.unequip')
     router.get('grupos/:groupId/membros/:userId', [controllers.Members, 'show']).as('members.show')
+    router
+      .get('grupos/:groupId/convidados/:inviteId', [controllers.GuestInvites, 'member'])
+      .as('guest_invites.member')
   })
   .use(middleware.auth())

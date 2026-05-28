@@ -5,6 +5,39 @@ import { Home, History, ShoppingBag, UserCircle, Users, LogOut } from 'lucide-re
 import { ReactElement, useEffect, useRef } from 'react'
 import { toast, Toaster } from 'sonner'
 import Avatar from '~/components/Avatar'
+import { cn } from '~/lib/match'
+
+type NavKey = 'home' | 'plays' | 'history' | 'shop' | 'profile'
+
+function isNavActive(url: string, key: NavKey) {
+  const path = url.split('?')[0]
+  switch (key) {
+    case 'home':
+      return path === '/'
+    case 'plays':
+      return path.startsWith('/grupos') || path.startsWith('/partidas')
+    case 'history':
+      return path.startsWith('/historico')
+    case 'shop':
+      return path.startsWith('/loja')
+    case 'profile':
+      return path.startsWith('/perfil')
+  }
+}
+
+function desktopNavClass(active: boolean) {
+  return cn(
+    'hidden rounded-lg px-3 py-2 text-sm font-medium sm:inline',
+    active ? 'bg-brand-50 text-brand-700' : 'text-stone-600 hover:bg-stone-100'
+  )
+}
+
+function mobileNavClass(active: boolean) {
+  return cn(
+    'flex flex-col items-center gap-0.5 rounded-lg px-4 py-2 text-xs font-medium',
+    active ? 'text-brand-600' : 'text-stone-500 hover:text-brand-600'
+  )
+}
 
 export default function Layout({ children }: { children: ReactElement<Data.SharedProps> }) {
   const page = usePage()
@@ -27,6 +60,7 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
   }, [flash.error, flash.success])
 
   const user = children.props.user
+  const url = page.url
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
@@ -38,28 +72,16 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
           <nav className="flex items-center gap-2">
             {user ? (
               <>
-                <Link
-                  route="groups.index"
-                  className="hidden rounded-lg px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 sm:inline"
-                >
+                <Link route="groups.index" className={desktopNavClass(isNavActive(url, 'plays'))}>
                   Plays
                 </Link>
-                <Link
-                  route="history.show"
-                  className="hidden rounded-lg px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 sm:inline"
-                >
+                <Link route="history.show" className={desktopNavClass(isNavActive(url, 'history'))}>
                   Histórico
                 </Link>
-                <Link
-                  route="shop.index"
-                  className="hidden rounded-lg px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 sm:inline"
-                >
+                <Link route="shop.index" className={desktopNavClass(isNavActive(url, 'shop'))}>
                   Loja
                 </Link>
-                <Link
-                  route="profile.show"
-                  className="hidden rounded-lg px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 sm:inline"
-                >
+                <Link route="profile.show" className={desktopNavClass(isNavActive(url, 'profile'))}>
                   Perfil
                 </Link>
                 <Avatar
@@ -104,31 +126,19 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
       {user && (
         <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-lg -translate-x-1/2 border-t border-stone-200 bg-white/95 px-6 py-2 backdrop-blur-md sm:hidden">
           <div className="flex justify-around">
-            <Link
-              route="home"
-              className="flex flex-col items-center gap-0.5 rounded-lg px-4 py-2 text-xs font-medium text-stone-500 hover:text-brand-600 data-[current]:text-brand-600"
-            >
+            <Link route="home" className={mobileNavClass(isNavActive(url, 'home'))}>
               <Home className="h-5 w-5" />
               Início
             </Link>
-            <Link
-              route="groups.index"
-              className="flex flex-col items-center gap-0.5 rounded-lg px-4 py-2 text-xs font-medium text-stone-500 hover:text-brand-600"
-            >
+            <Link route="groups.index" className={mobileNavClass(isNavActive(url, 'plays'))}>
               <Users className="h-5 w-5" />
               Plays
             </Link>
-            <Link
-              route="shop.index"
-              className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-2 text-xs font-medium text-stone-500 hover:text-brand-600"
-            >
+            <Link route="shop.index" className={mobileNavClass(isNavActive(url, 'shop'))}>
               <ShoppingBag className="h-5 w-5" />
               Loja
             </Link>
-            <Link
-              route="profile.show"
-              className="flex flex-col items-center gap-0.5 rounded-lg px-4 py-2 text-xs font-medium text-stone-500 hover:text-brand-600"
-            >
+            <Link route="profile.show" className={mobileNavClass(isNavActive(url, 'profile'))}>
               <UserCircle className="h-5 w-5" />
               Perfil
             </Link>

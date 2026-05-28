@@ -1,7 +1,17 @@
 import ForbiddenException from '#exceptions/forbidden_exception'
 import { assertGroupMember } from '#helpers/group_access'
+import { createGuestPlayerInvite } from '#helpers/guest_player_invite'
 import { assertMatchCreator, isMatchCreator } from '#helpers/match_access'
+import { canHaveBets } from '#helpers/match_bets'
 import { clearMatchResult } from '#helpers/match_lifecycle'
+import {
+  isManageWindowOpen,
+  manageWindowExpiresAt,
+  markStatusChanged,
+  rejectExpiredManageWindow,
+} from '#helpers/match_manage_window'
+import { realPlayerUserIds, serializeMatchPlayer } from '#helpers/match_players'
+import { validateAndResolveMatchPlayers } from '#helpers/match_player_validation'
 import {
   formatMatchScore,
   normalizeSets,
@@ -12,13 +22,6 @@ import {
 } from '#helpers/match_score'
 import { creditBetReward } from '#helpers/wallet'
 import {
-  isManageWindowOpen,
-  manageWindowExpiresAt,
-  markStatusChanged,
-  rejectExpiredManageWindow,
-} from '#helpers/match_manage_window'
-import { canHaveBets } from '#helpers/match_bets'
-import {
   getBetParticipation,
   getGroupRanking,
   getMatchWithRelations,
@@ -28,7 +31,6 @@ import {
 import Arena from '#models/arena'
 import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
-import GroupMember from '#models/group_member'
 import MatchPlayer from '#models/match_player'
 import { createMatchValidator, finalizeMatchValidator, placeBetValidator } from '#validators/match'
 import type { HttpContext } from '@adonisjs/core/http'
@@ -44,26 +46,10 @@ export default class MatchesController {
     await assertGroupMember(groupId, user)
 
     const payload = await request.validateUsing(createMatchValidator)
-    const players = payload.players
+    const validation = await validateAndResolveMatchPlayers(payload.players, groupId)
 
-    const side1 = players.filter((p) => p.side === 1)
-    const side2 = players.filter((p) => p.side === 2)
-    if (side1.length !== 2 || side2.length !== 2) {
-      session.flash('error', 'Cada lado precisa ter exatamente 2 jogadores')
-      response.redirect().back()
-      return
-    }
-
-    const userIds = players.map((p) => p.userId)
-    if (new Set(userIds).size !== 4) {
-      session.flash('error', 'Os 4 jogadores devem ser diferentes')
-      response.redirect().back()
-      return
-    }
-
-    const members = await GroupMember.query().where('group_id', groupId).whereIn('user_id', userIds)
-    if (members.length !== 4) {
-      session.flash('error', 'Todos os jogadores devem fazer parte da Play')
+    if (!validation.ok) {
+      session.flash('error', validation.error)
       response.redirect().back()
       return
     }
@@ -86,7 +72,8 @@ export default class MatchesController {
       return
     }
 
-    const betsPossible = await canHaveBets(groupId, userIds)
+    const realUserIds = realPlayerUserIds(validation.resolved)
+    const betsPossible = await canHaveBets(groupId, realUserIds)
     const skipBets = payload.skipBets === true || !betsPossible
     const initialStatus = skipBets ? 'em_andamento' : 'palpites_abertos'
 
@@ -103,9 +90,22 @@ export default class MatchesController {
         { client: trx }
       )
 
-      for (const player of players) {
+      for (const player of validation.resolved) {
+        let guestInviteId = player.guestInviteId
+
+        if (!player.userId && !guestInviteId && player.displayName) {
+          const invite = await createGuestPlayerInvite(groupId, player.displayName, user.id, trx)
+          guestInviteId = invite.id
+        }
+
         await MatchPlayer.create(
-          { matchId: created.id, userId: player.userId, side: player.side },
+          {
+            matchId: created.id,
+            userId: player.userId,
+            displayName: player.userId ? null : player.displayName,
+            guestInviteId: player.userId ? null : guestInviteId,
+            side: player.side,
+          },
           { client: trx }
         )
       }
@@ -125,7 +125,7 @@ export default class MatchesController {
     const match = await getMatchWithRelations(Number(params.id))
     await assertGroupMember(match.groupId, user)
 
-    const playerUserIds = match.players.map((p) => p.userId)
+    const playerUserIds = realPlayerUserIds(match.players)
     const betsPossible = await canHaveBets(match.groupId, playerUserIds)
     const skipsBets = !betsPossible
     const ranking = await getGroupRanking(match.groupId)
@@ -150,16 +150,7 @@ export default class MatchesController {
         manageWindowOpen: isManageWindowOpen(match.statusChangedAt),
         manageWindowExpiresAt: manageWindowExpiresAt(match.statusChangedAt).toISO(),
       },
-      players: match.players.map((p) => ({
-        userId: p.userId,
-        side: p.side,
-        fullName: p.user.fullName,
-        email: p.user.email,
-        nickname: p.user.nickname,
-        funLabel: p.user.funLabel,
-        avatarUrl: p.user.avatarUrl,
-        initials: p.user.initials,
-      })),
+      players: match.players.map((player) => serializeMatchPlayer(player)),
       bets: match.bets.map((b) => ({
         userId: b.userId,
         predictedSide: b.predictedSide,
@@ -252,7 +243,7 @@ export default class MatchesController {
     await assertMatchCreator(match, user)
 
     const matchPlayers = await MatchPlayer.query().where('match_id', match.id).select('user_id')
-    const playerIds = matchPlayers.map((p) => p.userId)
+    const playerIds = realPlayerUserIds(matchPlayers)
     const betsPossible = await canHaveBets(match.groupId, playerIds)
     const canFinalizeNow =
       match.status === 'em_andamento' || (match.status === 'palpites_abertos' && !betsPossible)
@@ -320,7 +311,7 @@ export default class MatchesController {
     }
 
     const matchPlayers = await MatchPlayer.query().where('match_id', match.id).select('user_id')
-    const playerIds = matchPlayers.map((p) => p.userId)
+    const playerIds = realPlayerUserIds(matchPlayers)
     const betsPossible = await canHaveBets(match.groupId, playerIds)
 
     if (!betsPossible) {

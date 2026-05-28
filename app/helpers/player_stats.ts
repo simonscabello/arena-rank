@@ -180,7 +180,8 @@ export async function getPlayerStats(groupId: number, userId: number): Promise<P
       'm.created_at as playedAt',
       'partner.full_name as partnerFullName',
       'partner.email as partnerEmail',
-      'partner.nickname as partnerNickname'
+      'partner.nickname as partnerNickname',
+      'teammate.display_name as partnerDisplayName'
     )
     .orderBy('m.created_at', 'desc')
     .limit(RECENT_LIMIT)
@@ -212,7 +213,9 @@ export async function getPlayerStats(groupId: number, userId: number): Promise<P
             email: row.partnerEmail,
             nickname: row.partnerNickname,
           })
-        : null,
+        : row.partnerDisplayName
+          ? String(row.partnerDisplayName)
+          : null,
       scoreLabel: formatMatchScore(parseMatchScore(row.score)),
     })),
   }

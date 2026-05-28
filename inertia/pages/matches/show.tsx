@@ -15,14 +15,16 @@ import { buttonClassName } from '~/lib/button_styles'
 import { cn, displayName } from '~/lib/match'
 
 type Player = {
-  userId: number
+  id: number
+  userId: number | null
   side: number
-  fullName: string | null
-  email: string
-  nickname?: string | null
-  funLabel?: string | null
+  displayName: string
+  isDummy: boolean
   initials: string
   avatarUrl?: string | null
+  funLabel?: string | null
+  claimStatus?: 'pending' | 'claimed'
+  guestInviteId?: number | null
 }
 
 type Bet = {
@@ -263,9 +265,9 @@ export default function MatchShow({
 
         <Card className="mb-6">
           <div className="flex gap-3">
-            <TeamCard side={1} players={side1} />
+            <TeamCard groupId={match.groupId} side={1} players={side1} />
             <div className="flex shrink-0 items-center text-xs font-bold text-stone-400">VS</div>
-            <TeamCard side={2} players={side2} />
+            <TeamCard groupId={match.groupId} side={2} players={side2} />
           </div>
         </Card>
 
@@ -288,7 +290,7 @@ export default function MatchShow({
 
       <Card className="mb-6">
         <div className="flex gap-3">
-          <TeamCard side={1} players={side1} isWinner={match.winnerSide === 1} />
+          <TeamCard groupId={match.groupId} side={1} players={side1} isWinner={match.winnerSide === 1} />
           <div className="flex shrink-0 flex-col items-center justify-center gap-0.5 px-1">
             {match.scoreLabel ? (
               <span className="text-center text-sm font-bold leading-tight text-brand-700">
@@ -298,7 +300,7 @@ export default function MatchShow({
               <span className="text-xs font-bold text-stone-400">VS</span>
             )}
           </div>
-          <TeamCard side={2} players={side2} isWinner={match.winnerSide === 2} />
+          <TeamCard groupId={match.groupId} side={2} players={side2} isWinner={match.winnerSide === 2} />
         </div>
       </Card>
 
@@ -469,7 +471,11 @@ export default function MatchShow({
         )}
 
         <Card title="Ranking da Play">
-          <RankingList entries={ranking} highlightUserId={currentUserId} />
+          <RankingList
+            entries={ranking}
+            highlightUserId={currentUserId}
+            groupId={match.groupId}
+          />
         </Card>
       </div>
     </>

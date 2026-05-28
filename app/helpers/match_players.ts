@@ -1,0 +1,88 @@
+import type MatchPlayer from '#models/match_player'
+import type User from '#models/user'
+import env from '#start/env'
+
+export type MatchPlayerInput = {
+  userId?: number | null
+  displayName?: string | null
+  guestInviteId?: number | null
+  side: number
+}
+
+export function realPlayerUserIds(players: { userId?: number | null }[]) {
+  return players
+    .map((player) => player.userId)
+    .filter((userId): userId is number => userId !== null && userId !== undefined)
+}
+
+export function initialsFromName(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+function displayPerson(person: {
+  fullName: string | null
+  email: string
+  nickname?: string | null
+}) {
+  if (person.nickname) return person.nickname
+  if (person.fullName) return person.fullName
+  return person.email.split('@')[0]
+}
+
+export function playerDisplayName(player: MatchPlayer) {
+  if (player.user) {
+    return displayPerson(player.user)
+  }
+
+  return player.displayName ?? 'Convidado'
+}
+
+export function playerInitials(player: MatchPlayer) {
+  if (player.user) {
+    return player.user.initials
+  }
+
+  if (player.displayName) {
+    return initialsFromName(player.displayName)
+  }
+
+  return '?'
+}
+
+export function buildGuestInviteUrl(token: string) {
+  const base = env.get('APP_URL').replace(/\/$/, '')
+  return `${base}/convite-jogador/${encodeURIComponent(token)}`
+}
+
+export function serializeMatchPlayer(player: MatchPlayer) {
+  const isDummy = player.userId === null
+  const name = playerDisplayName(player)
+  const guestInvite = player.guestInvite
+  const invitePending = Boolean(guestInvite && !guestInvite.claimedUserId)
+
+  return {
+    id: player.id,
+    userId: player.userId,
+    side: player.side,
+    displayName: name,
+    isDummy,
+    initials: playerInitials(player),
+    avatarUrl: player.user?.avatarUrl ?? null,
+    funLabel: player.user?.funLabel ?? null,
+    email: player.user?.email ?? '',
+    fullName: player.user?.fullName ?? null,
+    nickname: player.user?.nickname ?? null,
+    claimStatus: isDummy && invitePending ? ('pending' as const) : ('claimed' as const),
+    guestInviteId: isDummy && invitePending && guestInvite ? guestInvite.id : null,
+  }
+}
+
+export function displayPersonFromUser(user: User) {
+  return displayPerson(user)
+}
