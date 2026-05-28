@@ -1,4 +1,5 @@
-import User from '#models/user'
+import { formatMatchScore, parseMatchScore } from '#helpers/match_score'
+import { getMemberDisplayWithRewards } from '#helpers/shop_rewards'
 import db from '@adonisjs/lucid/services/db'
 
 const RECENT_LIMIT = 10
@@ -29,6 +30,7 @@ export type RecentMatch = {
   won: boolean
   playedAt: string
   partnerName: string | null
+  scoreLabel: string | null
 }
 
 export type PlayerStats = {
@@ -174,6 +176,7 @@ export async function getPlayerStats(groupId: number, userId: number): Promise<P
       'a.city as city',
       'mp.side as side',
       'm.winner_side as winnerSide',
+      'm.score as score',
       'm.created_at as playedAt',
       'partner.full_name as partnerFullName',
       'partner.email as partnerEmail',
@@ -210,22 +213,11 @@ export async function getPlayerStats(groupId: number, userId: number): Promise<P
             nickname: row.partnerNickname,
           })
         : null,
+      scoreLabel: formatMatchScore(parseMatchScore(row.score)),
     })),
   }
 }
 
 export async function getMemberDisplay(userId: number) {
-  const user = await User.findOrFail(userId)
-  return {
-    id: user.id,
-    fullName: user.fullName,
-    email: user.email,
-    nickname: user.nickname,
-    funLabel: user.funLabel,
-    avatarUrl: user.avatarUrl,
-    initials: user.initials,
-    dominantHand: user.dominantHand,
-    courtSide: user.courtSide,
-    skillLevel: user.skillLevel,
-  }
+  return getMemberDisplayWithRewards(userId)
 }

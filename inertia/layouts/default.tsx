@@ -1,7 +1,7 @@
 import { Data } from '@generated/data'
 import { Form, Link } from '@adonisjs/inertia/react'
 import { usePage } from '@inertiajs/react'
-import { Home, History, UserCircle, Users, LogOut } from 'lucide-react'
+import { Home, History, ShoppingBag, UserCircle, Users, LogOut } from 'lucide-react'
 import { ReactElement, useEffect, useRef } from 'react'
 import { toast, Toaster } from 'sonner'
 import Avatar from '~/components/Avatar'
@@ -51,12 +51,24 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
                   Histórico
                 </Link>
                 <Link
+                  route="shop.index"
+                  className="hidden rounded-lg px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 sm:inline"
+                >
+                  Loja
+                </Link>
+                <Link
                   route="profile.show"
                   className="hidden rounded-lg px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100 sm:inline"
                 >
                   Perfil
                 </Link>
-                <Avatar initials={user.initials} src={user.avatarUrl} size="sm" />
+                <Avatar
+                  initials={user.initials}
+                  src={user.avatarUrl}
+                  size="sm"
+                  frameSrc={user.avatarFrameSrc}
+                  photoInset={user.avatarFrameInset}
+                />
                 <Form route="session.destroy">
                   <button
                     type="submit"
@@ -107,11 +119,11 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
               Plays
             </Link>
             <Link
-              route="history.show"
-              className="flex flex-col items-center gap-0.5 rounded-lg px-4 py-2 text-xs font-medium text-stone-500 hover:text-brand-600"
+              route="shop.index"
+              className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-2 text-xs font-medium text-stone-500 hover:text-brand-600"
             >
-              <History className="h-5 w-5" />
-              Histórico
+              <ShoppingBag className="h-5 w-5" />
+              Loja
             </Link>
             <Link
               route="profile.show"

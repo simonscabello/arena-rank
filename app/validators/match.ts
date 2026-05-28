@@ -22,4 +22,14 @@ export const placeBetValidator = vine.create({
 
 export const finalizeMatchValidator = vine.create({
   winnerSide: vine.number().in([1, 2]),
+  sets: vine
+    .array(
+      vine.object({
+        side1: vine.number().min(0).max(99),
+        side2: vine.number().min(0).max(99),
+      })
+    )
+    .minLength(1)
+    .maxLength(3)
+    .optional(),
 })

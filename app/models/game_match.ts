@@ -4,7 +4,8 @@ import Bet from '#models/bet'
 import Group from '#models/group'
 import MatchPlayer from '#models/match_player'
 import User from '#models/user'
-import { belongsTo, beforeCreate, hasMany } from '@adonisjs/lucid/orm'
+import { beforeCreate, beforeSave, belongsTo, hasMany } from '@adonisjs/lucid/orm'
+import type { MatchScore } from '#helpers/match_score'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -12,6 +13,13 @@ export type MatchStatus = 'palpites_abertos' | 'em_andamento' | 'finalizada' | '
 
 export default class GameMatch extends MatchSchema {
   static table = 'matches'
+
+  @beforeSave()
+  static serializeScore(match: GameMatch) {
+    if (match.$dirty.score && match.score && typeof match.score === 'object') {
+      match.score = JSON.stringify(match.score) as unknown as MatchScore
+    }
+  }
 
   @beforeCreate()
   static setInitialStatusChangedAt(match: GameMatch) {

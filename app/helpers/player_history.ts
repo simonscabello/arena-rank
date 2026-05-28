@@ -1,3 +1,4 @@
+import { formatMatchScore, parseMatchScore } from '#helpers/match_score'
 import GroupMember from '#models/group_member'
 import db from '@adonisjs/lucid/services/db'
 import type { DatabaseQueryBuilderContract } from '@adonisjs/lucid/types/querybuilder'
@@ -30,6 +31,7 @@ export type MatchHistoryItem = {
   won: boolean
   partnerName: string | null
   playedAt: string
+  scoreLabel: string | null
 }
 
 export type MatchHistorySummary = {
@@ -293,6 +295,7 @@ export async function getMatchHistory(
       'a.city as city',
       'mp.side as side',
       'm.winner_side as winnerSide',
+      'm.score as score',
       'm.created_at as playedAt',
       'partner.full_name as partnerFullName',
       'partner.email as partnerEmail',
@@ -318,6 +321,7 @@ export async function getMatchHistory(
           })
         : null,
       playedAt: String(row.playedAt),
+      scoreLabel: formatMatchScore(parseMatchScore(row.score)),
     })),
     summary: {
       wins,

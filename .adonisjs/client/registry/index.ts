@@ -162,6 +162,30 @@ const routes = {
     tokens: [{"old":"/historico","type":0,"val":"historico","end":""}],
     types: placeholder as Registry['history.show']['types'],
   },
+  'shop.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/loja',
+    tokens: [{"old":"/loja","type":0,"val":"loja","end":""}],
+    types: placeholder as Registry['shop.index']['types'],
+  },
+  'shop.purchase': {
+    methods: ["POST"],
+    pattern: '/loja/:id/comprar',
+    tokens: [{"old":"/loja/:id/comprar","type":0,"val":"loja","end":""},{"old":"/loja/:id/comprar","type":1,"val":"id","end":""},{"old":"/loja/:id/comprar","type":0,"val":"comprar","end":""}],
+    types: placeholder as Registry['shop.purchase']['types'],
+  },
+  'shop.equip': {
+    methods: ["POST"],
+    pattern: '/loja/equipar',
+    tokens: [{"old":"/loja/equipar","type":0,"val":"loja","end":""},{"old":"/loja/equipar","type":0,"val":"equipar","end":""}],
+    types: placeholder as Registry['shop.equip']['types'],
+  },
+  'shop.unequip': {
+    methods: ["POST"],
+    pattern: '/loja/desequipar',
+    tokens: [{"old":"/loja/desequipar","type":0,"val":"loja","end":""},{"old":"/loja/desequipar","type":0,"val":"desequipar","end":""}],
+    types: placeholder as Registry['shop.unequip']['types'],
+  },
   'members.show': {
     methods: ["GET","HEAD"],
     pattern: '/grupos/:groupId/membros/:userId',

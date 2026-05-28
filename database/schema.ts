@@ -96,6 +96,7 @@ export class MatchSchema extends BaseModel {
     'createdByUserId',
     'groupId',
     'id',
+    'score',
     'status',
     'statusChangedAt',
     'updatedAt',
@@ -113,6 +114,8 @@ export class MatchSchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column()
+  declare score: any | null
+  @column()
   declare status: string
   @column.dateTime()
   declare statusChangedAt: DateTime
@@ -120,6 +123,72 @@ export class MatchSchema extends BaseModel {
   declare updatedAt: DateTime | null
   @column()
   declare winnerSide: number | null
+}
+
+export class ShopItemSchema extends BaseModel {
+  static $columns = [
+    'active',
+    'createdAt',
+    'description',
+    'id',
+    'itemType',
+    'name',
+    'payload',
+    'price',
+    'slug',
+    'sortOrder',
+  ] as const
+  $columns = ShopItemSchema.$columns
+  @column()
+  declare active: boolean
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare description: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare itemType: string
+  @column()
+  declare name: string
+  @column()
+  declare payload: any
+  @column()
+  declare price: number
+  @column()
+  declare slug: string
+  @column()
+  declare sortOrder: number
+}
+
+export class UserEquippedItemSchema extends BaseModel {
+  static $columns = ['id', 'itemType', 'shopItemId', 'slot', 'userId'] as const
+  $columns = UserEquippedItemSchema.$columns
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare itemType: string
+  @column()
+  declare shopItemId: number | null
+  @column()
+  declare slot: boolean
+  @column()
+  declare userId: number
+}
+
+export class UserPurchaseSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'pricePaid', 'shopItemId', 'userId'] as const
+  $columns = UserPurchaseSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare pricePaid: number
+  @column()
+  declare shopItemId: number
+  @column()
+  declare userId: number
 }
 
 export class UserSchema extends BaseModel {
@@ -134,6 +203,7 @@ export class UserSchema extends BaseModel {
     'id',
     'nickname',
     'password',
+    'shopBalance',
     'skillLevel',
     'updatedAt',
   ] as const
@@ -159,7 +229,36 @@ export class UserSchema extends BaseModel {
   @column({ serializeAs: null })
   declare password: string
   @column()
+  declare shopBalance: number
+  @column()
   declare skillLevel: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+}
+
+export class WalletTransactionSchema extends BaseModel {
+  static $columns = [
+    'amount',
+    'createdAt',
+    'id',
+    'referenceId',
+    'referenceType',
+    'type',
+    'userId',
+  ] as const
+  $columns = WalletTransactionSchema.$columns
+  @column()
+  declare amount: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare referenceId: number | null
+  @column()
+  declare referenceType: string | null
+  @column()
+  declare type: string
+  @column()
+  declare userId: number
 }

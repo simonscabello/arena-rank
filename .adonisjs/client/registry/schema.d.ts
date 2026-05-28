@@ -319,6 +319,54 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/history_controller').default['show']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'shop.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/loja'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['index']>>>
+    }
+  }
+  'shop.purchase': {
+    methods: ["POST"]
+    pattern: '/loja/:id/comprar'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['purchase']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['purchase']>>>
+    }
+  }
+  'shop.equip': {
+    methods: ["POST"]
+    pattern: '/loja/equipar'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/shop').equipShopItemValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/shop').equipShopItemValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['equip']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['equip']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'shop.unequip': {
+    methods: ["POST"]
+    pattern: '/loja/desequipar'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/shop').unequipShopItemValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/shop').unequipShopItemValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['unequip']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['unequip']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'members.show': {
     methods: ["GET","HEAD"]
     pattern: '/grupos/:groupId/membros/:userId'

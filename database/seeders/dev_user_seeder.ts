@@ -12,7 +12,7 @@ const USERS = [
     email: 'joao@palpiteiro.test',
     fullName: 'João Silva',
     nickname: 'Juão',
-    funLabel: 'Especialista em Saque Torto',
+    funLabel: 'Se entrar o saque já é lucro',
     dominantHand: 'direita',
     courtSide: 'direita',
     skillLevel: 'intermediario',
@@ -90,11 +90,13 @@ export default class extends BaseSeeder {
     }
 
     for (const data of USERS) {
+      const isDevLoginUser = data.email === 'joao@palpiteiro.test'
       const user = await User.updateOrCreate(
         { email: data.email },
         {
           ...data,
           password: DEV_PASSWORD,
+          shopBalance: isDevLoginUser ? 1000 : 0,
         }
       )
 

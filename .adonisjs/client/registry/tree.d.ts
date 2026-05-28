@@ -44,6 +44,12 @@ export interface ApiDefinition {
   history: {
     show: typeof routes['history.show']
   }
+  shop: {
+    index: typeof routes['shop.index']
+    purchase: typeof routes['shop.purchase']
+    equip: typeof routes['shop.equip']
+    unequip: typeof routes['shop.unequip']
+  }
   members: {
     show: typeof routes['members.show']
   }

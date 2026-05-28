@@ -1,3 +1,4 @@
+import { enrichRankingEntries } from '#helpers/shop_rewards'
 import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
 import GroupMember from '#models/group_member'
@@ -15,6 +16,9 @@ export type RankingEntry = {
   betsCorrect: number
   accuracyPercent: number | null
   currentStreak: number
+  equippedTitles?: { icon: string; name: string }[]
+  avatarFrameSrc?: string | null
+  avatarFrameInset?: number
 }
 
 export type RankContext = {
@@ -154,7 +158,7 @@ export async function getGroupRanking(groupId: number): Promise<RankingEntry[]> 
     }
   })
 
-  return sortRankingEntries(entries)
+  return enrichRankingEntries(sortRankingEntries(entries))
 }
 
 export function getRankContext(ranking: RankingEntry[], userId: number): RankContext {

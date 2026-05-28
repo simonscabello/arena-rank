@@ -2,6 +2,7 @@ import { Link } from '@adonisjs/inertia/react'
 import { MapPin, Trophy } from 'lucide-react'
 import BackLink from '~/components/BackLink'
 import Avatar from '~/components/Avatar'
+import ProfileBadge from '~/components/ProfileBadge'
 import Card from '~/components/Card'
 import EmptyState from '~/components/EmptyState'
 import PageHeader from '~/components/PageHeader'
@@ -15,6 +16,10 @@ type Member = {
   funLabel: string | null
   initials: string
   avatarUrl: string | null
+  avatarFrameSrc: string | null
+  avatarFrameInset: number
+  equippedTitles: { icon: string; name: string }[]
+  lifetimeBetPoints: number
   dominantHandLabel: string | null
   courtSideLabel: string | null
   skillLevelLabel: string | null
@@ -51,6 +56,7 @@ type Stats = {
     won: boolean
     playedAt: string
     partnerName: string | null
+    scoreLabel: string | null
   }[]
 }
 
@@ -85,15 +91,29 @@ export default function MemberShow({ group, member, stats, betRanking, isSelf }:
         title={displayName(member)}
         subtitle={
           <span className="block space-y-1">
-            {member.funLabel && (
-              <span className="block text-sm italic text-brand-700">{member.funLabel}</span>
+            {(member.funLabel || member.equippedTitles.length > 0) && (
+              <span className="block text-sm text-brand-700">
+                {member.funLabel && (
+                  <span className="block italic">Status: {member.funLabel}</span>
+                )}
+                {member.equippedTitles.length > 0 && (
+                  <span className="mt-1 flex flex-wrap gap-1 not-italic">
+                    {member.equippedTitles.map((title) => (
+                      <ProfileBadge key={title.name} icon={title.icon} title={title.name} />
+                    ))}
+                  </span>
+                )}
+              </span>
             )}
+            <span className="block text-xs text-stone-500">
+              {member.lifetimeBetPoints} pts acumulados no Palpiteiro
+            </span>
             {isSelf ? (
               <Link route="profile.show" className="text-sm font-medium text-brand-600 hover:underline">
                 Editar meu perfil
               </Link>
             ) : (
-              !member.funLabel && (
+              !member.funLabel && member.equippedTitles.length === 0 && (
                 <span className="text-sm text-stone-500">Perfil na Play</span>
               )
             )}
@@ -102,7 +122,13 @@ export default function MemberShow({ group, member, stats, betRanking, isSelf }:
       />
 
       <div className="mb-6 flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-        <Avatar initials={member.initials} src={member.avatarUrl} size="lg" />
+        <Avatar
+          initials={member.initials}
+          src={member.avatarUrl}
+          size="lg"
+          frameSrc={member.avatarFrameSrc}
+          photoInset={member.avatarFrameInset}
+        />
         <div className="min-w-0 flex-1 text-sm text-stone-600">
           {member.skillLevelLabel && <p>Nível: {member.skillLevelLabel}</p>}
           {member.dominantHandLabel && <p>{member.dominantHandLabel}</p>}
@@ -212,6 +238,7 @@ export default function MemberShow({ group, member, stats, betRanking, isSelf }:
                       <p className="text-xs text-stone-500">
                         {match.partnerName ? `com ${match.partnerName}` : 'Sem parceiro'}
                         {match.city ? ` · ${match.city}` : ''}
+                        {match.scoreLabel ? ` · ${match.scoreLabel}` : ''}
                       </p>
                     </div>
                     <span

@@ -30,6 +30,10 @@ export type ScannedRoutes = {
     'profile.update': { paramsTuple?: []; params?: {} }
     'profile.updateAccount': { paramsTuple?: []; params?: {} }
     'history.show': { paramsTuple?: []; params?: {} }
+    'shop.index': { paramsTuple?: []; params?: {} }
+    'shop.purchase': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'shop.equip': { paramsTuple?: []; params?: {} }
+    'shop.unequip': { paramsTuple?: []; params?: {} }
     'members.show': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'userId': ParamValue} }
   }
   GET: {
@@ -44,6 +48,7 @@ export type ScannedRoutes = {
     'matches.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'profile.show': { paramsTuple?: []; params?: {} }
     'history.show': { paramsTuple?: []; params?: {} }
+    'shop.index': { paramsTuple?: []; params?: {} }
     'members.show': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'userId': ParamValue} }
   }
   HEAD: {
@@ -58,6 +63,7 @@ export type ScannedRoutes = {
     'matches.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'profile.show': { paramsTuple?: []; params?: {} }
     'history.show': { paramsTuple?: []; params?: {} }
+    'shop.index': { paramsTuple?: []; params?: {} }
     'members.show': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'userId': ParamValue} }
   }
   POST: {
@@ -76,6 +82,9 @@ export type ScannedRoutes = {
     'matches.cancel': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'profile.update': { paramsTuple?: []; params?: {} }
     'profile.updateAccount': { paramsTuple?: []; params?: {} }
+    'shop.purchase': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'shop.equip': { paramsTuple?: []; params?: {} }
+    'shop.unequip': { paramsTuple?: []; params?: {} }
   }
 }
 declare module '@adonisjs/core/types/http' {

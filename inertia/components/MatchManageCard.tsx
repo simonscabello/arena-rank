@@ -63,12 +63,13 @@ const actionConfigs: Record<ManageAction, Omit<ActionConfig, 'id' | 'buttonVaria
   },
 }
 
-function buildActions(status: string, betsPossible: boolean): ActionConfig[] {
-  const actions: ActionConfig[] = []
+function buildStartAction(status: string, betsPossible: boolean): ActionConfig | null {
+  if (status !== 'palpites_abertos' || !betsPossible) return null
+  return { id: 'start', buttonVariant: 'success', ...actionConfigs.start }
+}
 
-  if (status === 'palpites_abertos' && betsPossible) {
-    actions.push({ id: 'start', buttonVariant: 'success', ...actionConfigs.start })
-  }
+function buildWindowedActions(status: string, betsPossible: boolean): ActionConfig[] {
+  const actions: ActionConfig[] = []
 
   if (status === 'em_andamento' && betsPossible) {
     actions.push({ id: 'reopen', buttonVariant: 'success', ...actionConfigs.reopen })
@@ -118,11 +119,14 @@ export default function MatchManageCard({
   manageWindowOpen,
   manageWindowExpiresAt,
 }: Props) {
-  const actions = buildActions(status, betsPossible)
+  const startAction = buildStartAction(status, betsPossible)
+  const windowedActions = buildWindowedActions(status, betsPossible)
   const [pendingAction, setPendingAction] = useState<ActionConfig | null>(null)
   const secondsLeft = useCountdown(manageWindowExpiresAt)
+  const windowOpen = manageWindowOpen && secondsLeft > 0
+  const visibleWindowedActions = windowOpen ? windowedActions : []
 
-  if (actions.length === 0 || !manageWindowOpen || secondsLeft === 0) return null
+  if (!startAction && visibleWindowedActions.length === 0) return null
 
   function confirmAction() {
     if (!pendingAction) return
@@ -134,21 +138,35 @@ export default function MatchManageCard({
   return (
     <>
       <Card title="Gerenciar partida" className="mb-6">
-        <p className="mb-3 text-sm text-stone-600">
-          Você tem {formatCountdown(secondsLeft)} para alterar
-        </p>
         <div className="flex flex-col gap-2.5">
-          {actions.map((action) => (
+          {startAction && (
             <Button
-              key={action.id}
-              variant={action.buttonVariant}
+              variant={startAction.buttonVariant}
               size="md"
               fullWidth
-              onClick={() => setPendingAction(action)}
+              onClick={() => setPendingAction(startAction)}
             >
-              {action.label}
+              {startAction.label}
             </Button>
-          ))}
+          )}
+          {visibleWindowedActions.length > 0 && (
+            <>
+              <p className="text-sm text-stone-600">
+                Você tem {formatCountdown(secondsLeft)} para alterar
+              </p>
+              {visibleWindowedActions.map((action) => (
+                <Button
+                  key={action.id}
+                  variant={action.buttonVariant}
+                  size="md"
+                  fullWidth
+                  onClick={() => setPendingAction(action)}
+                >
+                  {action.label}
+                </Button>
+              ))}
+            </>
+          )}
         </div>
       </Card>
 

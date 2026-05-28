@@ -1,6 +1,8 @@
-import { Form } from '@adonisjs/inertia/react'
-import { useEffect, useState } from 'react'
+import { Form, Link } from '@adonisjs/inertia/react'
+import { router } from '@inertiajs/react'
+import { useEffect, useRef, useState } from 'react'
 import Avatar from '~/components/Avatar'
+import ProfileBadge from '~/components/ProfileBadge'
 import BackLink from '~/components/BackLink'
 import Card from '~/components/Card'
 import Input from '~/components/Input'
@@ -24,9 +26,15 @@ type Props = {
     courtSide: string | null
     skillLevel: string | null
     avatarUrl: string | null
+    avatarFrameSrc: string | null
+    avatarFrameInset: number
+    equippedTitles: { icon: string; name: string }[]
     initials: string
   }
-  funLabelSuggestions: string[]
+  shopBalance: number
+  lifetimeBetPoints: number
+  ownedItems: { id: number; name: string; itemType: string }[]
+  statusSuggestions: string[]
   options: {
     dominantHands: Option[]
     courtSides: Option[]
@@ -38,44 +46,118 @@ const MAX_FUN_LABEL_LENGTH = 60
 
 type ProfileTab = 'profile' | 'account'
 
-export default function ProfileShow({ account, profile, funLabelSuggestions, options }: Props) {
+export default function ProfileShow({
+  account,
+  profile,
+  shopBalance,
+  lifetimeBetPoints,
+  ownedItems,
+  statusSuggestions,
+  options,
+}: Props) {
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile')
+  const [nickname, setNickname] = useState(profile.nickname ?? '')
   const [funLabel, setFunLabel] = useState(profile.funLabel ?? '')
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(profile.avatarUrl)
-  const [removeAvatar, setRemoveAvatar] = useState(false)
+  const [dominantHand, setDominantHand] = useState(profile.dominantHand ?? '')
+  const [courtSide, setCourtSide] = useState(profile.courtSide ?? '')
+  const [skillLevel, setSkillLevel] = useState(profile.skillLevel ?? '')
+  const [localAvatar, setLocalAvatar] = useState<{ src: string | null; fromServer: boolean }>({
+    src: profile.avatarUrl,
+    fromServer: true,
+  })
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    setAvatarPreview(profile.avatarUrl)
-    setRemoveAvatar(false)
-  }, [profile.avatarUrl])
+    setNickname(profile.nickname ?? '')
+    setFunLabel(profile.funLabel ?? '')
+    setDominantHand(profile.dominantHand ?? '')
+    setCourtSide(profile.courtSide ?? '')
+    setSkillLevel(profile.skillLevel ?? '')
+    setLocalAvatar({ src: profile.avatarUrl, fromServer: true })
+  }, [
+    profile.nickname,
+    profile.funLabel,
+    profile.dominantHand,
+    profile.courtSide,
+    profile.skillLevel,
+    profile.avatarUrl,
+  ])
 
   useEffect(() => {
+    if (localAvatar.fromServer || !localAvatar.src?.startsWith('blob:')) return
+
     return () => {
-      if (avatarPreview?.startsWith('blob:')) {
-        URL.revokeObjectURL(avatarPreview)
-      }
+      URL.revokeObjectURL(localAvatar.src!)
     }
-  }, [avatarPreview])
+  }, [localAvatar])
+
+  const displayAvatarSrc = localAvatar.fromServer ? profile.avatarUrl : localAvatar.src
+  const hasAvatar = Boolean(displayAvatarSrc)
+
+  function buildProfileFormData(options?: { avatar?: File; removeAvatar?: boolean }) {
+    const formData = new FormData()
+    formData.set('nickname', nickname)
+    formData.set('funLabel', funLabel)
+    formData.set('dominantHand', dominantHand)
+    formData.set('courtSide', courtSide)
+    formData.set('skillLevel', skillLevel)
+
+    if (options?.removeAvatar) {
+      formData.set('removeAvatar', '1')
+      return formData
+    }
+
+    if (options?.avatar) {
+      formData.set('avatar', options.avatar)
+    }
+
+    return formData
+  }
+
+  function submitProfileForm(options?: { avatar?: File; removeAvatar?: boolean }) {
+    const formData = buildProfileFormData(options)
+
+    setAvatarUploading(true)
+
+    router.post('/perfil', formData, {
+      forceFormData: true,
+      preserveScroll: true,
+      onFinish: () => {
+        setAvatarUploading(false)
+        if (avatarInputRef.current) avatarInputRef.current.value = ''
+      },
+      onError: () => {
+        setLocalAvatar({ src: profile.avatarUrl, fromServer: true })
+        if (avatarInputRef.current) avatarInputRef.current.value = ''
+      },
+    })
+  }
 
   function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
-    setRemoveAvatar(false)
-
     if (!file) return
 
-    if (avatarPreview?.startsWith('blob:')) {
-      URL.revokeObjectURL(avatarPreview)
+    if (!localAvatar.fromServer && localAvatar.src?.startsWith('blob:')) {
+      URL.revokeObjectURL(localAvatar.src)
     }
 
-    setAvatarPreview(URL.createObjectURL(file))
+    setLocalAvatar({ src: URL.createObjectURL(file), fromServer: false })
+    submitProfileForm({ avatar: file })
   }
 
   function handleRemoveAvatar() {
-    setRemoveAvatar(true)
-    if (avatarPreview?.startsWith('blob:')) {
-      URL.revokeObjectURL(avatarPreview)
+    if (!localAvatar.fromServer && localAvatar.src?.startsWith('blob:')) {
+      URL.revokeObjectURL(localAvatar.src)
     }
-    setAvatarPreview(null)
+
+    setLocalAvatar({ src: null, fromServer: false })
+    submitProfileForm({ removeAvatar: true })
+  }
+
+  function openAvatarPicker() {
+    if (avatarUploading) return
+    avatarInputRef.current?.click()
   }
 
   return (
@@ -114,42 +196,88 @@ export default function ProfileShow({ account, profile, funLabelSuggestions, opt
       </div>
 
       {activeTab === 'profile' && (
+      <>
+      <Card title="Loja e recompensas" className="mb-4">
+        <p className="text-sm text-stone-600">
+          <span className="font-semibold text-brand-700">{shopBalance} pts</span> disponíveis ·{' '}
+          <span className="font-medium text-stone-800">{lifetimeBetPoints} pts</span> acumulados no
+          Palpiteiro
+        </p>
+        {profile.equippedTitles.length > 0 && (
+          <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-stone-700">
+            <span className="font-medium text-stone-600">Títulos equipados:</span>
+            {profile.equippedTitles.map((title) => (
+              <ProfileBadge key={title.name} icon={title.icon} title={title.name} />
+            ))}
+          </p>
+        )}
+        {profile.funLabel && (
+          <p className="mt-2 text-sm italic text-brand-700">Status: {profile.funLabel}</p>
+        )}
+        <p className="mt-2 text-sm text-stone-500">
+          {ownedItems.length > 0
+            ? `${ownedItems.length} item(ns) adquirido(s)`
+            : 'Nenhum item da loja ainda'}
+        </p>
+        <Link route="shop.index" className={cn(buttonClassName('primary', 'sm'), 'mt-4 inline-flex')}>
+          Abrir loja
+        </Link>
+      </Card>
+
       <Card title="Perfil na Play">
         <Form route="profile.update" encType="multipart/form-data" className="space-y-4">
-          {({ errors }) => (
+          {({ errors, processing }) => (
             <>
-              <div className="flex items-center gap-4 border-b border-stone-100 pb-4">
-                <Avatar initials={profile.initials} src={avatarPreview} size="lg" />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <label htmlFor="avatar" className="block text-sm font-medium text-stone-700">
-                    Foto de perfil
-                  </label>
-                  <input
-                    id="avatar"
-                    name="avatar"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleAvatarChange}
-                    className="block w-full text-sm text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-700"
-                  />
-                  <p className="text-xs text-stone-500">JPG, PNG ou WebP — máximo 2 MB</p>
-                  {(profile.avatarUrl || avatarPreview) && !removeAvatar && (
+              <div className="flex flex-col items-center gap-3 border-b border-stone-100 pb-4">
+                <Avatar
+                  initials={profile.initials}
+                  src={displayAvatarSrc}
+                  size="xl"
+                  frameSrc={profile.avatarFrameSrc}
+                  photoInset={profile.avatarFrameInset}
+                />
+                <div className="flex flex-col items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={openAvatarPicker}
+                    disabled={avatarUploading || processing}
+                    title="JPG, PNG ou WebP — máximo 2 MB"
+                    className={buttonClassName('secondary', 'sm')}
+                  >
+                    {avatarUploading
+                      ? 'Enviando...'
+                      : hasAvatar
+                        ? 'Alterar foto'
+                        : 'Adicionar foto'}
+                  </button>
+                  {hasAvatar && (
                     <button
                       type="button"
                       onClick={handleRemoveAvatar}
-                      className="text-xs font-medium text-stone-500 hover:text-red-600"
+                      disabled={avatarUploading || processing}
+                      className="text-xs font-medium text-stone-500 hover:text-red-600 disabled:opacity-50"
                     >
                       Remover foto
                     </button>
                   )}
                 </div>
+                <input
+                  ref={avatarInputRef}
+                  id="avatar"
+                  name="avatar"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleAvatarChange}
+                  disabled={avatarUploading || processing}
+                  className="sr-only"
+                />
               </div>
-              {removeAvatar && <input type="hidden" name="removeAvatar" value="1" />}
 
               <Input
                 label="Apelido"
                 name="nickname"
-                defaultValue={profile.nickname ?? ''}
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
                 placeholder="Como te chamam na Play"
                 error={errors.nickname}
               />
@@ -157,7 +285,7 @@ export default function ProfileShow({ account, profile, funLabelSuggestions, opt
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <label htmlFor="funLabel" className="block text-sm font-medium text-stone-700">
-                    Sua label na Play
+                    Status
                   </label>
                   {funLabel.length > 0 && (
                     <button
@@ -174,15 +302,16 @@ export default function ProfileShow({ account, profile, funLabelSuggestions, opt
                   id="funLabel"
                   value={funLabel}
                   onChange={(e) => setFunLabel(e.target.value.slice(0, MAX_FUN_LABEL_LENGTH))}
-                  placeholder="Ex: Especialista em Saque Torto"
+                  placeholder='Ex: "Se entrar o saque já é lucro"'
                   error={errors.funLabel}
                   maxLength={MAX_FUN_LABEL_LENGTH}
                 />
                 <p className="text-xs text-stone-500">
-                  {funLabel.length}/{MAX_FUN_LABEL_LENGTH} caracteres
+                  Frase curta sobre como você joga ou encara a Play. {funLabel.length}/
+                  {MAX_FUN_LABEL_LENGTH} caracteres
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {funLabelSuggestions.map((suggestion) => (
+                  {statusSuggestions.map((suggestion) => (
                     <button
                       key={suggestion}
                       type="button"
@@ -203,7 +332,8 @@ export default function ProfileShow({ account, profile, funLabelSuggestions, opt
               <Select
                 label="Mão dominante"
                 name="dominantHand"
-                defaultValue={profile.dominantHand ?? ''}
+                value={dominantHand}
+                onChange={(e) => setDominantHand(e.target.value)}
                 error={errors.dominantHand}
               >
                 <option value="">Não informado</option>
@@ -217,7 +347,8 @@ export default function ProfileShow({ account, profile, funLabelSuggestions, opt
               <Select
                 label="Lado preferido na quadra"
                 name="courtSide"
-                defaultValue={profile.courtSide ?? ''}
+                value={courtSide}
+                onChange={(e) => setCourtSide(e.target.value)}
                 error={errors.courtSide}
               >
                 <option value="">Não informado</option>
@@ -231,7 +362,8 @@ export default function ProfileShow({ account, profile, funLabelSuggestions, opt
               <Select
                 label="Nível"
                 name="skillLevel"
-                defaultValue={profile.skillLevel ?? ''}
+                value={skillLevel}
+                onChange={(e) => setSkillLevel(e.target.value)}
                 error={errors.skillLevel}
               >
                 <option value="">Não informado</option>
@@ -242,13 +374,18 @@ export default function ProfileShow({ account, profile, funLabelSuggestions, opt
                 ))}
               </Select>
 
-              <button type="submit" className={buttonClassName('primary', 'lg', true)}>
+              <button
+                type="submit"
+                disabled={avatarUploading || processing}
+                className={buttonClassName('primary', 'lg', true)}
+              >
                 Salvar perfil
               </button>
             </>
           )}
         </Form>
       </Card>
+      </>
       )}
 
       {activeTab === 'account' && (

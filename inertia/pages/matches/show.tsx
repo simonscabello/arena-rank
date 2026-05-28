@@ -1,5 +1,7 @@
 import { Form } from '@adonisjs/inertia/react'
+import { router } from '@inertiajs/react'
 import { Target, Users } from 'lucide-react'
+import { useState } from 'react'
 import BackLink from '~/components/BackLink'
 import Avatar from '~/components/Avatar'
 import Badge from '~/components/Badge'
@@ -51,11 +53,14 @@ type BetParticipation = {
   }[]
 }
 
+type SetRow = { side1: string; side2: string }
+
 type Props = {
   match: {
     id: number
     status: string
     winnerSide: number | null
+    scoreLabel: string | null
     arenaName: string
     groupId: number
     manageWindowOpen: boolean
@@ -76,6 +81,134 @@ type Props = {
 
 function playersBySide(players: Player[], side: number) {
   return players.filter((p) => p.side === side)
+}
+
+const EMPTY_SET_ROWS: SetRow[] = [
+  { side1: '', side2: '' },
+  { side1: '', side2: '' },
+  { side1: '', side2: '' },
+]
+
+function hasPartialSetRow(row: SetRow) {
+  const hasSide1 = row.side1.trim() !== ''
+  const hasSide2 = row.side2.trim() !== ''
+  return hasSide1 !== hasSide2
+}
+
+function buildSetsPayload(rows: SetRow[]) {
+  const sets: { side1: number; side2: number }[] = []
+
+  for (const row of rows) {
+    const hasSide1 = row.side1.trim() !== ''
+    const hasSide2 = row.side2.trim() !== ''
+    if (!hasSide1 && !hasSide2) continue
+    if (hasPartialSetRow(row)) return null
+    sets.push({
+      side1: Number.parseInt(row.side1, 10),
+      side2: Number.parseInt(row.side2, 10),
+    })
+  }
+
+  return sets.length > 0 ? sets : undefined
+}
+
+function MatchFinalizeCard({ matchId }: { matchId: number }) {
+  const [winnerSide, setWinnerSide] = useState<1 | 2 | null>(null)
+  const [setRows, setSetRows] = useState<SetRow[]>(EMPTY_SET_ROWS)
+  const [error, setError] = useState('')
+
+  function updateSetRow(index: number, field: 'side1' | 'side2', value: string) {
+    setSetRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
+    )
+  }
+
+  function submit() {
+    if (winnerSide === null) {
+      setError('Selecione a dupla vencedora')
+      return
+    }
+
+    if (setRows.some(hasPartialSetRow)) {
+      setError('Preencha os dois lados de cada set ou deixe o set em branco')
+      return
+    }
+
+    const sets = buildSetsPayload(setRows)
+    if (sets === null) {
+      setError('Preencha os dois lados de cada set ou deixe o set em branco')
+      return
+    }
+
+    setError('')
+    router.post(`/partidas/${matchId}/finalizar`, {
+      winnerSide,
+      ...(sets ? { sets } : {}),
+    })
+  }
+
+  return (
+    <Card title="Registrar resultado" className="mb-6">
+      <p className="mb-3 text-sm font-medium text-stone-700">Placar (opcional)</p>
+      <div className="mb-2 grid grid-cols-[3rem_1fr_1fr] gap-x-2 gap-y-2 text-xs font-medium text-stone-500">
+        <span />
+        <span className="text-center">Dupla 1</span>
+        <span className="text-center">Dupla 2</span>
+      </div>
+      {setRows.map((row, index) => (
+        <div key={index} className="mb-2 grid grid-cols-[3rem_1fr_1fr] items-center gap-x-2">
+          <span className="text-xs font-medium text-stone-500">Set {index + 1}</span>
+          <input
+            type="number"
+            min={0}
+            max={99}
+            inputMode="numeric"
+            value={row.side1}
+            onChange={(e) => updateSetRow(index, 'side1', e.target.value)}
+            placeholder="—"
+            className="h-10 w-full rounded-xl border border-stone-200 bg-white px-2 text-center text-stone-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          />
+          <input
+            type="number"
+            min={0}
+            max={99}
+            inputMode="numeric"
+            value={row.side2}
+            onChange={(e) => updateSetRow(index, 'side2', e.target.value)}
+            placeholder="—"
+            className="h-10 w-full rounded-xl border border-stone-200 bg-white px-2 text-center text-stone-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          />
+        </div>
+      ))}
+
+      <p className="mb-3 mt-4 text-sm text-stone-600">Quem venceu?</p>
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => setWinnerSide(1)}
+          className={buttonClassName(winnerSide === 1 ? 'primary' : 'secondary', 'md', true)}
+        >
+          Dupla 1 venceu
+        </button>
+        <button
+          type="button"
+          onClick={() => setWinnerSide(2)}
+          className={cn(
+            buttonClassName(winnerSide === 2 ? 'primary' : 'secondary', 'md', true),
+            winnerSide === 2 && 'bg-amber-500 hover:bg-amber-600'
+          )}
+        >
+          Dupla 2 venceu
+        </button>
+      </div>
+
+      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+
+      <button type="button" onClick={submit} className={buttonClassName('primary', 'md', true)}>
+        Finalizar partida
+      </button>
+    </Card>
+  )
 }
 
 function rankContextMessage(rankContext: RankContext, hasUserBet: boolean) {
@@ -156,7 +289,15 @@ export default function MatchShow({
       <Card className="mb-6">
         <div className="flex gap-3">
           <TeamCard side={1} players={side1} isWinner={match.winnerSide === 1} />
-          <div className="flex shrink-0 items-center text-xs font-bold text-stone-400">VS</div>
+          <div className="flex shrink-0 flex-col items-center justify-center gap-0.5 px-1">
+            {match.scoreLabel ? (
+              <span className="text-center text-sm font-bold leading-tight text-brand-700">
+                {match.scoreLabel}
+              </span>
+            ) : (
+              <span className="text-xs font-bold text-stone-400">VS</span>
+            )}
+          </div>
           <TeamCard side={2} players={side2} isWinner={match.winnerSide === 2} />
         </div>
       </Card>
@@ -195,13 +336,24 @@ export default function MatchShow({
         </Card>
       )}
 
-      {match.status === 'palpites_abertos' && betsPossible && !isPlayer && !userBet && (
-        <Card title="Seu palpite" className="mb-6">
-          <p className="mb-4 text-sm text-stone-500">Quem vence esta partida?</p>
+      {match.status === 'palpites_abertos' && betsPossible && !isPlayer && (
+        <Card title={userBet ? 'Alterar palpite' : 'Seu palpite'} className="mb-6">
+          <p className="mb-4 text-sm text-stone-500">
+            {userBet
+              ? `Seu palpite atual: Dupla ${userBet.predictedSide}. Toque na outra dupla para trocar.`
+              : 'Quem vence esta partida?'}
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <Form route="matches.bet" routeParams={{ id: match.id }} className="contents">
               <input type="hidden" name="predictedSide" value="1" />
-              <button type="submit" className={buttonClassName('primary', 'lg', true)}>
+              <button
+                type="submit"
+                className={buttonClassName(
+                  userBet?.predictedSide === 1 ? 'primary' : 'secondary',
+                  'lg',
+                  true
+                )}
+              >
                 Dupla 1
               </button>
             </Form>
@@ -209,7 +361,14 @@ export default function MatchShow({
               <input type="hidden" name="predictedSide" value="2" />
               <button
                 type="submit"
-                className={buttonClassName('primary', 'lg', true, 'bg-amber-500 hover:bg-amber-600')}
+                className={cn(
+                  buttonClassName(
+                    !userBet || userBet.predictedSide === 2 ? 'primary' : 'secondary',
+                    'lg',
+                    true
+                  ),
+                  (!userBet || userBet.predictedSide === 2) && 'bg-amber-500 hover:bg-amber-600'
+                )}
               >
                 Dupla 2
               </button>
@@ -218,7 +377,7 @@ export default function MatchShow({
         </Card>
       )}
 
-      {userBet && (
+      {userBet && match.status !== 'palpites_abertos' && (
         <Card
           className={cn(
             'mb-6',
@@ -259,25 +418,7 @@ export default function MatchShow({
       {canManageMatch &&
         (match.status === 'em_andamento' ||
           (match.status === 'palpites_abertos' && skipsBets)) && (
-        <Card title="Registrar resultado" className="mb-6">
-          <div className="grid grid-cols-2 gap-3">
-            <Form route="matches.finalize" routeParams={{ id: match.id }}>
-              <input type="hidden" name="winnerSide" value="1" />
-              <button type="submit" className={buttonClassName('primary', 'md', true)}>
-                Dupla 1 venceu
-              </button>
-            </Form>
-            <Form route="matches.finalize" routeParams={{ id: match.id }}>
-              <input type="hidden" name="winnerSide" value="2" />
-              <button
-                type="submit"
-                className={buttonClassName('primary', 'md', true, 'bg-amber-500 hover:bg-amber-600')}
-              >
-                Dupla 2 venceu
-              </button>
-            </Form>
-          </div>
-        </Card>
+        <MatchFinalizeCard matchId={match.id} />
       )}
 
       {canManageMatch && (

@@ -3,6 +3,15 @@ import { assertGroupMember } from '#helpers/group_access'
 import { assertMatchCreator, isMatchCreator } from '#helpers/match_access'
 import { clearMatchResult } from '#helpers/match_lifecycle'
 import {
+  formatMatchScore,
+  normalizeSets,
+  parseMatchScore,
+  setsHavePartialInput,
+  validateSets,
+  type MatchScore,
+} from '#helpers/match_score'
+import { creditBetReward } from '#helpers/wallet'
+import {
   isManageWindowOpen,
   manageWindowExpiresAt,
   markStatusChanged,
@@ -134,6 +143,8 @@ export default class MatchesController {
         id: match.id,
         status: match.status,
         winnerSide: match.winnerSide,
+        score: parseMatchScore(match.score),
+        scoreLabel: formatMatchScore(parseMatchScore(match.score)),
         arenaName: match.arena.name,
         groupId: match.groupId,
         manageWindowOpen: isManageWindowOpen(match.statusChangedAt),
@@ -191,7 +202,15 @@ export default class MatchesController {
 
     const existing = await Bet.query().where('match_id', match.id).where('user_id', user.id).first()
     if (existing) {
-      session.flash('error', 'Você já fez seu palpite nesta partida')
+      if (existing.predictedSide === predictedSide) {
+        session.flash('success', 'Palpite mantido')
+        response.redirect().back()
+        return
+      }
+
+      existing.predictedSide = predictedSide
+      await existing.save()
+      session.flash('success', 'Palpite atualizado')
       response.redirect().back()
       return
     }
@@ -211,7 +230,6 @@ export default class MatchesController {
     const match = await GameMatch.findOrFail(Number(params.id))
     await assertGroupMember(match.groupId, user)
     await assertMatchCreator(match, user)
-    if (rejectExpiredManageWindow(match, { session, response })) return
 
     if (match.status !== 'palpites_abertos') {
       session.flash('error', 'Partida não está aberta para palpites')
@@ -245,20 +263,42 @@ export default class MatchesController {
       return
     }
 
-    const { winnerSide } = await request.validateUsing(finalizeMatchValidator)
+    const payload = await request.validateUsing(finalizeMatchValidator)
+
+    if (setsHavePartialInput(payload.sets)) {
+      session.flash('error', 'Preencha os dois lados de cada set ou deixe o set em branco')
+      response.redirect().back()
+      return
+    }
+
+    const sets = normalizeSets(payload.sets)
+    const scoreValidation = validateSets(sets, payload.winnerSide)
+    if (!scoreValidation.ok) {
+      session.flash('error', scoreValidation.message)
+      response.redirect().back()
+      return
+    }
+
+    const score: MatchScore | null = sets ? { sets } : null
 
     await db.transaction(async (trx) => {
       match.useTransaction(trx)
       match.status = 'finalizada'
-      match.winnerSide = winnerSide
+      match.winnerSide = payload.winnerSide
+      if (score) {
+        match.score = score
+      }
       markStatusChanged(match)
       await match.save()
 
       const bets = await Bet.query({ client: trx }).where('match_id', match.id)
       for (const bet of bets) {
         bet.useTransaction(trx)
-        bet.pointsAwarded = bet.predictedSide === winnerSide ? POINTS_CORRECT : 0
+        bet.pointsAwarded = bet.predictedSide === payload.winnerSide ? POINTS_CORRECT : 0
         await bet.save()
+        if (bet.pointsAwarded > 0) {
+          await creditBetReward(bet.userId, bet.id, bet.pointsAwarded, trx)
+        }
       }
     })
 

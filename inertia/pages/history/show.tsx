@@ -36,6 +36,7 @@ type MatchItem = {
   won: boolean
   partnerName: string | null
   playedAt: string
+  scoreLabel: string | null
 }
 
 type BetItem = {
@@ -354,6 +355,7 @@ export default function HistoryShow({
                           {match.groupName}
                           {match.partnerName ? ` · com ${match.partnerName}` : ''}
                           {match.city ? ` · ${match.city}` : ''}
+                          {match.scoreLabel ? ` · ${match.scoreLabel}` : ''}
                           {` · ${formatDate(match.playedAt)}`}
                         </p>
                       </div>

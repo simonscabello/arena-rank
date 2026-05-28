@@ -1,4 +1,4 @@
-import { FUN_LABEL_SUGGESTIONS } from '#constants/fun_label_suggestions'
+import { STATUS_SUGGESTIONS } from '#constants/fun_label_suggestions'
 import {
   COURT_SIDE_LABELS,
   COURT_SIDES,
@@ -8,7 +8,9 @@ import {
   SKILL_LEVELS,
 } from '#enums/sport_profile'
 import { removeUserAvatar, saveUserAvatar } from '#helpers/avatar_storage'
+import { getEquippedRewards } from '#helpers/shop_rewards'
 import User from '#models/user'
+import UserPurchase from '#models/user_purchase'
 import { updateAccountValidator } from '#validators/account'
 import { updateProfileValidator } from '#validators/profile'
 import hash from '@adonisjs/core/services/hash'
@@ -17,8 +19,19 @@ import type { HttpContext } from '@adonisjs/core/http'
 export default class ProfileController {
   async show({ inertia, auth }: HttpContext) {
     const user = auth.user!
+    await user.refresh()
+
+    const purchases = await UserPurchase.query().where('user_id', user.id).preload('shopItem')
+    const rewards = await getEquippedRewards(user.id)
 
     return inertia.render('profile/show', {
+      shopBalance: user.shopBalance ?? 0,
+      lifetimeBetPoints: rewards.lifetimeBetPoints,
+      ownedItems: purchases.map((purchase) => ({
+        id: purchase.shopItem.id,
+        name: purchase.shopItem.name,
+        itemType: purchase.shopItem.itemType,
+      })),
       account: {
         fullName: user.fullName,
         email: user.email,
@@ -30,9 +43,12 @@ export default class ProfileController {
         courtSide: user.courtSide,
         skillLevel: user.skillLevel,
         avatarUrl: user.avatarUrl,
+        avatarFrameSrc: rewards.avatarFrameSrc,
+        avatarFrameInset: rewards.avatarFrameInset,
+        equippedTitles: rewards.equippedTitles,
         initials: user.initials,
       },
-      funLabelSuggestions: [...FUN_LABEL_SUGGESTIONS],
+      statusSuggestions: [...STATUS_SUGGESTIONS],
       options: {
         dominantHands: DOMINANT_HANDS.map((value: (typeof DOMINANT_HANDS)[number]) => ({
           value,
