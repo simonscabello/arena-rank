@@ -1,13 +1,8 @@
 import { Link } from '@adonisjs/inertia/react'
-import { usePage } from '@inertiajs/react'
-import { Users } from 'lucide-react'
-import InstallPwaPrompt from '~/components/InstallPwaPrompt'
 import Logo from '~/components/Logo'
 import { buttonClassName } from '~/lib/button_styles'
 
 export default function Home() {
-  const { user } = usePage().props as { user?: { initials: string } }
-
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col py-8">
       <div className="flex flex-col items-center text-center">
@@ -19,28 +14,13 @@ export default function Home() {
         </p>
       </div>
 
-      {user && (
-        <div className="mt-6">
-          <InstallPwaPrompt />
-        </div>
-      )}
-
       <div className="mt-6 flex w-full flex-col gap-3">
-        {user ? (
-          <Link route="groups.index" className={buttonClassName('primary', 'lg', true)}>
-            <Users className="h-5 w-5" />
-            Minhas Plays
-          </Link>
-        ) : (
-          <>
-            <Link route="session.create" className={buttonClassName('primary', 'lg', true)}>
-              Entrar
-            </Link>
-            <Link route="new_account.create" className={buttonClassName('secondary', 'lg', true)}>
-              Criar conta
-            </Link>
-          </>
-        )}
+        <Link route="session.create" className={buttonClassName('primary', 'lg', true)}>
+          Entrar
+        </Link>
+        <Link route="new_account.create" className={buttonClassName('secondary', 'lg', true)}>
+          Criar conta
+        </Link>
       </div>
 
       <ul className="mt-10 grid w-full gap-3 text-sm text-stone-600">

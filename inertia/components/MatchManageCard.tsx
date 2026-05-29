@@ -132,7 +132,11 @@ export default function MatchManageCard({
 
   return (
     <>
-      <Card title="Gerenciar partida" className="mb-6">
+      <Card title="Gerenciar partida" className="mb-0">
+        <p className="mb-3 text-xs text-stone-500">
+          Após cada mudança de status, você tem 2 minutos para reabrir palpites, desfazer resultado
+          ou cancelar. Depois desse prazo, a partida fica travada.
+        </p>
         <div className="flex flex-col gap-2.5">
           {startAction && (
             <Button
@@ -147,7 +151,7 @@ export default function MatchManageCard({
           {visibleWindowedActions.length > 0 && (
             <>
               <p className="text-sm text-stone-600">
-                Você tem {formatCountdown(secondsLeft)} para alterar
+                Você tem {formatCountdown(secondsLeft)} para alterar. Depois disso, estas ações somem.
               </p>
               {visibleWindowedActions.map((action) => (
                 <Button

@@ -14,6 +14,12 @@ export type ShopItemPayload = {
 
 export type EquippedTitle = { icon: string; name: string }
 
+export type UserEquippedDisplay = {
+  equippedTitles: EquippedTitle[]
+  avatarFrameSrc: string | null
+  avatarFrameInset: number
+}
+
 export type EquippedRewards = {
   equippedTitles: EquippedTitle[]
   avatarFrameSrc: string | null
@@ -110,6 +116,60 @@ export async function getEquippedRewards(userId: number): Promise<EquippedReward
     avatarFrameInset,
     lifetimeBetPoints,
   }
+}
+
+export async function getEquippedDisplayByUserIds(
+  userIds: number[]
+): Promise<Map<number, UserEquippedDisplay>> {
+  const uniqueUserIds = [...new Set(userIds)]
+  const emptyDisplay = (): UserEquippedDisplay => ({
+    equippedTitles: [],
+    avatarFrameSrc: null,
+    avatarFrameInset: DEFAULT_FRAME_INSET,
+  })
+
+  if (uniqueUserIds.length === 0) {
+    return new Map()
+  }
+
+  const rows = await db
+    .from('user_equipped_items as uei')
+    .leftJoin('shop_items as si', 'uei.shop_item_id', 'si.id')
+    .whereIn('uei.user_id', uniqueUserIds)
+    .whereNotNull('uei.shop_item_id')
+    .whereIn('uei.item_type', ['title', 'avatar_frame'])
+    .select(
+      'uei.user_id as userId',
+      'uei.item_type as itemType',
+      'uei.slot as slot',
+      'si.name as name',
+      'si.payload as payload'
+    )
+    .orderBy('uei.slot', 'asc')
+
+  const displayByUserId = new Map<number, UserEquippedDisplay>(
+    uniqueUserIds.map((userId) => [userId, emptyDisplay()])
+  )
+
+  for (const row of rows) {
+    const userId = Number(row.userId)
+    const display = displayByUserId.get(userId) ?? emptyDisplay()
+    const payload = parsePayload(row.payload)
+    const itemType = rowItemType(row as Record<string, unknown>) as ShopItemType
+
+    if (itemType === 'title' && payload.icon) {
+      display.equippedTitles.push({ icon: payload.icon, name: String(row.name) })
+    }
+
+    if (itemType === 'avatar_frame' && payload.frameSrc) {
+      display.avatarFrameSrc = payload.frameSrc
+      display.avatarFrameInset = payload.inset ?? DEFAULT_FRAME_INSET
+    }
+
+    displayByUserId.set(userId, display)
+  }
+
+  return displayByUserId
 }
 
 export async function enrichRankingEntries<T extends { userId: number; avatarUrl: string | null }>(

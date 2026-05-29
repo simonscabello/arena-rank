@@ -19,7 +19,8 @@ export default function ShopBalanceBanner({ shopBalance, maxTitleSlots }: Props)
         </div>
       </div>
       <p className="mt-2 text-xs text-stone-500">
-        Até {maxTitleSlots} títulos equipados · ranking não diminui
+        Pontos ganhos em palpites certos · até {maxTitleSlots} títulos ao mesmo tempo · gastar na
+        loja não reduz seu ranking
       </p>
     </Card>
   )

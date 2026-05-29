@@ -1,14 +1,5 @@
 import { cn } from '~/lib/match'
 
-type Props = {
-  initials: string
-  src?: string | null
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'preview'
-  className?: string
-  frameSrc?: string | null
-  photoInset?: number
-}
-
 const SIZE_PX = {
   'sm': 32,
   'md': 40,
@@ -17,6 +8,32 @@ const SIZE_PX = {
   '2xl': 112,
   'preview': 160,
 } as const
+
+const DEFAULT_PHOTO_INSET = 18
+
+export type AvatarSize = keyof typeof SIZE_PX
+
+function frameOuterSize(photoPx: number, photoInset: number) {
+  const inset = Math.min(Math.max(photoInset, 0), 49)
+  const innerPhotoRatio = 1 - (inset * 2) / 100
+  if (innerPhotoRatio <= 0) return photoPx
+  return photoPx / innerPhotoRatio
+}
+
+export function avatarSlotSize(size: AvatarSize, photoInset = DEFAULT_PHOTO_INSET) {
+  return frameOuterSize(SIZE_PX[size], photoInset)
+}
+
+type Props = {
+  initials: string
+  src?: string | null
+  size?: AvatarSize
+  className?: string
+  frameSrc?: string | null
+  photoInset?: number
+  reserveFrameSlot?: boolean
+  slotInset?: number
+}
 
 const textSizeClasses = {
   'sm': 'text-xs',
@@ -27,7 +44,16 @@ const textSizeClasses = {
   'preview': 'text-2xl',
 }
 
-const DEFAULT_PHOTO_INSET = 18
+function wrapInFrameSlot(node: React.ReactNode, slotPx: number, className?: string) {
+  return (
+    <span
+      className={cn('inline-flex shrink-0 items-center justify-center', className)}
+      style={{ width: slotPx, height: slotPx }}
+    >
+      {node}
+    </span>
+  )
+}
 
 export default function Avatar({
   initials,
@@ -36,50 +62,56 @@ export default function Avatar({
   className,
   frameSrc,
   photoInset = DEFAULT_PHOTO_INSET,
+  reserveFrameSlot = false,
+  slotInset = DEFAULT_PHOTO_INSET,
 }: Props) {
-  const boxPx = SIZE_PX[size]
+  const photoPx = SIZE_PX[size]
   const textSize = textSizeClasses[size]
-  const inset = Math.min(Math.max(photoInset, 0), 40)
-  const photoSizePercent = 100 - inset * 2
+  const reservedSlotPx = reserveFrameSlot ? avatarSlotSize(size, slotInset) : null
 
   if (!frameSrc) {
-    if (src) {
-      return (
-        <img
-          src={src}
-          alt=""
-          className={cn('inline-block shrink-0 rounded-full object-cover', className)}
-          style={{ width: boxPx, height: boxPx }}
-        />
-      )
-    }
-    return (
+    const avatar = src ? (
+      <img
+        src={src}
+        alt=""
+        className={cn('inline-block shrink-0 rounded-full object-cover', className)}
+        style={{ width: photoPx, height: photoPx }}
+      />
+    ) : (
       <span
         className={cn(
           'inline-flex shrink-0 items-center justify-center rounded-full bg-brand-600 font-semibold text-white',
           textSize,
           className
         )}
-        style={{ width: boxPx, height: boxPx }}
+        style={{ width: photoPx, height: photoPx }}
         aria-hidden
       >
         {initials}
       </span>
     )
+
+    if (reservedSlotPx !== null) {
+      return wrapInFrameSlot(avatar, reservedSlotPx)
+    }
+
+    return avatar
   }
 
-  return (
+  const framePx = frameOuterSize(photoPx, photoInset)
+  const photoOffset = (framePx - photoPx) / 2
+  const framedAvatar = (
     <span
       className={cn('relative inline-block shrink-0', className)}
-      style={{ width: boxPx, height: boxPx }}
+      style={{ width: framePx, height: framePx }}
     >
       <span
         className="absolute overflow-hidden rounded-full bg-brand-600"
         style={{
-          left: `${inset}%`,
-          top: `${inset}%`,
-          width: `${photoSizePercent}%`,
-          height: `${photoSizePercent}%`,
+          left: photoOffset,
+          top: photoOffset,
+          width: photoPx,
+          height: photoPx,
         }}
       >
         {src ? (
@@ -104,4 +136,10 @@ export default function Avatar({
       />
     </span>
   )
+
+  if (reservedSlotPx !== null && framePx !== reservedSlotPx) {
+    return wrapInFrameSlot(framedAvatar, reservedSlotPx)
+  }
+
+  return framedAvatar
 }

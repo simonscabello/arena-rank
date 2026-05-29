@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react'
 import { Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Card from '~/components/Card'
 import { buttonClassName } from '~/lib/button_styles'
 import { inferWinnerSideFromSets } from '~/lib/match'
@@ -30,6 +30,36 @@ function buildSetsPayload(rows: SetRow[]) {
   return sets.length > 0 ? sets : null
 }
 
+function hasAnyScoreInput(rows: SetRow[]) {
+  return rows.some((row) => row.side1.trim() !== '' || row.side2.trim() !== '')
+}
+
+function liveValidationMessage(
+  setRows: SetRow[],
+  sets: { side1: number; side2: number }[] | null,
+  inferredWinner: 1 | 2 | null
+) {
+  if (!hasAnyScoreInput(setRows)) return null
+
+  if (setRows.some(hasPartialSetRow)) {
+    return 'Preencha os dois lados de cada set'
+  }
+
+  if (!sets) {
+    return 'Informe o placar de pelo menos um set'
+  }
+
+  if (sets.some((set) => set.side1 === set.side2)) {
+    return 'Cada set precisa ter um vencedor (placares diferentes)'
+  }
+
+  if (inferredWinner === null) {
+    return 'O placar está empatado — adicione mais sets ou ajuste os placares'
+  }
+
+  return null
+}
+
 type Props = {
   matchId: number
   side1Label: string
@@ -53,25 +83,19 @@ export default function MatchFinalizeCard({ matchId, side1Label, side2Label }: P
   const inferredWinner =
     sets && !setRows.some(hasPartialSetRow) ? inferWinnerSideFromSets(sets) : null
   const winnerLabel = inferredWinner === 1 ? side1Label : inferredWinner === 2 ? side2Label : null
+  const liveError = useMemo(
+    () => liveValidationMessage(setRows, sets, inferredWinner),
+    [setRows, sets, inferredWinner]
+  )
 
   function submit() {
-    if (setRows.some(hasPartialSetRow)) {
-      setError('Preencha os dois lados de cada set')
+    if (liveError) {
+      setError(liveError)
       return
     }
 
-    if (!sets) {
+    if (!sets || inferredWinner === null) {
       setError('Informe o placar de pelo menos um set')
-      return
-    }
-
-    if (sets.some((set) => set.side1 === set.side2)) {
-      setError('Cada set precisa ter um vencedor (placares diferentes)')
-      return
-    }
-
-    if (inferredWinner === null) {
-      setError('O placar está empatado — adicione mais sets ou ajuste os placares')
       return
     }
 
@@ -80,7 +104,7 @@ export default function MatchFinalizeCard({ matchId, side1Label, side2Label }: P
   }
 
   return (
-    <Card title="Registrar resultado" className="mb-6">
+    <Card title="Registrar resultado" className="mb-0">
       <div className="mb-2 grid grid-cols-[3rem_1fr_1fr] gap-x-2 gap-y-2 text-xs font-medium text-stone-500">
         <span />
         <span className="truncate text-center text-brand-700">{side1Label}</span>
@@ -125,15 +149,22 @@ export default function MatchFinalizeCard({ matchId, side1Label, side2Label }: P
         </button>
       )}
 
-      {winnerLabel && (
+      {winnerLabel && !liveError && (
         <p className="mb-4 text-sm font-medium text-stone-800">
           Vencedor: <span className="text-brand-700">{winnerLabel}</span>
         </p>
       )}
 
-      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      {(error || liveError) && (
+        <p className="mb-3 text-sm text-red-600">{error || liveError}</p>
+      )}
 
-      <button type="button" onClick={submit} className={buttonClassName('primary', 'md', true)}>
+      <button
+        type="button"
+        onClick={submit}
+        disabled={Boolean(liveError) || !sets}
+        className={buttonClassName('primary', 'md', true)}
+      >
         Finalizar partida
       </button>
     </Card>

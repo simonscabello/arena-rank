@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Card from '~/components/Card'
 import EmptyState from '~/components/EmptyState'
 import Input from '~/components/Input'
+import InstallPwaPrompt from '~/components/InstallPwaPrompt'
 import PageHeader from '~/components/PageHeader'
 import { buttonClassName } from '~/lib/button_styles'
 import { cn } from '~/lib/match'
@@ -85,6 +86,10 @@ export default function GroupsIndex({ groups }: Props) {
           ))}
         </ul>
       )}
+
+      <div className="mt-8">
+        <InstallPwaPrompt />
+      </div>
     </>
   )
 }

@@ -12,6 +12,7 @@ import {
   rejectExpiredManageWindow,
 } from '#helpers/match_manage_window'
 import { realPlayerUserIds, serializeMatchPlayer } from '#helpers/match_players'
+import { DEFAULT_FRAME_INSET, getEquippedDisplayByUserIds } from '#helpers/shop_rewards'
 import { validateAndResolveMatchPlayers } from '#helpers/match_player_validation'
 import { buildMatchShareText } from '#helpers/match_share'
 import {
@@ -98,6 +99,11 @@ export default class MatchesController {
     const canManageMatch = isMatchCreator(match, user.id)
     const betsRevealed = match.status !== 'palpites_abertos' || !betsPossible
     const parsedScore = parseMatchScore(match.score)
+    const serializedPlayers = match.players.map((player) => serializeMatchPlayer(player))
+    const playerUserIdsForRewards = serializedPlayers
+      .map((player) => player.userId)
+      .filter((userId): userId is number => userId !== null)
+    const equippedDisplayByUserId = await getEquippedDisplayByUserIds(playerUserIdsForRewards)
 
     return inertia.render('matches/show', {
       match: {
@@ -120,7 +126,16 @@ export default class MatchesController {
               })
             : null,
       },
-      players: match.players.map((player) => serializeMatchPlayer(player)),
+      players: serializedPlayers.map((player) => {
+        const rewards = player.userId ? equippedDisplayByUserId.get(player.userId) : null
+
+        return {
+          ...player,
+          equippedTitles: rewards?.equippedTitles ?? [],
+          avatarFrameSrc: rewards?.avatarFrameSrc ?? null,
+          avatarFrameInset: rewards?.avatarFrameInset ?? DEFAULT_FRAME_INSET,
+        }
+      }),
       bets: betsRevealed
         ? match.bets.map((b) => ({
             userId: b.userId,

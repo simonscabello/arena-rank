@@ -207,6 +207,7 @@ test.group('History', (suite) => {
     assert.equal(allBets.items.length, 1)
     assert.equal(allBets.summary.correctBets, 1)
     assert.equal(allBets.summary.totalPoints, 10)
+    assert.include(allBets.items[0].predictedSideLabel, '&')
 
     const response = await client.get('/historico').qs({ tab: 'bets' }).loginAs(member)
     response.assertStatus(200)

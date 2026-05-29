@@ -9,7 +9,10 @@ type Player = {
   playerType: PlayerType
   initials: string
   avatarUrl?: string | null
+  avatarFrameSrc?: string | null
+  avatarFrameInset?: number
   funLabel?: string | null
+  equippedTitles?: { icon: string; name: string }[]
   claimStatus?: 'pending' | 'claimed'
   guestInviteId?: number | null
 }

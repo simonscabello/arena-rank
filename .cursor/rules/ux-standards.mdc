@@ -1,0 +1,61 @@
+---
+description: UX and usability standards for Palpiteiro (navigation, forms, labels, mobile-first)
+alwaysApply: true
+---
+
+# UX Standards — Palpiteiro
+
+Apply when creating or changing user-facing surfaces: `inertia/pages`, `inertia/components`, `inertia/layouts`, and backend payloads consumed by them.
+
+## Product vocabulary
+
+* Use **Play** (not "grupo") in UI copy. Routes may stay `/grupos`.
+* Show **player/team names** in lists and history — never generic "Dupla 1/2" when names are available.
+* Prefer plain Portuguese; match existing tone (direct, informal).
+
+## Navigation
+
+* **Mobile-first**: primary sections must appear in the **bottom nav** (`default.tsx`). Desktop header and mobile bottom nav must expose the **same core areas** (Plays, Histórico, Loja, Perfil).
+* **`/` for guests only**: authenticated users redirect to Plays (`groups.index`). Do not show marketing onboarding to logged-in users.
+* **One primary path** per feature. Avoid duplicate entry points (e.g. nav + card button + footer link to the same place).
+* **`BackLink`** must point to a meaningful parent (Plays, Play name, Perfil) — not a redirect-only route.
+* Avatar in header links to **Perfil**.
+
+## Page structure
+
+* Reuse `PageHeader`, `BackLink`, `Card`, `EmptyState`, `ConfirmDialog`.
+* Each screen has **one clear goal**; subtitle explains it in one line.
+* **Admin/secondary actions** (gestão, correções, config avançada) go in a **collapsible section**, below the user's primary action.
+* Do not stack many cards of equal weight on one screen — prioritize what the user came to do.
+
+## Actions and feedback
+
+* **Destructive or hard-to-undo actions** (palpite, cancelar, finalizar) require **`ConfirmDialog`** or equivalent confirmation.
+* **Equal visual weight** for symmetric choices (e.g. both duplas neutral until one is selected; highlight only after choice).
+* Show **validation while typing** when rules are inferable (placar, datas, senha) — not only on submit.
+* Surface **business rules in context** (janela de 2 min, saldo negativo, "sem palpites") near the control they affect.
+* Use **toasts/flash** for success/error; empty states explain the next step.
+
+## Color semantics
+
+* **Amber** = Dupla 2 identity only (picker, placar, team blocks).
+* **Status badges** use distinct palettes — `Badge.tsx` (`open` emerald, `live` sky, `done` stone, `cancelled` red). Do not reuse amber for status.
+* **Brand** = primary actions and Dupla 1 identity.
+
+## Forms
+
+* Labels must say **what to fill and why** when non-obvious.
+* Prefer **segmented toggles** over hidden mode switches (e.g. Membro / Convidado in `PlayerPicker`).
+* Required fields only when truly required; show constraints upfront (e.g. senha 8–32 chars).
+* Split **Perfil na Play** (identidade) from **Conta** (email/senha). Keep shop balance **outside** profile form.
+
+## Mobile layout
+
+* Respect `max-w-lg` container and bottom nav padding (`pb-24` on main when nav is visible).
+* Fixed footers (e.g. criar partida) must not overlap bottom nav — use `bottom-16` on mobile.
+* PWA install prompt: **non-blocking**, secondary placement (e.g. rodapé de Plays), dismissible.
+
+## Backend display data
+
+* Send **display-ready labels** from helpers/controllers (team names, side labels) — do not force the UI to reconstruct names from raw IDs.
+* Keep list/history payloads consistent with what the detail screen shows.

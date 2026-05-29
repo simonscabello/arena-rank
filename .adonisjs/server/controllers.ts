@@ -8,6 +8,7 @@ export const controllers = {
   Groups: () => import('#controllers/groups_controller'),
   GuestInvites: () => import('#controllers/guest_invites_controller'),
   History: () => import('#controllers/history_controller'),
+  Home: () => import('#controllers/home_controller'),
   Matches: () => import('#controllers/matches_controller'),
   Members: () => import('#controllers/members_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),

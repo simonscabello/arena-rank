@@ -52,6 +52,11 @@ export default function RankingList({
     return <p className="text-center text-sm text-stone-500 py-4">{emptyMessage}</p>
   }
 
+  const frameSlotInset = entries.reduce(
+    (maxInset, entry) => Math.max(maxInset, entry.avatarFrameInset ?? 18),
+    18
+  )
+
   return (
     <ol className="space-y-2">
       {entries.map((entry, index) => {
@@ -93,6 +98,8 @@ export default function RankingList({
               size="sm"
               frameSrc={entry.avatarFrameSrc}
               photoInset={entry.avatarFrameInset}
+              reserveFrameSlot
+              slotInset={frameSlotInset}
             />
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium text-stone-800">

@@ -4,9 +4,11 @@ import {
   partnerNameSelectColumns,
   resolvePartnerName,
 } from '#helpers/match_partner_queries'
+import { compactPlayerName, playerDisplayName } from '#helpers/match_players'
 import { displayPerson } from '#helpers/person_display'
 import { formatMatchScore, parseMatchScore } from '#helpers/match_score'
 import GroupMember from '#models/group_member'
+import MatchPlayer from '#models/match_player'
 import db from '@adonisjs/lucid/services/db'
 import type { DatabaseQueryBuilderContract } from '@adonisjs/lucid/types/querybuilder'
 import type { Knex } from 'knex'
@@ -54,6 +56,7 @@ export type BetHistoryItem = {
   groupName: string
   arenaName: string
   predictedSide: number
+  predictedSideLabel: string
   pointsAwarded: number | null
   correct: boolean | null
   playedAt: string
@@ -80,6 +83,30 @@ export type PaginatedResult<TItem, TSummary> = {
 
 function pageNumber(filters: HistoryFilters) {
   return Math.max(1, filters.page ?? 1)
+}
+
+function teamSideLabel(players: MatchPlayer[], side: number) {
+  return players
+    .filter((player) => player.side === side)
+    .map((player) => compactPlayerName(playerDisplayName(player)))
+    .join(' & ')
+}
+
+async function loadPlayersByMatchId(matchIds: number[]) {
+  if (matchIds.length === 0) {
+    return new Map<number, MatchPlayer[]>()
+  }
+
+  const players = await MatchPlayer.query().whereIn('matchId', matchIds).preload('user')
+  const playersByMatchId = new Map<number, MatchPlayer[]>()
+
+  for (const player of players) {
+    const list = playersByMatchId.get(player.matchId) ?? []
+    list.push(player)
+    playersByMatchId.set(player.matchId, list)
+  }
+
+  return playersByMatchId
 }
 
 function applyDateFilters(
@@ -361,19 +388,26 @@ export async function getBetHistory(
     .offset(offset)
     .limit(HISTORY_PAGE_SIZE)
 
+  const matchIds = [...new Set(rows.map((row) => Number(row.matchId)))]
+  const playersByMatchId = await loadPlayersByMatchId(matchIds)
+
   return {
     items: rows.map((row) => {
       const pointsAwarded =
         row.pointsAwarded === null || row.pointsAwarded === undefined
           ? null
           : Number(row.pointsAwarded)
+      const predictedSide = Number(row.predictedSide)
+      const players = playersByMatchId.get(Number(row.matchId)) ?? []
+      const predictedSideLabel = teamSideLabel(players, predictedSide) || `Dupla ${predictedSide}`
 
       return {
         matchId: Number(row.matchId),
         groupId: Number(row.groupId),
         groupName: row.groupName,
         arenaName: row.arenaName,
-        predictedSide: Number(row.predictedSide),
+        predictedSide,
+        predictedSideLabel,
         pointsAwarded,
         correct: pointsAwarded === null ? null : pointsAwarded > 0,
         playedAt: String(row.playedAt),

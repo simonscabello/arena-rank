@@ -1,4 +1,4 @@
-import { Form, Link } from '@adonisjs/inertia/react'
+import { Form } from '@adonisjs/inertia/react'
 import { usePage } from '@inertiajs/react'
 import { Data } from '@generated/data'
 import { useState, type FC } from 'react'
@@ -429,12 +429,6 @@ const ShopIndex: FC<Props> = ({ maxTitleSlots, titleSlotsFull, items }) => {
           )}
         </section>
       )}
-
-      <p className="mt-8 text-center text-sm text-stone-500">
-        <Link route="profile.show" className="font-medium text-brand-600 hover:underline">
-          Voltar ao perfil
-        </Link>
-      </p>
 
       <ShopFramePreviewModal
         open={previewItem !== null}

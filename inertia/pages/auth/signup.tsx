@@ -35,13 +35,16 @@ export default function Signup() {
                 />
                 <p className="text-xs text-stone-500">Será usado para fazer login no app</p>
               </div>
-              <PasswordInput
-                label="Senha"
-                name="password"
-                id="password"
-                autoComplete="new-password"
-                error={errors.password}
-              />
+              <div className="space-y-1.5">
+                <PasswordInput
+                  label="Senha"
+                  name="password"
+                  id="password"
+                  autoComplete="new-password"
+                  error={errors.password}
+                />
+                <p className="text-xs text-stone-500">Entre 8 e 32 caracteres</p>
+              </div>
               <PasswordInput
                 label="Confirmar senha"
                 name="passwordConfirmation"

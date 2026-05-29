@@ -45,6 +45,7 @@ type BetItem = {
   groupName: string
   arenaName: string
   predictedSide: number
+  predictedSideLabel: string
   pointsAwarded: number | null
   correct: boolean | null
   playedAt: string
@@ -161,7 +162,7 @@ export default function HistoryShow({
   return (
     <>
       <PageHeader
-        back={<BackLink route="home" label="Início" />}
+        back={<BackLink route="groups.index" label="Plays" />}
         title="Meu histórico"
         subtitle="Partidas e palpites em todas as suas Plays"
       />
@@ -389,7 +390,7 @@ export default function HistoryShow({
                       <div>
                         <p className="font-medium text-stone-900">{bet.arenaName}</p>
                         <p className="text-xs text-stone-500">
-                          {bet.groupName} · Dupla {bet.predictedSide} · {formatDate(bet.playedAt)}
+                          {bet.groupName} · {bet.predictedSideLabel} · {formatDate(bet.playedAt)}
                         </p>
                       </div>
                       <span

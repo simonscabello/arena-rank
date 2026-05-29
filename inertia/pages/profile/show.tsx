@@ -1,4 +1,4 @@
-import { Form, Link } from '@adonisjs/inertia/react'
+import { Form } from '@adonisjs/inertia/react'
 import { router, usePage } from '@inertiajs/react'
 import { Data } from '@generated/data'
 import { useEffect, useRef, useState } from 'react'
@@ -163,10 +163,35 @@ export default function ProfileShow({
   return (
     <>
       <PageHeader
-        back={<BackLink route="home" label="Início" />}
+        back={<BackLink route="groups.index" label="Plays" />}
         title="Meu perfil"
-        subtitle="Conta e preferências no court"
+        subtitle={
+          activeTab === 'profile'
+            ? 'Como você aparece nas Plays'
+            : 'Email, nome e senha de acesso'
+        }
       />
+
+      <Card title="Loja e recompensas" className="mb-4">
+        <p className="text-sm text-stone-600">
+          <span className="font-semibold text-brand-700">{shopBalance} pts</span> disponíveis ·{' '}
+          <span className="font-medium text-stone-800">{lifetimeBetPoints} pts</span> acumulados no
+          Palpiteiro
+        </p>
+        {profile.equippedTitles.length > 0 && (
+          <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-stone-700">
+            <span className="font-medium text-stone-600">Títulos equipados:</span>
+            {profile.equippedTitles.map((title) => (
+              <ProfileBadge key={title.name} icon={title.icon} title={title.name} />
+            ))}
+          </p>
+        )}
+        <p className="mt-2 text-sm text-stone-500">
+          {ownedItems.length > 0
+            ? `${ownedItems.length} item(ns) adquirido(s) · acesse a Loja pelo menu`
+            : 'Nenhum item da loja ainda · acesse a Loja pelo menu'}
+        </p>
+      </Card>
 
       <div className="mb-4 flex rounded-xl border border-stone-200 bg-stone-50 p-1">
         <button
@@ -196,38 +221,7 @@ export default function ProfileShow({
       </div>
 
       {activeTab === 'profile' && (
-        <>
-          <Card title="Loja e recompensas" className="mb-4">
-            <p className="text-sm text-stone-600">
-              <span className="font-semibold text-brand-700">{shopBalance} pts</span> disponíveis ·{' '}
-              <span className="font-medium text-stone-800">{lifetimeBetPoints} pts</span> acumulados
-              no Palpiteiro
-            </p>
-            {profile.equippedTitles.length > 0 && (
-              <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-stone-700">
-                <span className="font-medium text-stone-600">Títulos equipados:</span>
-                {profile.equippedTitles.map((title) => (
-                  <ProfileBadge key={title.name} icon={title.icon} title={title.name} />
-                ))}
-              </p>
-            )}
-            {profile.funLabel && (
-              <p className="mt-2 text-sm italic text-brand-700">Status: {profile.funLabel}</p>
-            )}
-            <p className="mt-2 text-sm text-stone-500">
-              {ownedItems.length > 0
-                ? `${ownedItems.length} item(ns) adquirido(s)`
-                : 'Nenhum item da loja ainda'}
-            </p>
-            <Link
-              route="shop.index"
-              className={cn(buttonClassName('primary', 'sm'), 'mt-4 inline-flex')}
-            >
-              Abrir loja
-            </Link>
-          </Card>
-
-          <Card title="Perfil na Play">
+        <Card title="Perfil na Play">
             <Form route="profile.update" encType="multipart/form-data" className="space-y-4">
               {({ errors, processing }) => (
                 <>
@@ -391,7 +385,6 @@ export default function ProfileShow({
               )}
             </Form>
           </Card>
-        </>
       )}
 
       {activeTab === 'account' && (

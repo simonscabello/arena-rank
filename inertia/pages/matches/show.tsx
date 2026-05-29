@@ -1,10 +1,13 @@
-import { Form } from '@adonisjs/inertia/react'
+import { router } from '@inertiajs/react'
 import { Target, Users } from 'lucide-react'
+import { useState } from 'react'
 import BackLink from '~/components/BackLink'
 import Avatar from '~/components/Avatar'
 import Badge from '~/components/Badge'
 import Card from '~/components/Card'
+import ConfirmDialog from '~/components/ConfirmDialog'
 import EmptyState from '~/components/EmptyState'
+import MatchAdminSection from '~/components/MatchAdminSection'
 import MatchFinalizeCard from '~/components/MatchFinalizeCard'
 import MatchManageCard from '~/components/MatchManageCard'
 import MatchTeamsBlock from '~/components/MatchTeamsBlock'
@@ -23,7 +26,10 @@ type Player = {
   playerType: PlayerType
   initials: string
   avatarUrl?: string | null
+  avatarFrameSrc?: string | null
+  avatarFrameInset?: number
   funLabel?: string | null
+  equippedTitles?: { icon: string; name: string }[]
   claimStatus?: 'pending' | 'claimed'
   guestInviteId?: number | null
 }
@@ -131,6 +137,29 @@ export default function MatchShow({
     betParticipation && betParticipation.pendingMembers.length > pendingPreview.length
       ? betParticipation.pendingMembers.length - pendingPreview.length
       : 0
+  const [pendingBetSide, setPendingBetSide] = useState<number | null>(null)
+  const showFinalizeCard =
+    canManageMatch &&
+    (match.status === 'em_andamento' || (match.status === 'palpites_abertos' && skipsBets))
+  const showAdminSection =
+    canManageMatch &&
+    (showFinalizeCard ||
+      (match.status === 'palpites_abertos' && betsPossible) ||
+      (match.manageWindowOpen &&
+        (match.status === 'em_andamento' ||
+          match.status === 'finalizada' ||
+          match.status === 'palpites_abertos')))
+
+  function betButtonVariant(side: number) {
+    if (!userBet) return 'secondary'
+    return userBet.predictedSide === side ? 'primary' : 'secondary'
+  }
+
+  function confirmBet() {
+    if (pendingBetSide === null) return
+    router.post(`/partidas/${match.id}/palpite`, { predictedSide: pendingBetSide })
+    setPendingBetSide(null)
+  }
 
   if (match.status === 'cancelada') {
     return (
@@ -224,36 +253,34 @@ export default function MatchShow({
               : 'Quem vence esta partida?'}
           </p>
           <div className="flex flex-col gap-3">
-            <Form route="matches.bet" routeParams={{ id: match.id }} className="contents">
-              <input type="hidden" name="predictedSide" value="1" />
-              <button
-                type="submit"
-                className={buttonClassName(
-                  userBet?.predictedSide === 1 ? 'primary' : 'secondary',
-                  'lg',
-                  true
-                )}
-              >
-                {side1Label}
-              </button>
-            </Form>
-            <Form route="matches.bet" routeParams={{ id: match.id }} className="contents">
-              <input type="hidden" name="predictedSide" value="2" />
-              <button
-                type="submit"
-                className={cn(
-                  buttonClassName(
-                    !userBet || userBet.predictedSide === 2 ? 'primary' : 'secondary',
-                    'lg',
-                    true
-                  ),
-                  (!userBet || userBet.predictedSide === 2) && 'bg-amber-500 hover:bg-amber-600'
-                )}
-              >
-                {side2Label}
-              </button>
-            </Form>
+            <button
+              type="button"
+              onClick={() => setPendingBetSide(1)}
+              className={buttonClassName(betButtonVariant(1), 'lg', true)}
+            >
+              {side1Label}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPendingBetSide(2)}
+              className={buttonClassName(betButtonVariant(2), 'lg', true)}
+            >
+              {side2Label}
+            </button>
           </div>
+          <ConfirmDialog
+            open={pendingBetSide !== null}
+            title={userBet ? 'Alterar palpite?' : 'Confirmar palpite?'}
+            description={
+              pendingBetSide === null
+                ? ''
+                : `Palpite em ${sideLabelFor(pendingBetSide, side1Label, side2Label)}. Você pode trocar enquanto os palpites estiverem abertos.`
+            }
+            confirmLabel={userBet ? 'Alterar palpite' : 'Confirmar palpite'}
+            confirmVariant="success"
+            onConfirm={confirmBet}
+            onCancel={() => setPendingBetSide(null)}
+          />
         </Card>
       )}
 
@@ -299,19 +326,19 @@ export default function MatchShow({
         </p>
       )}
 
-      {canManageMatch &&
-        (match.status === 'em_andamento' || (match.status === 'palpites_abertos' && skipsBets)) && (
-          <MatchFinalizeCard matchId={match.id} side1Label={side1Label} side2Label={side2Label} />
-        )}
-
-      {canManageMatch && (
-        <MatchManageCard
-          matchId={match.id}
-          status={match.status}
-          betsPossible={betsPossible}
-          manageWindowOpen={match.manageWindowOpen}
-          manageWindowExpiresAt={match.manageWindowExpiresAt}
-        />
+      {showAdminSection && (
+        <MatchAdminSection defaultOpen={showFinalizeCard}>
+          {showFinalizeCard && (
+            <MatchFinalizeCard matchId={match.id} side1Label={side1Label} side2Label={side2Label} />
+          )}
+          <MatchManageCard
+            matchId={match.id}
+            status={match.status}
+            betsPossible={betsPossible}
+            manageWindowOpen={match.manageWindowOpen}
+            manageWindowExpiresAt={match.manageWindowExpiresAt}
+          />
+        </MatchAdminSection>
       )}
 
       <div className="space-y-6">
