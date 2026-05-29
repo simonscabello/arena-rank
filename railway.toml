@@ -4,6 +4,7 @@ buildCommand = "npm install && npm run build"
 buildEnvironment = "V3"
 
 [deploy]
+healthcheckPath = "/health"
 runtime = "V2"
 numReplicas = 1
 preDeployCommand = "cd build && npm ci --omit=dev && node ace migration:run --force"

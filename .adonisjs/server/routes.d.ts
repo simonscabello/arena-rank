@@ -4,6 +4,7 @@ type ParamValue = string | number | bigint | boolean
 
 export type ScannedRoutes = {
   ALL: {
+    'health': { paramsTuple?: []; params?: {} }
     'home': { paramsTuple?: []; params?: {} }
     'avatars.show': { paramsTuple: [ParamValue]; params: {'file': ParamValue} }
     'groups.invite': { paramsTuple: [ParamValue]; params: {'code': ParamValue} }
@@ -38,6 +39,7 @@ export type ScannedRoutes = {
     'guest_invites.member': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'inviteId': ParamValue} }
   }
   GET: {
+    'health': { paramsTuple?: []; params?: {} }
     'home': { paramsTuple?: []; params?: {} }
     'avatars.show': { paramsTuple: [ParamValue]; params: {'file': ParamValue} }
     'groups.invite': { paramsTuple: [ParamValue]; params: {'code': ParamValue} }
@@ -55,6 +57,7 @@ export type ScannedRoutes = {
     'guest_invites.member': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'inviteId': ParamValue} }
   }
   HEAD: {
+    'health': { paramsTuple?: []; params?: {} }
     'home': { paramsTuple?: []; params?: {} }
     'avatars.show': { paramsTuple: [ParamValue]; params: {'file': ParamValue} }
     'groups.invite': { paramsTuple: [ParamValue]; params: {'code': ParamValue} }

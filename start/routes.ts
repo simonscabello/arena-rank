@@ -11,6 +11,8 @@ import { middleware } from '#start/kernel'
 import { controllers } from '#generated/controllers'
 import router from '@adonisjs/core/services/router'
 
+router.get('/health', ({ response }) => response.ok({ status: 'ok' })).as('health')
+
 router.get('/', [controllers.Home, 'show']).as('home')
 
 router.get('uploads/avatars/:file', [controllers.Avatars, 'show']).as('avatars.show')
