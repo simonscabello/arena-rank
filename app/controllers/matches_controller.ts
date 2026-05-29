@@ -12,6 +12,7 @@ import {
 } from '#helpers/match_manage_window'
 import { realPlayerUserIds, serializeMatchPlayer } from '#helpers/match_players'
 import { validateAndResolveMatchPlayers } from '#helpers/match_player_validation'
+import { buildMatchShareText } from '#helpers/match_share'
 import {
   formatMatchScore,
   inferWinnerSideFromSets,
@@ -21,6 +22,7 @@ import {
   validateSets,
   type MatchScore,
 } from '#helpers/match_score'
+import { isUniqueConstraintError } from '#helpers/db_errors'
 import { creditBetReward } from '#helpers/wallet'
 import {
   getBetParticipation,
@@ -139,18 +141,29 @@ export default class MatchesController {
     const userBet = match.bets.find((b) => b.userId === user.id)
     const canManageMatch = isMatchCreator(match, user.id)
     const betsRevealed = match.status !== 'palpites_abertos' || !betsPossible
+    const parsedScore = parseMatchScore(match.score)
 
     return inertia.render('matches/show', {
       match: {
         id: match.id,
         status: match.status,
         winnerSide: match.winnerSide,
-        score: parseMatchScore(match.score),
-        scoreLabel: formatMatchScore(parseMatchScore(match.score)),
+        score: parsedScore,
+        scoreLabel: formatMatchScore(parsedScore),
         arenaName: match.arena.name,
         groupId: match.groupId,
         manageWindowOpen: isManageWindowOpen(match.statusChangedAt),
         manageWindowExpiresAt: manageWindowExpiresAt(match.statusChangedAt).toISO(),
+        shareText:
+          match.status === 'finalizada' && match.winnerSide
+            ? buildMatchShareText({
+                score: parsedScore,
+                winnerSide: match.winnerSide,
+                players: match.players,
+                bets: match.bets,
+                skipsBets,
+              })
+            : null,
       },
       players: match.players.map((player) => serializeMatchPlayer(player)),
       bets: betsRevealed
@@ -195,28 +208,39 @@ export default class MatchesController {
 
     const { predictedSide } = await request.validateUsing(placeBetValidator)
 
-    const existing = await Bet.query().where('match_id', match.id).where('user_id', user.id).first()
-    if (existing) {
-      if (existing.predictedSide === predictedSide) {
-        session.flash('success', 'Palpite mantido')
+    let existing = await Bet.query().where('match_id', match.id).where('user_id', user.id).first()
+
+    if (!existing) {
+      try {
+        await Bet.create({
+          matchId: match.id,
+          userId: user.id,
+          predictedSide,
+        })
+        session.flash('success', 'Palpite registrado')
         response.redirect().back()
         return
-      }
+      } catch (error) {
+        if (!isUniqueConstraintError(error)) {
+          throw error
+        }
 
-      existing.predictedSide = predictedSide
-      await existing.save()
-      session.flash('success', 'Palpite atualizado')
+        existing = await Bet.query()
+          .where('match_id', match.id)
+          .where('user_id', user.id)
+          .firstOrFail()
+      }
+    }
+
+    if (existing.predictedSide === predictedSide) {
+      session.flash('success', 'Palpite mantido')
       response.redirect().back()
       return
     }
 
-    await Bet.create({
-      matchId: match.id,
-      userId: user.id,
-      predictedSide,
-    })
-
-    session.flash('success', 'Palpite registrado')
+    existing.predictedSide = predictedSide
+    await existing.save()
+    session.flash('success', 'Palpite atualizado')
     response.redirect().back()
   }
 

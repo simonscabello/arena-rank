@@ -82,7 +82,17 @@ export async function debitPurchase(
   amount: number,
   trx: TransactionClientContract
 ) {
-  const user = await User.query({ client: trx }).where('id', userId).firstOrFail()
+  const existing = await trx
+    .from('wallet_transactions')
+    .where('user_id', userId)
+    .where('type', 'shop_purchase')
+    .where('reference_type', 'purchase')
+    .where('reference_id', purchaseId)
+    .first()
+
+  if (existing) return
+
+  const user = await User.query({ client: trx }).where('id', userId).forUpdate().firstOrFail()
 
   if (user.shopBalance < amount) {
     throw new Error('Saldo insuficiente')

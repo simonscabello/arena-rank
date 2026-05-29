@@ -1,3 +1,4 @@
+import type { MatchPlayerType } from '#enums/match_player_type'
 import type MatchPlayer from '#models/match_player'
 import type User from '#models/user'
 import env from '#start/env'
@@ -33,6 +34,21 @@ function displayPerson(person: {
   if (person.nickname) return person.nickname
   if (person.fullName) return person.fullName
   return person.email.split('@')[0]
+}
+
+export function resolvePlayerType(player: {
+  userId: number | null
+  guestInviteId?: number | null
+}): MatchPlayerType {
+  if (player.userId !== null && player.userId !== undefined) {
+    return 'member'
+  }
+
+  if (player.guestInviteId) {
+    return 'guest_invite'
+  }
+
+  return 'guest_name'
 }
 
 export function playerDisplayName(player: MatchPlayer) {
@@ -81,7 +97,7 @@ export function buildGuestInviteUrl(token: string) {
 }
 
 export function serializeMatchPlayer(player: MatchPlayer) {
-  const isDummy = player.userId === null
+  const playerType = resolvePlayerType(player)
   const name = playerDisplayName(player)
   const guestInvite = player.guestInvite
   const invitePending = Boolean(guestInvite && !guestInvite.claimedUserId)
@@ -91,15 +107,17 @@ export function serializeMatchPlayer(player: MatchPlayer) {
     userId: player.userId,
     side: player.side,
     displayName: name,
-    isDummy,
+    playerType,
     initials: playerInitials(player),
     avatarUrl: player.user?.avatarUrl ?? null,
     funLabel: player.user?.funLabel ?? null,
     email: player.user?.email ?? '',
     fullName: player.user?.fullName ?? null,
     nickname: player.user?.nickname ?? null,
-    claimStatus: isDummy && invitePending ? ('pending' as const) : ('claimed' as const),
-    guestInviteId: isDummy && invitePending && guestInvite ? guestInvite.id : null,
+    claimStatus:
+      playerType === 'guest_invite' && invitePending ? ('pending' as const) : ('claimed' as const),
+    guestInviteId:
+      playerType === 'guest_invite' && invitePending && guestInvite ? guestInvite.id : null,
   }
 }
 

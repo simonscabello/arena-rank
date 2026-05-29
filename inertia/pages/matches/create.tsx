@@ -28,19 +28,51 @@ type Props = {
 
 function createInitialSlots(): Slot[] {
   return [
-    { slotIndex: 0, side: 1, userId: null, displayName: null, guestInviteId: null, guestInviteUrl: null, isDummy: false },
-    { slotIndex: 1, side: 1, userId: null, displayName: null, guestInviteId: null, guestInviteUrl: null, isDummy: false },
-    { slotIndex: 2, side: 2, userId: null, displayName: null, guestInviteId: null, guestInviteUrl: null, isDummy: false },
-    { slotIndex: 3, side: 2, userId: null, displayName: null, guestInviteId: null, guestInviteUrl: null, isDummy: false },
+    {
+      slotIndex: 0,
+      side: 1,
+      userId: null,
+      displayName: null,
+      guestInviteId: null,
+      guestInviteUrl: null,
+      playerType: 'member',
+    },
+    {
+      slotIndex: 1,
+      side: 1,
+      userId: null,
+      displayName: null,
+      guestInviteId: null,
+      guestInviteUrl: null,
+      playerType: 'member',
+    },
+    {
+      slotIndex: 2,
+      side: 2,
+      userId: null,
+      displayName: null,
+      guestInviteId: null,
+      guestInviteUrl: null,
+      playerType: 'member',
+    },
+    {
+      slotIndex: 3,
+      side: 2,
+      userId: null,
+      displayName: null,
+      guestInviteId: null,
+      guestInviteUrl: null,
+      playerType: 'member',
+    },
   ]
 }
 
 function isSlotFilled(slot: Slot) {
-  if (slot.isDummy) {
-    return (slot.displayName?.trim().length ?? 0) >= 2 || slot.guestInviteId !== null
+  if (slot.playerType === 'member') {
+    return slot.userId !== null
   }
 
-  return slot.userId !== null
+  return (slot.displayName?.trim().length ?? 0) >= 2 || slot.guestInviteId !== null
 }
 
 export default function MatchCreate({
@@ -67,10 +99,11 @@ export default function MatchCreate({
     const players = slots
       .filter(isSlotFilled)
       .map((slot) => ({
-        userId: slot.isDummy ? undefined : slot.userId ?? undefined,
+        userId: slot.playerType === 'member' ? slot.userId ?? undefined : undefined,
         displayName:
-          slot.isDummy && !slot.guestInviteId ? slot.displayName?.trim() || undefined : undefined,
-        guestInviteId: slot.isDummy && slot.guestInviteId ? slot.guestInviteId : undefined,
+          slot.playerType === 'guest_name' ? slot.displayName?.trim() || undefined : undefined,
+        guestInviteId:
+          slot.playerType === 'guest_invite' ? slot.guestInviteId ?? undefined : undefined,
         side: slot.side,
       }))
 

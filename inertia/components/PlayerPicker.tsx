@@ -1,4 +1,5 @@
 import { cn, displayName, initialsFromName } from '~/lib/match'
+import type { PlayerType } from '~/lib/player_type'
 import Avatar from '~/components/Avatar'
 import Input from '~/components/Input'
 
@@ -23,7 +24,7 @@ export type Slot = {
   displayName: string | null
   guestInviteId: number | null
   guestInviteUrl: string | null
-  isDummy: boolean
+  playerType: PlayerType
 }
 
 type Props = {
@@ -64,7 +65,7 @@ function SlotPicker({
 
   function selectMember(userId: number | null) {
     onChange({
-      isDummy: false,
+      playerType: 'member',
       userId,
       displayName: null,
       guestInviteId: null,
@@ -72,9 +73,9 @@ function SlotPicker({
     })
   }
 
-  function enableDummyMode() {
+  function enableGuestMode() {
     onChange({
-      isDummy: true,
+      playerType: 'guest_name',
       userId: null,
       displayName: slot.displayName ?? '',
       guestInviteId: null,
@@ -84,7 +85,7 @@ function SlotPicker({
 
   function selectPendingInvite(invite: PendingGuestInvite) {
     onChange({
-      isDummy: true,
+      playerType: 'guest_invite',
       userId: null,
       displayName: invite.displayName,
       guestInviteId: invite.id,
@@ -92,7 +93,7 @@ function SlotPicker({
     })
   }
 
-  if (slot.isDummy) {
+  if (slot.playerType !== 'member') {
     const initials = slot.displayName ? initialsFromName(slot.displayName) : '?'
 
     return (
@@ -108,7 +109,7 @@ function SlotPicker({
           </button>
         </div>
 
-        {slot.guestInviteId ? (
+        {slot.playerType === 'guest_invite' && slot.guestInviteId ? (
           <div className="mb-3 rounded-xl border border-brand-200 bg-brand-50/40 px-3 py-2">
             <p className="text-sm font-medium text-stone-800">{slot.displayName}</p>
             <p className="text-xs text-stone-500">Convite pendente reutilizado</p>
@@ -179,7 +180,7 @@ function SlotPicker({
         <p className="text-xs font-medium text-stone-500">{label}</p>
         <button
           type="button"
-          onClick={enableDummyMode}
+          onClick={enableGuestMode}
           className="text-xs font-medium text-brand-600 hover:underline"
         >
           Convidado
@@ -233,7 +234,7 @@ export default function PlayerPicker({
   )
   const usedDisplayNames = new Set(
     slots
-      .filter((slot) => slot.isDummy && slot.displayName)
+      .filter((slot) => slot.playerType !== 'member' && slot.displayName)
       .map((slot) => slot.displayName!.trim().toLowerCase())
   )
 

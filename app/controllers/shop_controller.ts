@@ -182,26 +182,17 @@ export default class ShopController {
       return
     }
 
-    const alreadyOwned = await UserPurchase.query()
-      .where('user_id', user.id)
-      .where('shop_item_id', item.id)
-      .first()
-
-    if (alreadyOwned) {
-      session.flash('error', 'Você já possui este item')
-      response.redirect().back()
-      return
-    }
-
-    await user.refresh()
-    if (user.shopBalance < item.price) {
-      session.flash('error', 'Saldo insuficiente')
-      response.redirect().back()
-      return
-    }
-
     try {
       await db.transaction(async (trx) => {
+        const alreadyOwned = await UserPurchase.query({ client: trx })
+          .where('user_id', user.id)
+          .where('shop_item_id', item.id)
+          .first()
+
+        if (alreadyOwned) {
+          throw new Error('ALREADY_OWNED')
+        }
+
         const purchase = new UserPurchase()
         purchase.useTransaction(trx)
         purchase.userId = user.id
@@ -234,7 +225,13 @@ export default class ShopController {
           await applyEquip(freshUser, item, undefined, trx)
         }
       })
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === 'ALREADY_OWNED') {
+        session.flash('error', 'Você já possui este item')
+        response.redirect().back()
+        return
+      }
+
       session.flash('error', 'Saldo insuficiente')
       response.redirect().back()
       return

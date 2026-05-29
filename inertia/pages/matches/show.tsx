@@ -9,17 +9,19 @@ import Card from '~/components/Card'
 import EmptyState from '~/components/EmptyState'
 import MatchManageCard from '~/components/MatchManageCard'
 import PageHeader from '~/components/PageHeader'
+import ShareMatchResult from '~/components/ShareMatchResult'
 import RankingList, { type RankingEntry } from '~/components/RankingList'
 import TeamCard from '~/components/TeamCard'
 import { buttonClassName } from '~/lib/button_styles'
 import { cn, displayName, inferWinnerSideFromSets, teamLabel } from '~/lib/match'
+import type { PlayerType } from '~/lib/player_type'
 
 type Player = {
   id: number
   userId: number | null
   side: number
   displayName: string
-  isDummy: boolean
+  playerType: PlayerType
   initials: string
   avatarUrl?: string | null
   funLabel?: string | null
@@ -67,6 +69,7 @@ type Props = {
     groupId: number
     manageWindowOpen: boolean
     manageWindowExpiresAt: string
+    shareText: string | null
   }
   players: Player[]
   bets: Bet[]
@@ -345,6 +348,12 @@ export default function MatchShow({
           scoreLabel={match.scoreLabel}
         />
       </Card>
+
+      {match.status === 'finalizada' && match.shareText && (
+        <div className="mb-6">
+          <ShareMatchResult shareText={match.shareText} />
+        </div>
+      )}
 
       {skipsBets && match.status !== 'finalizada' && (
         <p className="mb-6 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700">

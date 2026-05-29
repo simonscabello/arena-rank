@@ -1,12 +1,14 @@
 import { Link } from '@adonisjs/inertia/react'
 import { cn, teamLabel } from '~/lib/match'
+import type { PlayerType } from '~/lib/player_type'
+import { isGuestPlayerType } from '~/lib/player_type'
 import Avatar from '~/components/Avatar'
 
 type Player = {
   id: number
   userId: number | null
   displayName: string
-  isDummy: boolean
+  playerType: PlayerType
   initials: string
   avatarUrl?: string | null
   funLabel?: string | null
@@ -45,7 +47,9 @@ export default function TeamCard({ groupId, side, players, isWinner }: Props) {
             <div className="flex items-center gap-2">
               <Avatar initials={player.initials} src={player.avatarUrl} size="sm" />
               <span className="min-w-0 flex-1">
-                {player.isDummy && player.claimStatus === 'pending' && player.guestInviteId ? (
+                {player.playerType === 'guest_invite' &&
+                player.claimStatus === 'pending' &&
+                player.guestInviteId ? (
                   <Link
                     route="guest_invites.member"
                     routeParams={{ groupId, inviteId: player.guestInviteId }}
@@ -62,7 +66,7 @@ export default function TeamCard({ groupId, side, players, isWinner }: Props) {
                   <span className="block truncate text-xs italic text-stone-500">{player.funLabel}</span>
                 )}
               </span>
-              {player.isDummy && (
+              {isGuestPlayerType(player.playerType) && (
                 <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">
                   Convidado
                 </span>

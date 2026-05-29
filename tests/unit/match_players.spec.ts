@@ -2,6 +2,7 @@ import {
   compactPlayerName,
   formatMatchPlayersLabel,
   playerDisplayName,
+  resolvePlayerType,
 } from '#helpers/match_players'
 import type MatchPlayer from '#models/match_player'
 import { test } from '@japa/runner'
@@ -61,6 +62,12 @@ test.group('match_players', () => {
     ]
 
     assert.equal(formatMatchPlayersLabel(players), 'Simon & Paula vs Jennifer & Maria')
+  })
+
+  test('resolvePlayerType distinguishes member, guest invite and guest name', ({ assert }) => {
+    assert.equal(resolvePlayerType({ userId: 1, guestInviteId: null }), 'member')
+    assert.equal(resolvePlayerType({ userId: null, guestInviteId: 5 }), 'guest_invite')
+    assert.equal(resolvePlayerType({ userId: null, guestInviteId: null }), 'guest_name')
   })
 
   test('playerDisplayName prefers nickname over full name', ({ assert }) => {
