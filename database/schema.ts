@@ -23,14 +23,7 @@ export class ArenaSchema extends BaseModel {
 }
 
 export class BetSchema extends BaseModel {
-  static $columns = [
-    'createdAt',
-    'id',
-    'matchId',
-    'pointsAwarded',
-    'predictedSide',
-    'userId',
-  ] as const
+  static $columns = ['createdAt', 'id', 'matchId', 'pointsAwarded', 'predictedSide', 'userId'] as const
   $columns = BetSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -77,17 +70,7 @@ export class GroupSchema extends BaseModel {
 }
 
 export class GuestPlayerInviteSchema extends BaseModel {
-  static $columns = [
-    'claimedAt',
-    'claimedUserId',
-    'createdAt',
-    'createdByUserId',
-    'displayName',
-    'groupId',
-    'id',
-    'token',
-    'updatedAt',
-  ] as const
+  static $columns = ['claimedAt', 'claimedUserId', 'createdAt', 'createdByUserId', 'displayName', 'groupId', 'id', 'token', 'updatedAt'] as const
   $columns = GuestPlayerInviteSchema.$columns
   @column.dateTime()
   declare claimedAt: DateTime | null
@@ -127,18 +110,7 @@ export class MatchPlayerSchema extends BaseModel {
 }
 
 export class MatchSchema extends BaseModel {
-  static $columns = [
-    'arenaId',
-    'createdAt',
-    'createdByUserId',
-    'groupId',
-    'id',
-    'score',
-    'status',
-    'statusChangedAt',
-    'updatedAt',
-    'winnerSide',
-  ] as const
+  static $columns = ['arenaId', 'createdAt', 'createdByUserId', 'groupId', 'id', 'score', 'status', 'statusChangedAt', 'updatedAt', 'winnerSide'] as const
   $columns = MatchSchema.$columns
   @column()
   declare arenaId: number
@@ -163,18 +135,7 @@ export class MatchSchema extends BaseModel {
 }
 
 export class ShopItemSchema extends BaseModel {
-  static $columns = [
-    'active',
-    'createdAt',
-    'description',
-    'id',
-    'itemType',
-    'name',
-    'payload',
-    'price',
-    'slug',
-    'sortOrder',
-  ] as const
+  static $columns = ['active', 'createdAt', 'description', 'id', 'itemType', 'name', 'payload', 'price', 'slug', 'sortOrder'] as const
   $columns = ShopItemSchema.$columns
   @column()
   declare active: boolean
@@ -229,21 +190,7 @@ export class UserPurchaseSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = [
-    'avatarPath',
-    'courtSide',
-    'createdAt',
-    'dominantHand',
-    'email',
-    'fullName',
-    'funLabel',
-    'id',
-    'nickname',
-    'password',
-    'shopBalance',
-    'skillLevel',
-    'updatedAt',
-  ] as const
+  static $columns = ['avatarPath', 'courtSide', 'createdAt', 'dominantHand', 'email', 'fullName', 'funLabel', 'id', 'nickname', 'password', 'shopBalance', 'skillLevel', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column()
   declare avatarPath: string | null
@@ -274,15 +221,7 @@ export class UserSchema extends BaseModel {
 }
 
 export class WalletTransactionSchema extends BaseModel {
-  static $columns = [
-    'amount',
-    'createdAt',
-    'id',
-    'referenceId',
-    'referenceType',
-    'type',
-    'userId',
-  ] as const
+  static $columns = ['amount', 'createdAt', 'id', 'referenceId', 'referenceType', 'type', 'userId'] as const
   $columns = WalletTransactionSchema.$columns
   @column()
   declare amount: number
