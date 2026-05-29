@@ -65,38 +65,41 @@ export function setsHavePartialInput(input: SetInput[] | undefined): boolean {
   return false
 }
 
+export function inferWinnerSideFromSets(sets: MatchSetScore[]): 1 | 2 | null {
+  let side1Sets = 0
+  let side2Sets = 0
+
+  for (const set of sets) {
+    if (set.side1 > set.side2) side1Sets++
+    else if (set.side2 > set.side1) side2Sets++
+  }
+
+  if (side1Sets > side2Sets) return 1
+  if (side2Sets > side1Sets) return 2
+  return null
+}
+
 export function validateSets(
-  sets: MatchSetScore[] | null,
-  winnerSide?: number
+  sets: MatchSetScore[] | null
 ): { ok: true } | { ok: false; message: string } {
-  if (!sets) return { ok: true }
+  if (!sets) {
+    return { ok: false, message: 'Informe o placar de pelo menos um set' }
+  }
 
   if (sets.length < 1 || sets.length > 3) {
     return { ok: false, message: 'Informe de 1 a 3 sets completos' }
   }
 
-  let side1Sets = 0
-  let side2Sets = 0
-
   for (const set of sets) {
     if (set.side1 === set.side2) {
       return { ok: false, message: 'Cada set precisa ter um vencedor (placares diferentes)' }
     }
-    if (set.side1 > set.side2) side1Sets++
-    else side2Sets++
   }
 
-  if (winnerSide === 1 && side1Sets <= side2Sets) {
+  if (inferWinnerSideFromSets(sets) === null) {
     return {
       ok: false,
-      message: 'O placar não confere com a dupla vencedora informada',
-    }
-  }
-
-  if (winnerSide === 2 && side2Sets <= side1Sets) {
-    return {
-      ok: false,
-      message: 'O placar não confere com a dupla vencedora informada',
+      message: 'O placar está empatado — adicione mais sets ou ajuste os placares',
     }
   }
 

@@ -14,6 +14,7 @@ import { realPlayerUserIds, serializeMatchPlayer } from '#helpers/match_players'
 import { validateAndResolveMatchPlayers } from '#helpers/match_player_validation'
 import {
   formatMatchScore,
+  inferWinnerSideFromSets,
   normalizeSets,
   parseMatchScore,
   setsHavePartialInput,
@@ -137,6 +138,7 @@ export default class MatchesController {
     const isPlayer = await isMatchPlayer(match.id, user.id)
     const userBet = match.bets.find((b) => b.userId === user.id)
     const canManageMatch = isMatchCreator(match, user.id)
+    const betsRevealed = match.status !== 'palpites_abertos' || !betsPossible
 
     return inertia.render('matches/show', {
       match: {
@@ -151,15 +153,17 @@ export default class MatchesController {
         manageWindowExpiresAt: manageWindowExpiresAt(match.statusChangedAt).toISO(),
       },
       players: match.players.map((player) => serializeMatchPlayer(player)),
-      bets: match.bets.map((b) => ({
-        userId: b.userId,
-        predictedSide: b.predictedSide,
-        pointsAwarded: b.pointsAwarded,
-        fullName: b.user.fullName,
-        email: b.user.email,
-        nickname: b.user.nickname,
-        funLabel: b.user.funLabel,
-      })),
+      bets: betsRevealed
+        ? match.bets.map((b) => ({
+            userId: b.userId,
+            predictedSide: b.predictedSide,
+            pointsAwarded: b.pointsAwarded,
+            fullName: b.user.fullName,
+            email: b.user.email,
+            nickname: b.user.nickname,
+            funLabel: b.user.funLabel,
+          }))
+        : [],
       ranking,
       rankContext,
       betParticipation,
@@ -263,29 +267,34 @@ export default class MatchesController {
     }
 
     const sets = normalizeSets(payload.sets)
-    const scoreValidation = validateSets(sets, payload.winnerSide)
+    const scoreValidation = validateSets(sets)
     if (!scoreValidation.ok) {
       session.flash('error', scoreValidation.message)
       response.redirect().back()
       return
     }
 
-    const score: MatchScore | null = sets ? { sets } : null
+    const winnerSide = inferWinnerSideFromSets(sets!)
+    if (winnerSide === null) {
+      session.flash('error', 'O placar está empatado — adicione mais sets ou ajuste os placares')
+      response.redirect().back()
+      return
+    }
+
+    const score: MatchScore = { sets: sets! }
 
     await db.transaction(async (trx) => {
       match.useTransaction(trx)
       match.status = 'finalizada'
-      match.winnerSide = payload.winnerSide
-      if (score) {
-        match.score = score
-      }
+      match.winnerSide = winnerSide
+      match.score = score
       markStatusChanged(match)
       await match.save()
 
       const bets = await Bet.query({ client: trx }).where('match_id', match.id)
       for (const bet of bets) {
         bet.useTransaction(trx)
-        bet.pointsAwarded = bet.predictedSide === payload.winnerSide ? POINTS_CORRECT : 0
+        bet.pointsAwarded = bet.predictedSide === winnerSide ? POINTS_CORRECT : 0
         await bet.save()
         if (bet.pointsAwarded > 0) {
           await creditBetReward(bet.userId, bet.id, bet.pointsAwarded, trx)

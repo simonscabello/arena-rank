@@ -1,12 +1,14 @@
 import { generateInviteCode, PENDING_INVITE_SESSION_KEY } from '#helpers/group_access'
+import GameMatch from '#models/game_match'
 import Group from '#models/group'
 import GroupMember from '#models/group_member'
 import User from '#models/user'
 import testUtils from '@adonisjs/core/services/test_utils'
+import { inertiaPropsFromHtml } from '#tests/helpers/inertia_page'
 import { test } from '@japa/runner'
 
 test.group('Groups', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().wrapInGlobalTransaction())
 
   async function createUser(email: string) {
     return User.create({
@@ -99,5 +101,67 @@ test.group('Groups', (group) => {
     const response = await client.get('/convite/ZZZZZZ')
 
     response.assertStatus(404)
+  })
+
+  test('active matches list shows compact player names', async ({ client, assert }) => {
+    const organizer = await createUser('organizer@test.com')
+    const simon = await User.create({
+      email: 'simon@test.com',
+      password: 'password123',
+      fullName: 'Simon Scabello',
+    })
+    const paula = await User.create({
+      email: 'paula@test.com',
+      password: 'password123',
+      fullName: 'Paula Silva',
+    })
+    const jennifer = await User.create({
+      email: 'jennifer@test.com',
+      password: 'password123',
+      fullName: 'Jennifer Duarte',
+    })
+    const maria = await User.create({
+      email: 'maria@test.com',
+      password: 'password123',
+      fullName: 'Maria',
+    })
+
+    const inviteCode = generateInviteCode()
+    const play = await Group.create({ name: 'Play Partidas', inviteCode })
+    await GroupMember.create({ groupId: play.id, userId: organizer.id, role: 'organizador' })
+    for (const user of [simon, paula, jennifer, maria]) {
+      await GroupMember.create({ groupId: play.id, userId: user.id, role: 'membro' })
+    }
+
+    const createResponse = await client
+      .post(`/grupos/${play.id}/partidas`)
+      .loginAs(organizer)
+      .json({
+        arenaName: 'Arena Teste',
+        players: [
+          { userId: simon.id, side: 1 },
+          { userId: paula.id, side: 1 },
+          { userId: jennifer.id, side: 2 },
+          { userId: maria.id, side: 2 },
+        ],
+      })
+
+    createResponse.assertStatus(200)
+
+    const activeMatch = await GameMatch.query()
+      .where('group_id', play.id)
+      .whereIn('status', ['palpites_abertos', 'em_andamento'])
+      .first()
+    assert.isNotNull(activeMatch)
+
+    const response = await client.get(`/grupos/${play.id}`).loginAs(organizer)
+    response.assertStatus(200)
+
+    const props = inertiaPropsFromHtml<{ matches: { playersLabel: string; arenaName: string }[] }>(
+      response.text()
+    )
+    assert.lengthOf(props.matches, 1)
+    assert.equal(props.matches[0].playersLabel, 'Simon & Paula vs Jennifer & Maria')
+    assert.equal(props.matches[0].arenaName, 'Arena Teste')
   })
 })

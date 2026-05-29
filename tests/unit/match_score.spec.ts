@@ -1,5 +1,6 @@
 import {
   formatMatchScore,
+  inferWinnerSideFromSets,
   normalizeSets,
   setsHavePartialInput,
   validateSets,
@@ -26,13 +27,33 @@ test.group('match_score', () => {
     assert.isFalse(setsHavePartialInput([{ side1: 6, side2: 4 }]))
   })
 
-  test('validateSets requires winner to match set count', ({ assert }) => {
+  test('inferWinnerSideFromSets counts set wins', ({ assert }) => {
+    assert.equal(
+      inferWinnerSideFromSets([
+        { side1: 4, side2: 6 },
+        { side1: 3, side2: 6 },
+      ]),
+      2
+    )
+    assert.equal(inferWinnerSideFromSets([{ side1: 6, side2: 4 }]), 1)
+    assert.isNull(
+      inferWinnerSideFromSets([
+        { side1: 6, side2: 4 },
+        { side1: 4, side2: 6 },
+      ])
+    )
+  })
+
+  test('validateSets requires at least one set', ({ assert }) => {
+    assert.isFalse(validateSets(null).ok)
+  })
+
+  test('validateSets rejects tied match', ({ assert }) => {
     const sets = [
+      { side1: 6, side2: 4 },
       { side1: 4, side2: 6 },
-      { side1: 3, side2: 6 },
     ]
-    assert.isTrue(validateSets(sets, 2).ok)
-    assert.isFalse(validateSets(sets, 1).ok)
+    assert.isFalse(validateSets(sets).ok)
   })
 
   test('formatMatchScore joins sets', ({ assert }) => {

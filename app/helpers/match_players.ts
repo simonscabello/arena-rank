@@ -43,6 +43,26 @@ export function playerDisplayName(player: MatchPlayer) {
   return player.displayName ?? 'Convidado'
 }
 
+export function compactPlayerName(name: string) {
+  const trimmed = name.trim()
+  if (!trimmed.includes(' ')) {
+    return trimmed
+  }
+
+  return trimmed.split(/\s+/)[0]
+}
+
+function sidePlayerNames(players: MatchPlayer[], side: number) {
+  return players
+    .filter((player) => player.side === side)
+    .map((player) => compactPlayerName(playerDisplayName(player)))
+    .join(' & ')
+}
+
+export function formatMatchPlayersLabel(players: MatchPlayer[]) {
+  return `${sidePlayerNames(players, 1)} vs ${sidePlayerNames(players, 2)}`
+}
+
 export function playerInitials(player: MatchPlayer) {
   if (player.user) {
     return player.user.initials

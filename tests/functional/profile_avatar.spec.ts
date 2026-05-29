@@ -13,7 +13,7 @@ const PNG_1X1 = Buffer.from(
 )
 
 test.group('Profile avatar', (group) => {
-  group.each.setup(() => testUtils.db().truncate())
+  group.each.setup(() => testUtils.db().wrapInGlobalTransaction())
 
   async function createUser(email: string) {
     return User.create({

@@ -9,6 +9,7 @@ import {
   joinGroupByCode,
   PENDING_INVITE_SESSION_KEY,
 } from '#helpers/group_access'
+import { formatMatchPlayersLabel } from '#helpers/match_players'
 import { getGroupRanking } from '#helpers/ranking'
 import Arena from '#models/arena'
 import Group from '#models/group'
@@ -102,6 +103,7 @@ export default class GroupsController {
       .where('group_id', groupId)
       .whereIn('status', ['palpites_abertos', 'em_andamento'])
       .preload('arena')
+      .preload('players', (query) => query.preload('user').preload('guestInvite'))
       .orderBy('created_at', 'desc')
 
     const arenas = await Arena.query().orderBy('name', 'asc')
@@ -118,6 +120,7 @@ export default class GroupsController {
         id: m.id,
         status: m.status,
         arenaName: m.arena.name,
+        playersLabel: formatMatchPlayersLabel(m.players),
       })),
       arenas: arenas.map((a) => ({ id: a.id, name: a.name })),
       ranking,

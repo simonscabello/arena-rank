@@ -1,5 +1,5 @@
 import { Link } from '@adonisjs/inertia/react'
-import { cn } from '~/lib/match'
+import { cn, teamLabel } from '~/lib/match'
 import Avatar from '~/components/Avatar'
 
 type Player = {
@@ -36,7 +36,7 @@ export default function TeamCard({ groupId, side, players, isWinner }: Props) {
           side === 1 ? 'text-brand-700' : 'text-amber-800'
         )}
       >
-        Dupla {side}
+        {teamLabel(players)}
         {isWinner && <span className="ml-1 text-emerald-600">✓</span>}
       </p>
       <ul className="space-y-3">

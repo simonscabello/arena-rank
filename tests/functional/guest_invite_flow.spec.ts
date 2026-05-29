@@ -8,11 +8,12 @@ import GroupMember from '#models/group_member'
 import GuestPlayerInvite from '#models/guest_player_invite'
 import MatchPlayer from '#models/match_player'
 import User from '#models/user'
+import { finalizePayload } from '#tests/helpers/finalize_match'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
 
 test.group('Guest invite flow', (suite) => {
-  suite.each.setup(() => testUtils.db().truncate())
+  suite.each.setup(() => testUtils.db().wrapInGlobalTransaction())
 
   async function createUser(email: string, fullName?: string) {
     return User.create({
@@ -148,9 +149,9 @@ test.group('Guest invite flow', (suite) => {
     )
 
     await client.post(`/partidas/${matchId1}/iniciar`).loginAs(owner)
-    await client.post(`/partidas/${matchId1}/finalizar`).loginAs(owner).json({ winnerSide: 1 })
+    await client.post(`/partidas/${matchId1}/finalizar`).loginAs(owner).json(finalizePayload(1))
     await client.post(`/partidas/${matchId2}/iniciar`).loginAs(owner)
-    await client.post(`/partidas/${matchId2}/finalizar`).loginAs(owner).json({ winnerSide: 2 })
+    await client.post(`/partidas/${matchId2}/finalizar`).loginAs(owner).json(finalizePayload(2))
 
     const landing = await client.get(`/convite-jogador/${invite.token}`)
     landing.assertStatus(200)

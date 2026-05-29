@@ -14,6 +14,7 @@ type MatchItem = {
   id: number
   status: string
   arenaName: string
+  playersLabel: string
 }
 
 type Props = {
@@ -122,8 +123,9 @@ export default function GroupShow({
                     routeParams={{ id: match.id }}
                     className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-3 transition hover:border-brand-200 hover:bg-brand-50/50"
                   >
-                    <div>
-                      <p className="font-medium text-stone-900">{match.arenaName}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-stone-900">{match.playersLabel}</p>
+                      <p className="truncate text-sm text-stone-500">{match.arenaName}</p>
                       <div className="mt-1">
                         <Badge status={match.status} />
                       </div>

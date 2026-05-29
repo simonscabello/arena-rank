@@ -6,12 +6,14 @@ import GameMatch from '#models/game_match'
 import Group from '#models/group'
 import GroupMember from '#models/group_member'
 import User from '#models/user'
+import { finalizePayload } from '#tests/helpers/finalize_match'
+import { inertiaPropsFromHtml } from '#tests/helpers/inertia_page'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
 import { DateTime } from 'luxon'
 
 test.group('Match flow', (suite) => {
-  suite.each.setup(() => testUtils.db().truncate())
+  suite.each.setup(() => testUtils.db().wrapInGlobalTransaction())
 
   async function createUser(email: string) {
     return User.create({
@@ -109,10 +111,10 @@ test.group('Match flow', (suite) => {
     const ownerFinalize = await client
       .post(`/partidas/${matchId}/finalizar`)
       .loginAs(owner)
-      .json({ winnerSide: 1 })
+      .json(finalizePayload(1))
     ownerFinalize.assertStatus(403)
 
-    await client.post(`/partidas/${matchId}/finalizar`).loginAs(member).json({ winnerSide: 1 })
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(member).json(finalizePayload(1))
     await match.refresh()
     assert.equal(match.status, 'finalizada')
   })
@@ -172,6 +174,53 @@ test.group('Match flow', (suite) => {
     assert.equal(bets[0].predictedSide, 2)
   })
 
+  test('bets list hidden until match starts', async ({ client, assert }) => {
+    const { owner, member, player1, player2, player3, player4, group } =
+      await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, owner, group.id, [
+      { userId: player1.id, side: 1 },
+      { userId: player2.id, side: 1 },
+      { userId: player3.id, side: 2 },
+      { userId: player4.id, side: 2 },
+    ])
+
+    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
+
+    const openResponse = await client.get(`/partidas/${matchId}`).loginAs(owner)
+    openResponse.assertStatus(200)
+
+    const openProps = inertiaPropsFromHtml<{
+      match: { status: string }
+      bets: { userId: number; predictedSide: number }[]
+      userBet: { predictedSide: number } | null
+    }>(openResponse.text())
+
+    assert.equal(openProps.match.status, 'palpites_abertos')
+    assert.lengthOf(openProps.bets, 0)
+    assert.isNull(openProps.userBet)
+
+    const memberOpenResponse = await client.get(`/partidas/${matchId}`).loginAs(member)
+    const memberOpenProps = inertiaPropsFromHtml<{
+      bets: { userId: number; predictedSide: number }[]
+      userBet: { predictedSide: number } | null
+    }>(memberOpenResponse.text())
+
+    assert.lengthOf(memberOpenProps.bets, 0)
+    assert.equal(memberOpenProps.userBet?.predictedSide, 1)
+
+    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
+
+    const startedResponse = await client.get(`/partidas/${matchId}`).loginAs(owner)
+    const startedProps = inertiaPropsFromHtml<{
+      match: { status: string }
+      bets: { userId: number; predictedSide: number }[]
+    }>(startedResponse.text())
+
+    assert.equal(startedProps.match.status, 'em_andamento')
+    assert.isAtLeast(startedProps.bets.length, 1)
+    assert.equal(startedProps.bets.find((bet) => bet.userId === member.id)?.predictedSide, 1)
+  })
+
   test('four players only can register match without bets', async ({ client, assert }) => {
     const owner = await createUser('quadra@test.com')
     const p1 = await createUser('q1@test.com')
@@ -209,7 +258,7 @@ test.group('Match flow', (suite) => {
     const match = await GameMatch.findOrFail(matchId)
     assert.equal(match.status, 'em_andamento')
 
-    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json({ winnerSide: 1 })
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
 
     await match.refresh()
     assert.equal(match.status, 'finalizada')
@@ -231,7 +280,7 @@ test.group('Match flow', (suite) => {
 
     await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
     await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json({ winnerSide: 1 })
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
 
     const bet = await Bet.query()
       .where('match_id', matchId)
@@ -242,7 +291,7 @@ test.group('Match flow', (suite) => {
     const match = await GameMatch.findOrFail(matchId)
     assert.equal(match.status, 'finalizada')
     assert.equal(match.winnerSide, 1)
-    assert.isNull(match.score)
+    assert.deepEqual(match.score, { sets: [{ side1: 6, side2: 4 }] })
   })
 
   test('finalize with sets persists score', async ({ client, assert }) => {
@@ -259,7 +308,6 @@ test.group('Match flow', (suite) => {
       .post(`/partidas/${matchId}/finalizar`)
       .loginAs(owner)
       .json({
-        winnerSide: 1,
         sets: [
           { side1: 6, side2: 4 },
           { side1: 6, side2: 3 },
@@ -277,7 +325,7 @@ test.group('Match flow', (suite) => {
     })
   })
 
-  test('finalize rejects score inconsistent with winner', async ({ client, assert }) => {
+  test('finalize rejects tied sets', async ({ client, assert }) => {
     const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
     const matchId = await createMatchViaHttp(client, owner, group.id, [
       { userId: player1.id, side: 1 },
@@ -291,10 +339,9 @@ test.group('Match flow', (suite) => {
       .post(`/partidas/${matchId}/finalizar`)
       .loginAs(owner)
       .json({
-        winnerSide: 1,
         sets: [
+          { side1: 6, side2: 4 },
           { side1: 4, side2: 6 },
-          { side1: 3, side2: 6 },
         ],
       })
 
@@ -344,7 +391,7 @@ test.group('Match flow', (suite) => {
 
     await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
     await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json({ winnerSide: 1 })
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
 
     await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(owner)
 
@@ -373,10 +420,7 @@ test.group('Match flow', (suite) => {
     await client
       .post(`/partidas/${matchId}/finalizar`)
       .loginAs(owner)
-      .json({
-        winnerSide: 2,
-        sets: [{ side1: 4, side2: 6 }],
-      })
+      .json(finalizePayload(2, [{ side1: 4, side2: 6 }]))
 
     await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(owner)
 
@@ -420,7 +464,7 @@ test.group('Match flow', (suite) => {
 
     await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
     await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json({ winnerSide: 1 })
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
 
     await client.post(`/partidas/${matchId}/cancelar`).loginAs(owner)
 
@@ -456,7 +500,7 @@ test.group('Match flow', (suite) => {
     const reopen = await client.post(`/partidas/${matchId}/reabrir-palpites`).loginAs(member)
     reopen.assertStatus(403)
 
-    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json({ winnerSide: 1 })
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
 
     const undo = await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(member)
     undo.assertStatus(403)
