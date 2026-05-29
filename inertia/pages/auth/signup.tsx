@@ -1,5 +1,6 @@
 import { Form, Link } from '@adonisjs/inertia/react'
 import Input from '~/components/Input'
+import Logo from '~/components/Logo'
 import PasswordInput from '~/components/PasswordInput'
 import { buttonClassName } from '~/lib/button_styles'
 
@@ -7,6 +8,7 @@ export default function Signup() {
   return (
     <div className="mx-auto w-full max-w-sm py-4">
       <div className="mb-8 text-center">
+        <Logo className="mx-auto mb-4 h-16 w-16" />
         <h1 className="text-2xl font-bold text-stone-900">Cadastrar</h1>
         <p className="mt-2 text-sm text-stone-500">Crie sua conta para participar dos palpites</p>
       </div>

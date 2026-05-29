@@ -1,7 +1,8 @@
 import { Link } from '@adonisjs/inertia/react'
 import { usePage } from '@inertiajs/react'
-import { Trophy, Users } from 'lucide-react'
+import { Users } from 'lucide-react'
 import InstallPwaPrompt from '~/components/InstallPwaPrompt'
+import Logo from '~/components/Logo'
 import { buttonClassName } from '~/lib/button_styles'
 
 export default function Home() {
@@ -10,9 +11,7 @@ export default function Home() {
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col py-8">
       <div className="flex flex-col items-center text-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-lg shadow-brand-600/25">
-          <Trophy className="h-10 w-10 text-white" aria-hidden />
-        </div>
+        <Logo className="mb-5 h-36 w-36" />
         <h1 className="text-3xl font-bold tracking-tight text-stone-900">Palpiteiro</h1>
         <p className="mt-3 text-base leading-relaxed text-stone-600">
           O app onde amizade vale menos que posição no ranking. Seu grupo nunca mais terá uma
