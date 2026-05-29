@@ -10,21 +10,21 @@ type Props = {
 }
 
 const SIZE_PX = {
-  sm: 32,
-  md: 40,
-  lg: 48,
-  xl: 80,
+  'sm': 32,
+  'md': 40,
+  'lg': 48,
+  'xl': 80,
   '2xl': 112,
-  preview: 160,
+  'preview': 160,
 } as const
 
 const textSizeClasses = {
-  sm: 'text-xs',
-  md: 'text-sm',
-  lg: 'text-base',
-  xl: 'text-lg',
+  'sm': 'text-xs',
+  'md': 'text-sm',
+  'lg': 'text-base',
+  'xl': 'text-lg',
   '2xl': 'text-xl',
-  preview: 'text-2xl',
+  'preview': 'text-2xl',
 }
 
 const DEFAULT_PHOTO_INSET = 18

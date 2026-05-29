@@ -1,9 +1,9 @@
+import { appBaseUrl } from '#helpers/app_url'
 import { isOrganizer } from '#enums/group_role'
 import ForbiddenException from '#exceptions/forbidden_exception'
 import Group from '#models/group'
 import GroupMember from '#models/group_member'
 import type User from '#models/user'
-import env from '#start/env'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export const PENDING_INVITE_SESSION_KEY = 'pendingInviteCode'
@@ -58,8 +58,7 @@ export function generateInviteCode() {
 }
 
 export function buildInviteUrl(inviteCode: string) {
-  const base = env.get('APP_URL').replace(/\/$/, '')
-  return `${base}/convite/${encodeURIComponent(inviteCode.toUpperCase())}`
+  return `${appBaseUrl()}/convite/${encodeURIComponent(inviteCode.toUpperCase())}`
 }
 
 export async function findGroupByInviteCode(inviteCode: string) {

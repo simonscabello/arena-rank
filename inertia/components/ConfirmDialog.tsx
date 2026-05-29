@@ -69,12 +69,7 @@ export default function ConfirmDialog({
           <Button variant="secondary" fullWidth className="sm:w-auto" onClick={onCancel}>
             Voltar
           </Button>
-          <Button
-            variant={confirmVariant}
-            fullWidth
-            className="sm:w-auto"
-            onClick={onConfirm}
-          >
+          <Button variant={confirmVariant} fullWidth className="sm:w-auto" onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>

@@ -1,0 +1,31 @@
+---
+description: Prevent unnecessary dependencies
+alwaysApply: true
+---
+
+# Dependency Discipline
+
+Prefer existing project dependencies and native platform features.
+
+Before adding a new package:
+
+1. Check whether the functionality already exists in the project.
+2. Check whether an existing dependency already provides it.
+3. Check whether it can be implemented with Node.js built-in APIs.
+4. Evaluate the maintenance and security impact.
+
+Do not add dependencies for trivial functionality.
+
+Examples:
+
+* Do not add a package for simple string manipulation.
+* Do not add a package for simple date formatting if the project already has a date library.
+* Do not add utility libraries for functionality already available in modern JavaScript.
+
+When a new dependency is genuinely required:
+
+* Explain why.
+* Explain why existing solutions are insufficient.
+* Choose the smallest and most maintained option.
+
+Prefer fewer dependencies and a smaller attack surface.

@@ -27,28 +27,17 @@ export default class HistoryController {
     })
     const filters = normalizeFilters(validated)
     const filterOptions = await getHistoryFilterOptions(user.id)
-
-    if (filters.tab === 'bets') {
-      const { items, summary, pagination } = await getBetHistory(user.id, filters)
-
-      return inertia.render('history/show', {
-        filters,
-        filterOptions,
-        items,
-        summary,
-        pagination,
-        currentUserId: user.id,
-      })
-    }
-
-    const { items, summary, pagination } = await getMatchHistory(user.id, filters)
+    const history =
+      filters.tab === 'bets'
+        ? await getBetHistory(user.id, filters)
+        : await getMatchHistory(user.id, filters)
 
     return inertia.render('history/show', {
       filters,
       filterOptions,
-      items,
-      summary,
-      pagination,
+      items: history.items,
+      summary: history.summary,
+      pagination: history.pagination,
       currentUserId: user.id,
     })
   }

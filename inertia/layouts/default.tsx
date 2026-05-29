@@ -1,7 +1,7 @@
 import { Data } from '@generated/data'
 import { Form, Link } from '@adonisjs/inertia/react'
 import { usePage } from '@inertiajs/react'
-import { Home, History, ShoppingBag, UserCircle, Users, LogOut } from 'lucide-react'
+import { Home, ShoppingBag, UserCircle, Users, LogOut } from 'lucide-react'
 import { ReactElement, useEffect, useRef } from 'react'
 import { toast, Toaster } from 'sonner'
 import Avatar from '~/components/Avatar'

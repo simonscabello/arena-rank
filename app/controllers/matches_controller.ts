@@ -1,6 +1,7 @@
+import { scoreBetsForMatch } from '#helpers/match_bet_scoring'
+import { createMatchWithPlayers } from '#helpers/match_creation'
 import ForbiddenException from '#exceptions/forbidden_exception'
 import { assertGroupMember } from '#helpers/group_access'
-import { createGuestPlayerInvite } from '#helpers/guest_player_invite'
 import { assertMatchCreator, isMatchCreator } from '#helpers/match_access'
 import { canHaveBets } from '#helpers/match_bets'
 import { clearMatchResult } from '#helpers/match_lifecycle'
@@ -23,7 +24,6 @@ import {
   type MatchScore,
 } from '#helpers/match_score'
 import { isUniqueConstraintError } from '#helpers/db_errors'
-import { creditBetReward } from '#helpers/wallet'
 import {
   getBetParticipation,
   getGroupRanking,
@@ -31,16 +31,12 @@ import {
   getRankContext,
   isMatchPlayer,
 } from '#helpers/ranking'
-import Arena from '#models/arena'
 import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
 import MatchPlayer from '#models/match_player'
 import { createMatchValidator, finalizeMatchValidator, placeBetValidator } from '#validators/match'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
-import { DateTime } from 'luxon'
-
-const POINTS_CORRECT = 10
 
 export default class MatchesController {
   async store({ request, response, auth, session, params }: HttpContext) {
@@ -57,70 +53,30 @@ export default class MatchesController {
       return
     }
 
-    let arenaId = payload.arenaId
-    if (!arenaId && payload.arenaName) {
-      const arena = await Arena.firstOrCreate(
-        { name: payload.arenaName },
-        { city: payload.arenaCity ?? null }
-      )
-      if (payload.arenaCity && !arena.city) {
-        arena.city = payload.arenaCity
-        await arena.save()
-      }
-      arenaId = arena.id
-    }
-    if (!arenaId) {
-      session.flash('error', 'Informe uma arena')
-      response.redirect().back()
-      return
-    }
-
     const realUserIds = realPlayerUserIds(validation.resolved)
     const betsPossible = await canHaveBets(groupId, realUserIds)
     const skipBets = payload.skipBets === true || !betsPossible
     const initialStatus = skipBets ? 'em_andamento' : 'palpites_abertos'
 
-    const match = await db.transaction(async (trx) => {
-      const now = DateTime.now()
-      const created = await GameMatch.create(
-        {
-          groupId,
-          arenaId,
-          createdByUserId: user.id,
-          status: initialStatus,
-          statusChangedAt: now,
-        },
-        { client: trx }
-      )
+    const created = await createMatchWithPlayers(
+      groupId,
+      user,
+      payload,
+      validation.resolved,
+      initialStatus
+    )
 
-      for (const player of validation.resolved) {
-        let guestInviteId = player.guestInviteId
-
-        if (!player.userId && !guestInviteId && player.displayName) {
-          const invite = await createGuestPlayerInvite(groupId, player.displayName, user.id, trx)
-          guestInviteId = invite.id
-        }
-
-        await MatchPlayer.create(
-          {
-            matchId: created.id,
-            userId: player.userId,
-            displayName: player.userId ? null : player.displayName,
-            guestInviteId: player.userId ? null : guestInviteId,
-            side: player.side,
-          },
-          { client: trx }
-        )
-      }
-
-      return created
-    })
+    if (!created.ok) {
+      session.flash('error', created.error)
+      response.redirect().back()
+      return
+    }
 
     session.flash(
       'success',
       skipBets ? 'Partida criada — registre o resultado (sem palpites)' : 'Partida criada'
     )
-    response.redirect().toRoute('matches.show', { id: match.id })
+    response.redirect().toRoute('matches.show', { id: created.match.id })
   }
 
   async show({ inertia, auth, params }: HttpContext) {
@@ -148,12 +104,11 @@ export default class MatchesController {
         id: match.id,
         status: match.status,
         winnerSide: match.winnerSide,
-        score: parsedScore,
         scoreLabel: formatMatchScore(parsedScore),
         arenaName: match.arena.name,
         groupId: match.groupId,
         manageWindowOpen: isManageWindowOpen(match.statusChangedAt),
-        manageWindowExpiresAt: manageWindowExpiresAt(match.statusChangedAt).toISO(),
+        manageWindowExpiresAt: manageWindowExpiresAt(match.statusChangedAt).toISO() ?? '',
         shareText:
           match.status === 'finalizada' && match.winnerSide
             ? buildMatchShareText({
@@ -308,22 +263,7 @@ export default class MatchesController {
     const score: MatchScore = { sets: sets! }
 
     await db.transaction(async (trx) => {
-      match.useTransaction(trx)
-      match.status = 'finalizada'
-      match.winnerSide = winnerSide
-      match.score = score
-      markStatusChanged(match)
-      await match.save()
-
-      const bets = await Bet.query({ client: trx }).where('match_id', match.id)
-      for (const bet of bets) {
-        bet.useTransaction(trx)
-        bet.pointsAwarded = bet.predictedSide === winnerSide ? POINTS_CORRECT : 0
-        await bet.save()
-        if (bet.pointsAwarded > 0) {
-          await creditBetReward(bet.userId, bet.id, bet.pointsAwarded, trx)
-        }
-      }
+      await scoreBetsForMatch(match, winnerSide, score, trx)
     })
 
     session.flash('success', 'Partida finalizada')

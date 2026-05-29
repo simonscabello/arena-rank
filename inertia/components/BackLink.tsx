@@ -7,6 +7,9 @@ type RouteName =
   | 'groups.show'
   | 'groups.matches.create'
   | 'matches.show'
+  | 'profile.show'
+  | 'history.show'
+  | 'shop.index'
 
 type Props = {
   label: string

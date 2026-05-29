@@ -10,7 +10,10 @@ const logoSymbolRaw = join(publicDir, 'logo-symbol-raw.png')
 const logoSymbol = join(publicDir, 'logo-symbol.png')
 
 async function removeDarkBackground(input, output) {
-  const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  const { data, info } = await sharp(input)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
 
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i]

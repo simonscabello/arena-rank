@@ -59,8 +59,9 @@ function SlotPicker({
     usedDisplayNames.has(selectedName) &&
     !(
       slot.guestInviteId &&
-      pendingGuestInvites.find((invite) => invite.id === slot.guestInviteId)?.displayName.toLowerCase() ===
-        selectedName
+      pendingGuestInvites
+        .find((invite) => invite.id === slot.guestInviteId)
+        ?.displayName.toLowerCase() === selectedName
     )
 
   function selectMember(userId: number | null) {
@@ -169,7 +170,6 @@ function SlotPicker({
             </span>
           </div>
         )}
-
       </div>
     )
   }
@@ -220,12 +220,7 @@ function SlotPicker({
   )
 }
 
-export default function PlayerPicker({
-  members,
-  pendingGuestInvites,
-  slots,
-  onChange,
-}: Props) {
+export default function PlayerPicker({ members, pendingGuestInvites, slots, onChange }: Props) {
   const selectedUserIds = new Set(
     slots.map((slot) => slot.userId).filter((id): id is number => id !== null)
   )

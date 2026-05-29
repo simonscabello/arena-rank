@@ -1,0 +1,35 @@
+---
+description: Respect project architecture and separation of responsibilities
+alwaysApply: true
+---
+
+# Architecture Boundaries
+
+Follow the existing architecture of the project. Before implementing a feature, identify where similar functionality lives and follow the same pattern.
+
+## Controllers
+
+Controllers should receive requests, delegate work, and return responses. They should not contain business logic.
+
+## Helpers
+
+Helpers (`app/helpers`) should contain business rules and application logic. Prefer placing business logic in helpers rather than controllers.
+
+## Database Access
+
+Keep database access consistent with existing project conventions. Avoid placing database logic directly in controllers when the project already uses helpers, repositories or other abstractions.
+
+## Validation
+
+Reuse existing validation patterns. Do not duplicate validation logic across multiple layers.
+
+## Responsibility Separation
+
+Each layer should have a clear responsibility. Avoid:
+
+* Business logic in controllers
+* Validation spread across multiple places
+* Database access mixed with presentation logic
+* Large classes that handle multiple concerns
+
+When multiple valid implementations exist, choose the one most consistent with the current architecture. Consistency is more important than introducing a new pattern.

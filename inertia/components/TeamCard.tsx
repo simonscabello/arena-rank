@@ -63,7 +63,9 @@ export default function TeamCard({ groupId, side, players, isWinner }: Props) {
                   </span>
                 )}
                 {player.funLabel && (
-                  <span className="block truncate text-xs italic text-stone-500">{player.funLabel}</span>
+                  <span className="block truncate text-xs italic text-stone-500">
+                    {player.funLabel}
+                  </span>
                 )}
               </span>
               {isGuestPlayerType(player.playerType) && (

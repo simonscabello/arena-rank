@@ -1,3 +1,10 @@
+import {
+  joinTeammateForUser,
+  mapMatchOutcome,
+  partnerNameSelectColumns,
+  resolvePartnerName,
+} from '#helpers/match_partner_queries'
+import { displayPerson } from '#helpers/person_display'
 import { formatMatchScore, parseMatchScore } from '#helpers/match_score'
 import GroupMember from '#models/group_member'
 import db from '@adonisjs/lucid/services/db'
@@ -69,16 +76,6 @@ export type PaginatedResult<TItem, TSummary> = {
     total: number
     lastPage: number
   }
-}
-
-function displayPerson(person: {
-  fullName: string | null
-  email: string
-  nickname?: string | null
-}) {
-  if (person.nickname) return person.nickname
-  if (person.fullName) return person.fullName
-  return person.email.split('@')[0]
 }
 
 function pageNumber(filters: HistoryFilters) {
@@ -274,15 +271,8 @@ export async function getMatchHistory(
   const losses = Number(summaryRow?.losses ?? 0)
   const matchesPlayed = Number(summaryRow?.played ?? 0)
 
-  const listQuery = db
-    .from('match_players as mp')
-    .leftJoin('match_players as teammate', (join) => {
-      join
-        .on('teammate.match_id', 'mp.match_id')
-        .andOn('teammate.side', 'mp.side')
-        .andOnVal('teammate.user_id', '!=', userId)
-    })
-    .leftJoin('users as partner', 'teammate.user_id', 'partner.id')
+  const listQuery = db.from('match_players as mp')
+  joinTeammateForUser(listQuery, userId)
 
   applyMatchFilters(listQuery, filters, userId)
 
@@ -297,10 +287,7 @@ export async function getMatchHistory(
       'm.winner_side as winnerSide',
       'm.score as score',
       'm.created_at as playedAt',
-      'partner.full_name as partnerFullName',
-      'partner.email as partnerEmail',
-      'partner.nickname as partnerNickname',
-      'teammate.display_name as partnerDisplayName'
+      ...partnerNameSelectColumns()
     )
     .orderBy('m.created_at', 'desc')
     .offset(offset)
@@ -313,16 +300,8 @@ export async function getMatchHistory(
       groupName: row.groupName,
       arenaName: row.arenaName,
       city: row.city,
-      won: Number(row.side) === Number(row.winnerSide),
-      partnerName: row.partnerEmail
-        ? displayPerson({
-            fullName: row.partnerFullName,
-            email: row.partnerEmail,
-            nickname: row.partnerNickname,
-          })
-        : row.partnerDisplayName
-          ? String(row.partnerDisplayName)
-          : null,
+      won: mapMatchOutcome(row),
+      partnerName: resolvePartnerName(row),
       playedAt: String(row.playedAt),
       scoreLabel: formatMatchScore(parseMatchScore(row.score)),
     })),

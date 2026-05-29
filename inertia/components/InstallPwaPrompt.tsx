@@ -75,7 +75,11 @@ export default function InstallPwaPrompt() {
           </div>
         </div>
         <div className="mt-4 flex w-full flex-col gap-2">
-          <button type="button" onClick={handleInstall} className={buttonClassName('primary', 'md', true)}>
+          <button
+            type="button"
+            onClick={handleInstall}
+            className={buttonClassName('primary', 'md', true)}
+          >
             Instalar app
           </button>
           <button

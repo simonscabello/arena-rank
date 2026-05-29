@@ -96,16 +96,14 @@ export default function MatchCreate({
   }
 
   function submit() {
-    const players = slots
-      .filter(isSlotFilled)
-      .map((slot) => ({
-        userId: slot.playerType === 'member' ? slot.userId ?? undefined : undefined,
-        displayName:
-          slot.playerType === 'guest_name' ? slot.displayName?.trim() || undefined : undefined,
-        guestInviteId:
-          slot.playerType === 'guest_invite' ? slot.guestInviteId ?? undefined : undefined,
-        side: slot.side,
-      }))
+    const players = slots.filter(isSlotFilled).map((slot) => ({
+      userId: slot.playerType === 'member' ? (slot.userId ?? undefined) : undefined,
+      displayName:
+        slot.playerType === 'guest_name' ? slot.displayName?.trim() || undefined : undefined,
+      guestInviteId:
+        slot.playerType === 'guest_invite' ? (slot.guestInviteId ?? undefined) : undefined,
+      side: slot.side,
+    }))
 
     if (players.length !== 4) return
 
@@ -118,15 +116,12 @@ export default function MatchCreate({
     })
   }
 
-  const canSubmit =
-    slots.every(isSlotFilled) && (!useNewArena || arenaName.trim().length > 0)
+  const canSubmit = slots.every(isSlotFilled) && (!useNewArena || arenaName.trim().length > 0)
 
   return (
     <>
       <PageHeader
-        back={
-          <BackLink route="groups.show" routeParams={{ id: group.id }} label={group.name} />
-        }
+        back={<BackLink route="groups.show" routeParams={{ id: group.id }} label={group.name} />}
         title="Nova partida"
         subtitle="Monte as duplas e escolha a arena"
       />
@@ -199,8 +194,8 @@ export default function MatchCreate({
             <span className="text-sm text-stone-700">
               <span className="font-medium text-stone-900">Sem palpites (só histórico)</span>
               <span className="mt-1 block text-stone-500">
-                Use quando todos da Play estão jogando ou não haverá apostas nesta partida.
-                Vitórias e derrotas entram no histórico normalmente.
+                Use quando todos da Play estão jogando ou não haverá apostas nesta partida. Vitórias
+                e derrotas entram no histórico normalmente.
               </span>
             </span>
           </label>

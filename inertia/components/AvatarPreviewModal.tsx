@@ -82,7 +82,11 @@ export default function AvatarPreviewModal({
           />
         </div>
 
-        <button type="button" onClick={onClose} className={buttonClassName('secondary', 'md', true)}>
+        <button
+          type="button"
+          onClick={onClose}
+          className={buttonClassName('secondary', 'md', true)}
+        >
           Fechar
         </button>
       </div>

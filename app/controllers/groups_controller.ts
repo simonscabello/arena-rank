@@ -106,7 +106,6 @@ export default class GroupsController {
       .preload('players', (query) => query.preload('user').preload('guestInvite'))
       .orderBy('created_at', 'desc')
 
-    const arenas = await Arena.query().orderBy('name', 'asc')
     const ranking = await getGroupRanking(groupId)
     const canManageGroup = await isGroupOrganizer(groupId, user.id)
 
@@ -122,7 +121,6 @@ export default class GroupsController {
         arenaName: m.arena.name,
         playersLabel: formatMatchPlayersLabel(m.players),
       })),
-      arenas: arenas.map((a) => ({ id: a.id, name: a.name })),
       ranking,
       currentUserId: user.id,
       canManageGroup,

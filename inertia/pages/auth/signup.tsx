@@ -17,7 +17,13 @@ export default function Signup() {
         <Form route="new_account.store" className="space-y-4">
           {({ errors }) => (
             <>
-              <Input label="Nome" type="text" name="fullName" id="fullName" error={errors.fullName} />
+              <Input
+                label="Nome"
+                type="text"
+                name="fullName"
+                id="fullName"
+                error={errors.fullName}
+              />
               <div className="space-y-1.5">
                 <Input
                   label="Email"

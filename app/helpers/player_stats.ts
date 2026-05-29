@@ -1,3 +1,11 @@
+import {
+  applyFinalizedPlayerMatchScope,
+  joinTeammateForUser,
+  mapMatchOutcome,
+  partnerNameSelectColumns,
+  resolvePartnerName,
+  winLossAggregation,
+} from '#helpers/match_partner_queries'
 import { formatMatchScore, parseMatchScore } from '#helpers/match_score'
 import { getMemberDisplayWithRewards } from '#helpers/shop_rewards'
 import db from '@adonisjs/lucid/services/db'
@@ -64,16 +72,6 @@ function mapPartnerRow(row: PartnerRow): PartnerSummary {
   }
 }
 
-function displayPerson(person: {
-  fullName: string | null
-  email: string
-  nickname?: string | null
-}) {
-  if (person.nickname) return person.nickname
-  if (person.fullName) return person.fullName
-  return person.email.split('@')[0]
-}
-
 async function getPartnerRows(groupId: number, userId: number): Promise<PartnerRow[]> {
   const rows = await db
     .from('match_players as mp')
@@ -103,18 +101,10 @@ async function getPartnerRows(groupId: number, userId: number): Promise<PartnerR
 }
 
 export async function getPlayerStats(groupId: number, userId: number): Promise<PlayerStats> {
-  const wl = await db
-    .from('match_players as mp')
-    .innerJoin('matches as m', 'mp.match_id', 'm.id')
-    .where('m.group_id', groupId)
-    .where('m.status', 'finalizada')
-    .where('mp.user_id', userId)
-    .select(
-      db.raw('SUM(CASE WHEN mp.side = m.winner_side THEN 1 ELSE 0 END) as wins'),
-      db.raw('SUM(CASE WHEN mp.side != m.winner_side THEN 1 ELSE 0 END) as losses'),
-      db.raw('COUNT(*) as played')
-    )
-    .first()
+  const wlQuery = db.from('match_players as mp')
+  applyFinalizedPlayerMatchScope(wlQuery, groupId, userId)
+  const aggregation = winLossAggregation()
+  const wl = await wlQuery.select(aggregation.wins, aggregation.losses, aggregation.played).first()
 
   const betRow = await db
     .from('bets')
@@ -156,20 +146,12 @@ export async function getPlayerStats(groupId: number, userId: number): Promise<P
     )
     .orderBy('played', 'desc')
 
-  const recentRows = await db
-    .from('match_players as mp')
-    .innerJoin('matches as m', 'mp.match_id', 'm.id')
-    .innerJoin('arenas as a', 'm.arena_id', 'a.id')
-    .leftJoin('match_players as teammate', (join) => {
-      join
-        .on('teammate.match_id', 'mp.match_id')
-        .andOn('teammate.side', 'mp.side')
-        .andOnVal('teammate.user_id', '!=', userId)
-    })
-    .leftJoin('users as partner', 'teammate.user_id', 'partner.id')
-    .where('m.group_id', groupId)
-    .where('m.status', 'finalizada')
-    .where('mp.user_id', userId)
+  const recentQuery = db.from('match_players as mp')
+  joinTeammateForUser(recentQuery, userId)
+  applyFinalizedPlayerMatchScope(recentQuery, groupId, userId)
+  recentQuery.innerJoin('arenas as a', 'm.arena_id', 'a.id')
+
+  const recentRows = await recentQuery
     .select(
       'm.id as matchId',
       'a.name as arenaName',
@@ -178,10 +160,7 @@ export async function getPlayerStats(groupId: number, userId: number): Promise<P
       'm.winner_side as winnerSide',
       'm.score as score',
       'm.created_at as playedAt',
-      'partner.full_name as partnerFullName',
-      'partner.email as partnerEmail',
-      'partner.nickname as partnerNickname',
-      'teammate.display_name as partnerDisplayName'
+      ...partnerNameSelectColumns()
     )
     .orderBy('m.created_at', 'desc')
     .limit(RECENT_LIMIT)
@@ -205,17 +184,9 @@ export async function getPlayerStats(groupId: number, userId: number): Promise<P
       matchId: Number(row.matchId),
       arenaName: row.arenaName,
       city: row.city,
-      won: Number(row.side) === Number(row.winnerSide),
+      won: mapMatchOutcome(row),
       playedAt: String(row.playedAt),
-      partnerName: row.partnerEmail
-        ? displayPerson({
-            fullName: row.partnerFullName,
-            email: row.partnerEmail,
-            nickname: row.partnerNickname,
-          })
-        : row.partnerDisplayName
-          ? String(row.partnerDisplayName)
-          : null,
+      partnerName: resolvePartnerName(row),
       scoreLabel: formatMatchScore(parseMatchScore(row.score)),
     })),
   }

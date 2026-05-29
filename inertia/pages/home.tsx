@@ -51,7 +51,8 @@ export default function Home() {
           <strong className="text-stone-900">2.</strong> Cadastre a partida 2x2 na hora
         </li>
         <li className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <strong className="text-stone-900">3.</strong> Palpite na dupla vencedora e suba no ranking
+          <strong className="text-stone-900">3.</strong> Palpite na dupla vencedora e suba no
+          ranking
         </li>
       </ul>
     </div>

@@ -29,8 +29,7 @@ const actionConfigs: Record<ManageAction, Omit<ActionConfig, 'id' | 'buttonVaria
   start: {
     label: 'Iniciar partida (fechar palpites)',
     confirmTitle: 'Fechar palpites?',
-    confirmDescription:
-      'Os palpites serão encerrados e a partida passará para em andamento.',
+    confirmDescription: 'Os palpites serão encerrados e a partida passará para em andamento.',
     confirmLabel: 'Iniciar partida',
     confirmVariant: 'success',
     url: '/partidas/:id/iniciar',
@@ -46,8 +45,7 @@ const actionConfigs: Record<ManageAction, Omit<ActionConfig, 'id' | 'buttonVaria
   undo: {
     label: 'Desfazer resultado',
     confirmTitle: 'Desfazer resultado?',
-    confirmDescription:
-      'Os pontos serão removidos e a partida voltará para em andamento.',
+    confirmDescription: 'Os pontos serão removidos e a partida voltará para em andamento.',
     confirmLabel: 'Desfazer resultado',
     confirmVariant: 'success',
     url: '/partidas/:id/desfazer-resultado',
@@ -55,8 +53,7 @@ const actionConfigs: Record<ManageAction, Omit<ActionConfig, 'id' | 'buttonVaria
   cancel: {
     label: 'Cancelar partida',
     confirmTitle: 'Cancelar partida?',
-    confirmDescription:
-      'Ela sumirá da Play e não contará no ranking nem no histórico.',
+    confirmDescription: 'Ela sumirá da Play e não contará no ranking nem no histórico.',
     confirmLabel: 'Cancelar partida',
     confirmVariant: 'danger',
     url: '/partidas/:id/cancelar',
@@ -99,9 +96,7 @@ function useCountdown(expiresAt: string) {
 
   useEffect(() => {
     function tick() {
-      setSecondsLeft(
-        Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000))
-      )
+      setSecondsLeft(Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000)))
     }
 
     tick()

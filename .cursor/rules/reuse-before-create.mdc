@@ -1,0 +1,33 @@
+---
+description: Prefer existing implementations before creating new ones
+alwaysApply: true
+---
+
+# Reuse Before Create
+
+Before creating new code, search the codebase for an existing implementation.
+
+Check for existing:
+
+* Services
+* Helpers
+* Utilities
+* Validators
+* Repositories
+* Hooks
+* DTOs
+* Traits
+* Base classes
+* Shared components
+
+Prefer extending or reusing existing code over creating duplicate functionality.
+
+Before introducing a new abstraction, ask:
+
+* Does something similar already exist?
+* Can the existing implementation be extended?
+* Would a new developer easily discover both implementations?
+
+Avoid creating multiple ways to solve the same problem. Favor consistency over personal preference.
+
+When introducing a new abstraction, there must be a clear reason why existing code cannot be reused.

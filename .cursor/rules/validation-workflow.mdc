@@ -1,0 +1,52 @@
+---
+description: Mandatory environment setup and validation workflow for AdonisJS
+alwaysApply: true
+---
+
+# Environment Requirements
+
+This project MUST always use Node.js 24, installed via NVM on WSL.
+
+Cursor may not auto-detect Node, so every command that depends on Node.js, npm, npx, AdonisJS, TypeScript, tests, build tools or linting MUST first load NVM and activate Node 24:
+
+```bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+nvm use 24
+```
+
+# Mandatory Validation After Every Code Change
+
+After creating, modifying, refactoring code, generating files, updating configs, changing dependencies or editing tests, run the full validation pipeline before considering the task complete:
+
+```bash
+bash -lc '
+export NVM_DIR="$HOME/.nvm";
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh";
+nvm use 24;
+npm run lint &&
+npm run typecheck &&
+npm run build &&
+node ace test --parallel
+'
+```
+
+# Failure Handling
+
+If ANY step fails: stop, analyze the error, fix it, then restart validation from the beginning. Repeat until all steps pass. Never continue while validations fail.
+
+# Completion Criteria
+
+A task is complete ONLY when lint, typecheck, build and tests all pass. Do not claim completion without running these validations.
+
+# Response Requirements
+
+After code changes, always report:
+
+```text
+Node: v24.x.x
+Lint: PASS
+Typecheck: PASS
+Build: PASS
+Tests: PASS
+```

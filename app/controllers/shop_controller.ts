@@ -1,127 +1,16 @@
 import type { ShopItemType } from '#enums/shop_item_type'
 import { MAX_TITLE_SLOTS, SHOP_ITEM_TYPE_LABELS } from '#enums/shop_item_type'
-import { debitPurchase } from '#helpers/wallet'
+import { purchaseShopItem } from '#helpers/shop_purchase'
+import {
+  applyEquip,
+  applyUnequipByItemType,
+  applyUnequipByShopItemId,
+} from '#helpers/shop_equipment'
 import ShopItem from '#models/shop_item'
-import User from '#models/user'
 import UserPurchase from '#models/user_purchase'
 import { equipShopItemValidator, unequipShopItemValidator } from '#validators/shop'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
-import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
-
-async function findTitleSlot(
-  userId: number,
-  client: TransactionClientContract | typeof db
-): Promise<number | null> {
-  const occupied = await client
-    .from('user_equipped_items')
-    .where('user_id', userId)
-    .where('item_type', 'title')
-    .whereNotNull('shop_item_id')
-    .select('slot')
-    .orderBy('slot', 'asc')
-
-  const used = new Set(occupied.map((row) => Number(row.slot)))
-
-  for (let slot = 1; slot <= MAX_TITLE_SLOTS; slot++) {
-    if (!used.has(slot)) return slot
-  }
-
-  return null
-}
-
-async function applyEquip(
-  user: User,
-  item: ShopItem,
-  requestedSlot?: number,
-  trx?: TransactionClientContract
-) {
-  const client = trx ?? db
-  const itemType = item.itemType as ShopItemType
-
-  if (itemType === 'avatar_frame') {
-    const existing = await client
-      .from('user_equipped_items')
-      .where('user_id', user.id)
-      .where('item_type', 'avatar_frame')
-      .first()
-
-    if (existing) {
-      await client
-        .from('user_equipped_items')
-        .where('id', existing.id)
-        .update({ shop_item_id: item.id, slot: 0 })
-      return
-    }
-
-    await client.table('user_equipped_items').insert({
-      user_id: user.id,
-      item_type: 'avatar_frame',
-      shop_item_id: item.id,
-      slot: 0,
-    })
-    return
-  }
-
-  let slot = requestedSlot
-  if (!slot) {
-    const freeSlot = await findTitleSlot(user.id, client)
-    if (!freeSlot) {
-      throw new Error('TITLE_SLOTS_FULL')
-    }
-    slot = freeSlot
-  }
-
-  const existing = await client
-    .from('user_equipped_items')
-    .where('user_id', user.id)
-    .where('item_type', 'title')
-    .where('slot', slot)
-    .first()
-
-  if (existing) {
-    await client
-      .from('user_equipped_items')
-      .where('id', existing.id)
-      .update({ shop_item_id: item.id })
-    return
-  }
-
-  await client.table('user_equipped_items').insert({
-    user_id: user.id,
-    item_type: 'title',
-    shop_item_id: item.id,
-    slot,
-  })
-}
-
-async function applyUnequipByShopItemId(
-  user: User,
-  shopItemId: number,
-  trx?: TransactionClientContract
-) {
-  const client = trx ?? db
-
-  await client
-    .from('user_equipped_items')
-    .where('user_id', user.id)
-    .where('shop_item_id', shopItemId)
-    .update({ shop_item_id: null })
-}
-
-async function applyUnequipByItemType(
-  user: User,
-  itemType: ShopItemType,
-  trx?: TransactionClientContract
-) {
-  const client = trx ?? db
-
-  await client
-    .from('user_equipped_items')
-    .where('user_id', user.id)
-    .where('item_type', itemType)
-    .update({ shop_item_id: null })
-}
 
 export default class ShopController {
   async index({ inertia, auth }: HttpContext) {
@@ -151,10 +40,8 @@ export default class ShopController {
     const titleSlotsFull = occupiedTitleSlots.length >= MAX_TITLE_SLOTS
 
     return inertia.render('shop/index', {
-      shopBalance: user.shopBalance ?? 0,
       maxTitleSlots: MAX_TITLE_SLOTS,
       titleSlotsFull,
-      occupiedTitleSlots,
       items: items.map((item) => ({
         id: item.id,
         slug: item.slug,
@@ -168,7 +55,6 @@ export default class ShopController {
         equipped: equippedItemIds.has(item.id),
         equippedSlot: equippedSlots[item.id] ?? null,
       })),
-      inventory: purchases.map((purchase) => purchase.shopItemId),
     })
   }
 
@@ -182,51 +68,10 @@ export default class ShopController {
       return
     }
 
-    try {
-      await db.transaction(async (trx) => {
-        const alreadyOwned = await UserPurchase.query({ client: trx })
-          .where('user_id', user.id)
-          .where('shop_item_id', item.id)
-          .first()
+    const result = await purchaseShopItem(user.id, item)
 
-        if (alreadyOwned) {
-          throw new Error('ALREADY_OWNED')
-        }
-
-        const purchase = new UserPurchase()
-        purchase.useTransaction(trx)
-        purchase.userId = user.id
-        purchase.shopItemId = item.id
-        purchase.pricePaid = item.price
-        await purchase.save()
-
-        await debitPurchase(user.id, purchase.id, item.price, trx)
-
-        if (item.itemType === 'title') {
-          const freeSlot = await findTitleSlot(user.id, trx)
-          if (freeSlot) {
-            const freshUser = await User.query({ client: trx }).where('id', user.id).firstOrFail()
-            freshUser.useTransaction(trx)
-            await applyEquip(freshUser, item, freeSlot, trx)
-          }
-          return
-        }
-
-        const slotTaken = await trx
-          .from('user_equipped_items')
-          .where('user_id', user.id)
-          .where('item_type', item.itemType)
-          .whereNotNull('shop_item_id')
-          .first()
-
-        if (!slotTaken) {
-          const freshUser = await User.query({ client: trx }).where('id', user.id).firstOrFail()
-          freshUser.useTransaction(trx)
-          await applyEquip(freshUser, item, undefined, trx)
-        }
-      })
-    } catch (error) {
-      if (error instanceof Error && error.message === 'ALREADY_OWNED') {
+    if (!result.ok) {
+      if (result.error === 'already_owned') {
         session.flash('error', 'Você já possui este item')
         response.redirect().back()
         return
@@ -257,16 +102,12 @@ export default class ShopController {
     }
 
     const item = await ShopItem.findOrFail(shopItemId)
+    const result = await applyEquip(user, item, slot)
 
-    try {
-      await applyEquip(user, item, slot)
-    } catch (error) {
-      if (error instanceof Error && error.message === 'TITLE_SLOTS_FULL') {
-        session.flash('error', 'Os 3 slots de título estão cheios. Desequipe um ou escolha o slot.')
-        response.redirect().back()
-        return
-      }
-      throw error
+    if (!result.ok) {
+      session.flash('error', 'Os 3 slots de título estão cheios. Desequipe um ou escolha o slot.')
+      response.redirect().back()
+      return
     }
 
     session.flash('success', `${item.name} equipado`)
@@ -279,15 +120,19 @@ export default class ShopController {
 
     if (payload.shopItemId) {
       await applyUnequipByShopItemId(user, payload.shopItemId)
-    } else if (payload.itemType) {
-      await applyUnequipByItemType(user, payload.itemType)
-    } else {
-      session.flash('error', 'Item inválido')
+      session.flash('success', 'Item desequipado')
       response.redirect().back()
       return
     }
 
-    session.flash('success', 'Item desequipado')
+    if (payload.itemType) {
+      await applyUnequipByItemType(user, payload.itemType)
+      session.flash('success', 'Item desequipado')
+      response.redirect().back()
+      return
+    }
+
+    session.flash('error', 'Item inválido')
     response.redirect().back()
   }
 }

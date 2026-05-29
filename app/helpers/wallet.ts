@@ -1,3 +1,4 @@
+import type { WalletDebitResult } from '#helpers/domain_results'
 import User from '#models/user'
 import db from '@adonisjs/lucid/services/db'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
@@ -81,7 +82,7 @@ export async function debitPurchase(
   purchaseId: number,
   amount: number,
   trx: TransactionClientContract
-) {
+): Promise<WalletDebitResult> {
   const existing = await trx
     .from('wallet_transactions')
     .where('user_id', userId)
@@ -90,15 +91,16 @@ export async function debitPurchase(
     .where('reference_id', purchaseId)
     .first()
 
-  if (existing) return
+  if (existing) return { ok: true }
 
   const user = await User.query({ client: trx }).where('id', userId).forUpdate().firstOrFail()
 
   if (user.shopBalance < amount) {
-    throw new Error('Saldo insuficiente')
+    return { ok: false, error: 'insufficient_balance' }
   }
 
   await adjustBalance(userId, -amount, 'shop_purchase', 'purchase', purchaseId, trx)
+  return { ok: true }
 }
 
 export async function getLifetimeBetPoints(userId: number) {

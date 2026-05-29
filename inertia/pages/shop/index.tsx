@@ -1,15 +1,23 @@
 import { Form, Link } from '@adonisjs/inertia/react'
 import { usePage } from '@inertiajs/react'
-import { useState } from 'react'
-import { ShoppingBag } from 'lucide-react'
+import { Data } from '@generated/data'
+import { useState, type FC } from 'react'
 import BackLink from '~/components/BackLink'
 import Card from '~/components/Card'
 import PageHeader from '~/components/PageHeader'
 import Avatar from '~/components/Avatar'
 import ProfileBadge from '~/components/ProfileBadge'
+import ShopBalanceBanner from '~/components/ShopBalanceBanner'
 import ShopFramePreviewModal from '~/components/ShopFramePreviewModal'
 import { buttonClassName } from '~/lib/button_styles'
 import { cn } from '~/lib/match'
+
+type ShopItemPayload = {
+  icon?: string
+  category?: string
+  frameSrc?: string
+  inset?: number
+}
 
 type ShopItem = {
   id: number
@@ -19,17 +27,15 @@ type ShopItem = {
   price: number
   itemType: string
   itemTypeLabel: string
-  payload: Record<string, unknown>
+  payload: ShopItemPayload
   owned: boolean
   equipped: boolean
   equippedSlot: number | null
 }
 
 type Props = {
-  shopBalance: number
   maxTitleSlots: number
   titleSlotsFull: boolean
-  occupiedTitleSlots: number[]
   items: ShopItem[]
 }
 
@@ -162,14 +168,16 @@ function ItemActions({
   const blocked = isPurchaseBlocked(item, shopBalance)
   const isFree = !item.owned && item.price === 0
   const showFramePreview =
-    item.itemType === 'avatar_frame' &&
-    !item.equipped &&
-    typeof item.payload.frameSrc === 'string'
+    item.itemType === 'avatar_frame' && !item.equipped && typeof item.payload.frameSrc === 'string'
 
   return (
     <div className="flex flex-wrap gap-2">
       {showFramePreview && (
-        <button type="button" onClick={onFramePreview} className={buttonClassName('secondary', 'sm')}>
+        <button
+          type="button"
+          onClick={onFramePreview}
+          className={buttonClassName('secondary', 'sm')}
+        >
           Prévia
         </button>
       )}
@@ -202,7 +210,11 @@ function ItemActions({
         </div>
       )}
       {!item.owned && (
-        <Form route="shop.purchase" routeParams={{ id: item.id }} className="inline-flex w-full shrink-0">
+        <Form
+          route="shop.purchase"
+          routeParams={{ id: item.id }}
+          className="inline-flex w-full shrink-0"
+        >
           <button
             type="submit"
             disabled={blocked}
@@ -290,16 +302,10 @@ function ItemCard({
   )
 }
 
-export default function ShopIndex({
-  shopBalance,
-  maxTitleSlots,
-  titleSlotsFull,
-  items,
-}: Props) {
-  const page = usePage()
-  const authUser = page.props.user as
-    | { initials: string; avatarUrl?: string | null }
-    | undefined
+const ShopIndex: FC<Props> = ({ maxTitleSlots, titleSlotsFull, items }) => {
+  const page = usePage<Data.SharedProps>()
+  const shopBalance = page.props.shopBalance
+  const authUser = page.props.user as { initials: string; avatarUrl?: string | null } | undefined
   const viewer = {
     initials: authUser?.initials ?? '?',
     avatarUrl: authUser?.avatarUrl ?? null,
@@ -325,9 +331,7 @@ export default function ShopIndex({
       ? previewItem.payload.frameSrc
       : ''
   const previewInset =
-    previewItem && typeof previewItem.payload.inset === 'number'
-      ? previewItem.payload.inset
-      : 18
+    previewItem && typeof previewItem.payload.inset === 'number' ? previewItem.payload.inset : 18
 
   return (
     <>
@@ -337,20 +341,7 @@ export default function ShopIndex({
         subtitle="Gaste pontos dos seus acertos em recompensas"
       />
 
-      <Card className="mb-6 flex items-center justify-between gap-3 border-brand-200 bg-brand-50/50">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white">
-            <ShoppingBag className="h-5 w-5" />
-          </span>
-          <div>
-            <p className="text-sm text-stone-600">Saldo disponível</p>
-            <p className="text-2xl font-bold text-brand-700">{shopBalance} pts</p>
-          </div>
-        </div>
-        <p className="max-w-[10rem] text-right text-xs text-stone-500">
-          Até {maxTitleSlots} títulos equipados · ranking não diminui
-        </p>
-      </Card>
+      <ShopBalanceBanner shopBalance={shopBalance} maxTitleSlots={maxTitleSlots} />
 
       {shopBalance < 0 && (
         <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -388,9 +379,7 @@ export default function ShopIndex({
       {activeTab === 'title' && (
         <div className="space-y-6">
           {TITLE_CATEGORY_ORDER.map((category) => {
-            const categoryItems = titleItems.filter(
-              (item) => item.payload.category === category
-            )
+            const categoryItems = titleItems.filter((item) => item.payload.category === category)
             if (categoryItems.length === 0) return null
 
             return (
@@ -459,3 +448,5 @@ export default function ShopIndex({
     </>
   )
 }
+
+export default ShopIndex

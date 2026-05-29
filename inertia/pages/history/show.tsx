@@ -172,7 +172,9 @@ export default function HistoryShow({
           onClick={() => updateFilters({ tab: 'matches', partnerId: undefined })}
           className={cn(
             'flex-1 rounded-lg py-2 text-sm font-medium transition',
-            isMatchesTab ? 'bg-white text-brand-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+            isMatchesTab
+              ? 'bg-white text-brand-700 shadow-sm'
+              : 'text-stone-600 hover:text-stone-900'
           )}
         >
           Partidas
@@ -182,7 +184,9 @@ export default function HistoryShow({
           onClick={() => updateFilters({ tab: 'bets', partnerId: undefined })}
           className={cn(
             'flex-1 rounded-lg py-2 text-sm font-medium transition',
-            !isMatchesTab ? 'bg-white text-brand-700 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+            !isMatchesTab
+              ? 'bg-white text-brand-700 shadow-sm'
+              : 'text-stone-600 hover:text-stone-900'
           )}
         >
           Palpites
@@ -263,7 +267,11 @@ export default function HistoryShow({
           </div>
 
           <div className="flex gap-2">
-            <button type="button" onClick={applyPeriod} className={buttonClassName('secondary', 'md')}>
+            <button
+              type="button"
+              onClick={applyPeriod}
+              className={buttonClassName('secondary', 'md')}
+            >
               Aplicar período
             </button>
             <button type="button" onClick={clearFilters} className={buttonClassName('ghost', 'md')}>

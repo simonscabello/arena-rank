@@ -1,0 +1,48 @@
+---
+description: Project code style and formatting rules
+alwaysApply: true
+---
+
+# Code Style and Formatting
+
+Generated or modified code MUST follow existing project conventions.
+
+Before writing code, inspect and respect:
+
+* ESLint configuration
+* Prettier configuration
+* TypeScript configuration
+* AdonisJS conventions
+* Existing file structure
+* Existing naming patterns
+* Existing test style
+
+Prefer consistency with the current codebase over personal preferences.
+
+# Formatting
+
+Do not invent formatting rules. Follow the project formatter and linter. Generated code should already be close to what ESLint and Prettier expect before validation runs. Avoid formatting-only changes in unrelated files.
+
+# TypeScript Quality
+
+Do not bypass type safety unless clearly unavoidable. Avoid:
+
+* `@ts-ignore`
+* `@ts-nocheck`
+* `eslint-disable`
+* unnecessary `any`
+* broad type assertions
+* disabling lint rules
+* weakening existing types
+
+Prefer fixing the underlying typing problem.
+
+# Simplicity
+
+Write the simplest correct code that fits the existing project. Avoid overengineering, unnecessary abstractions, premature optimization, complex generic types, clever code, deep nesting, and large functions. Don't add new patterns when existing ones suffice.
+
+Prefer clear names, small functions, straightforward control flow, explicit behavior, small diffs, and reuse of existing utilities and patterns.
+
+# Scope Control
+
+Do not refactor unrelated code to satisfy style preferences. Only change formatting, naming, structure, or abstractions when directly related to the requested task or required by lint/typecheck/build/tests.

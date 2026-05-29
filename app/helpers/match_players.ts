@@ -1,7 +1,8 @@
 import type { MatchPlayerType } from '#enums/match_player_type'
+import { displayPerson } from '#helpers/person_display'
 import type MatchPlayer from '#models/match_player'
 import type User from '#models/user'
-import env from '#start/env'
+import { appBaseUrl } from '#helpers/app_url'
 
 export type MatchPlayerInput = {
   userId?: number | null
@@ -24,16 +25,6 @@ export function initialsFromName(name: string) {
     .join('')
     .slice(0, 2)
     .toUpperCase()
-}
-
-function displayPerson(person: {
-  fullName: string | null
-  email: string
-  nickname?: string | null
-}) {
-  if (person.nickname) return person.nickname
-  if (person.fullName) return person.fullName
-  return person.email.split('@')[0]
 }
 
 export function resolvePlayerType(player: {
@@ -92,8 +83,7 @@ export function playerInitials(player: MatchPlayer) {
 }
 
 export function buildGuestInviteUrl(token: string) {
-  const base = env.get('APP_URL').replace(/\/$/, '')
-  return `${base}/convite-jogador/${encodeURIComponent(token)}`
+  return `${appBaseUrl()}/convite-jogador/${encodeURIComponent(token)}`
 }
 
 export function serializeMatchPlayer(player: MatchPlayer) {

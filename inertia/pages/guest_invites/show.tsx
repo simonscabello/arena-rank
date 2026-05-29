@@ -50,7 +50,8 @@ export default function GuestInviteShow({ groupName, displayName, claimed, inval
         </div>
         <h1 className="text-2xl font-bold text-stone-900">Convite para jogar</h1>
         <p className="mt-2 text-sm text-stone-500">
-          Você foi convidado para jogar em <span className="font-medium text-stone-800">{groupName}</span>
+          Você foi convidado para jogar em{' '}
+          <span className="font-medium text-stone-800">{groupName}</span>
           {displayName ? (
             <>
               {' '}
@@ -60,8 +61,8 @@ export default function GuestInviteShow({ groupName, displayName, claimed, inval
           .
         </p>
         <p className="mt-3 text-sm text-stone-600">
-          Ao criar conta ou entrar, suas partidas registradas serão vinculadas automaticamente ao seu
-          perfil.
+          Ao criar conta ou entrar, suas partidas registradas serão vinculadas automaticamente ao
+          seu perfil.
         </p>
       </div>
 

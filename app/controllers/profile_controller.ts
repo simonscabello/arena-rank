@@ -25,7 +25,6 @@ export default class ProfileController {
     const rewards = await getEquippedRewards(user.id)
 
     return inertia.render('profile/show', {
-      shopBalance: user.shopBalance ?? 0,
       lifetimeBetPoints: rewards.lifetimeBetPoints,
       ownedItems: purchases.map((purchase) => ({
         id: purchase.shopItem.id,

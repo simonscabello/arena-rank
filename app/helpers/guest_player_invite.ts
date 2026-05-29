@@ -1,3 +1,4 @@
+import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import { randomBytes } from 'node:crypto'
 import { isGroupMember } from '#helpers/group_access'
 import { buildGuestInviteUrl } from '#helpers/match_players'
@@ -36,7 +37,7 @@ export async function createGuestPlayerInvite(
   groupId: number,
   displayName: string,
   createdByUserId: number,
-  trx?: any
+  trx?: TransactionClientContract
 ) {
   return GuestPlayerInvite.create(
     {

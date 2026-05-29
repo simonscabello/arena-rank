@@ -83,11 +83,9 @@ function partnerName(partner: PartnerSummary) {
 
 export default function MemberShow({ group, member, stats, betRanking, isSelf }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false)
-  const winRate =
-    stats.matchesPlayed > 0 ? Math.round((stats.wins / stats.matchesPlayed) * 100) : 0
+  const winRate = stats.matchesPlayed > 0 ? Math.round((stats.wins / stats.matchesPlayed) * 100) : 0
 
-  const hasSportInfo =
-    member.skillLevelLabel || member.dominantHandLabel || member.courtSideLabel
+  const hasSportInfo = member.skillLevelLabel || member.dominantHandLabel || member.courtSideLabel
 
   return (
     <>
@@ -214,24 +212,22 @@ export default function MemberShow({ group, member, stats, betRanking, isSelf }:
             <div className="flex items-center justify-between gap-2">
               <p className="font-medium text-stone-900">{partnerName(stats.bestPartner)}</p>
               <span className="text-sm text-stone-500">
-                {stats.bestPartner.winsTogether} vitórias em {stats.bestPartner.gamesTogether}{' '}
-                jogos
+                {stats.bestPartner.winsTogether} vitórias em {stats.bestPartner.gamesTogether} jogos
               </span>
             </div>
           </Card>
         )}
 
-        {stats.worstPartner &&
-          stats.worstPartner.userId !== stats.bestPartner?.userId && (
-            <Card title="Parceiro mais difícil">
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-medium text-stone-900">{partnerName(stats.worstPartner)}</p>
-                <span className="text-sm text-stone-500">
-                  {stats.worstPartner.winsTogether}/{stats.worstPartner.gamesTogether} vitórias
-                </span>
-              </div>
-            </Card>
-          )}
+        {stats.worstPartner && stats.worstPartner.userId !== stats.bestPartner?.userId && (
+          <Card title="Parceiro mais difícil">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-medium text-stone-900">{partnerName(stats.worstPartner)}</p>
+              <span className="text-sm text-stone-500">
+                {stats.worstPartner.winsTogether}/{stats.worstPartner.gamesTogether} vitórias
+              </span>
+            </div>
+          </Card>
+        )}
 
         <Card title="Por arena">
           {stats.byArena.length === 0 ? (

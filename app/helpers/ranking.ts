@@ -1,3 +1,4 @@
+import { displayPerson } from '#helpers/person_display'
 import { enrichRankingEntries } from '#helpers/shop_rewards'
 import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
@@ -39,16 +40,6 @@ export type BetParticipation = {
     initials: string
     avatarUrl: string | null
   }[]
-}
-
-function displayPerson(person: {
-  fullName: string | null
-  email: string
-  nickname?: string | null
-}) {
-  if (person.nickname) return person.nickname
-  if (person.fullName) return person.fullName
-  return person.email.split('@')[0]
 }
 
 function computeStreak(outcomes: boolean[]) {

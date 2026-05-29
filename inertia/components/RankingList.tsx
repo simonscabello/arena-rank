@@ -71,7 +71,7 @@ export default function RankingList({
           'flex items-center gap-3 rounded-xl border px-3 py-2.5',
           index < 3 ? podiumStyles[index] : 'border-stone-100 bg-stone-50/50',
           isMe && 'ring-2 ring-brand-500/30',
-          groupId && 'transition hover:border-brand-200 hover:bg-brand-50/30'
+          groupId ? 'transition hover:border-brand-200 hover:bg-brand-50/30' : undefined
         )
 
         const content = (
