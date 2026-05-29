@@ -27,6 +27,18 @@ const staticServerConfig = defineConfig({
    * Policy for files starting with a dot.
    */
   dotFiles: 'ignore',
+
+  cacheControl: true,
+
+  headers: (path) => {
+    if (path.includes('/shop/frames/') && path.endsWith('.png')) {
+      return {
+        'Cache-Control': 'public, max-age=2592000',
+      }
+    }
+
+    return {}
+  },
 })
 
 export default staticServerConfig

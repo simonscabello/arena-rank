@@ -33,6 +33,7 @@ type Props = {
   photoInset?: number
   reserveFrameSlot?: boolean
   slotInset?: number
+  frameLoading?: 'lazy' | 'eager'
 }
 
 const textSizeClasses = {
@@ -64,6 +65,7 @@ export default function Avatar({
   photoInset = DEFAULT_PHOTO_INSET,
   reserveFrameSlot = false,
   slotInset = DEFAULT_PHOTO_INSET,
+  frameLoading = 'eager',
 }: Props) {
   const photoPx = SIZE_PX[size]
   const textSize = textSizeClasses[size]
@@ -131,6 +133,8 @@ export default function Avatar({
       <img
         src={frameSrc}
         alt=""
+        loading={frameLoading}
+        decoding="async"
         className="pointer-events-none absolute left-0 top-0 z-10 h-full w-full object-cover"
         aria-hidden
       />

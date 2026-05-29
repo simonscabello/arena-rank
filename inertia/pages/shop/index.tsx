@@ -74,6 +74,7 @@ function itemPreview(item: ShopItem, viewer: { avatarUrl: string | null; initial
         frameSrc={item.payload.frameSrc}
         photoInset={typeof item.payload.inset === 'number' ? item.payload.inset : 18}
         size="md"
+        frameLoading="lazy"
       />
     )
   }

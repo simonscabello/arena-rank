@@ -17,6 +17,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "icons:pwa": "node scripts/generate-pwa-icons.mjs",
+    "frames:optimize": "node scripts/optimize-shop-frames.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit --project inertia/tsconfig.json"
   },
   "imports": {
