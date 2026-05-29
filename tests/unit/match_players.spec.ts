@@ -31,6 +31,7 @@ test.group('match_players', () => {
       mockPlayer({
         side: 1,
         userId: 1,
+        displayName: null,
         user: {
           nickname: null,
           fullName: 'Simon Scabello',
@@ -40,6 +41,7 @@ test.group('match_players', () => {
       mockPlayer({
         side: 1,
         userId: 2,
+        displayName: null,
         user: {
           nickname: null,
           fullName: 'Paula Silva',
@@ -65,6 +67,7 @@ test.group('match_players', () => {
     const player = mockPlayer({
       side: 1,
       userId: 1,
+      displayName: null,
       user: {
         nickname: 'apelido',
         fullName: 'Nome Completo',
