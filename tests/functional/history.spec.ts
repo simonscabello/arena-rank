@@ -99,7 +99,11 @@ test.group('History', (suite) => {
     assert.equal(helperResult.summary.wins, 1)
     assert.equal(helperResult.summary.losses, 1)
 
-    const response = await client.get('/historico').loginAs(user)
+    const redirect = await client.get('/historico').loginAs(user)
+    redirect.assertRedirectsTo('/perfil')
+    assert.include(redirect.redirects()[0], 'section=history')
+
+    const response = await client.get('/perfil?section=history').loginAs(user)
     response.assertStatus(200)
     response.assertTextIncludes('data-page')
   })

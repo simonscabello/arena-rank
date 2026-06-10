@@ -1,39 +1,24 @@
-import {
-  getHistoryFilterOptions,
-  getMatchHistory,
-  type HistoryFilters,
-} from '#helpers/player_history'
 import { historyFiltersValidator } from '#validators/history'
 import type { HttpContext } from '@adonisjs/core/http'
 
-function normalizeFilters(raw: Record<string, unknown>): HistoryFilters {
-  return {
-    groupId: raw.groupId ? Number(raw.groupId) : undefined,
-    arenaId: raw.arenaId ? Number(raw.arenaId) : undefined,
-    partnerId: raw.partnerId ? Number(raw.partnerId) : undefined,
-    from: raw.from ? String(raw.from) : undefined,
-    to: raw.to ? String(raw.to) : undefined,
-    page: raw.page ? Number(raw.page) : undefined,
+function buildProfileHistoryPath(query: Record<string, unknown>) {
+  const params = new URLSearchParams()
+  params.set('section', 'history')
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined || value === null || value === '') continue
+    params.set(key, String(value))
   }
+
+  return `/perfil?${params.toString()}`
 }
 
 export default class HistoryController {
-  async show({ inertia, auth, request }: HttpContext) {
-    const user = auth.user!
+  async show({ request, response }: HttpContext) {
     const validated = await request.validateUsing(historyFiltersValidator, {
       data: request.qs(),
     })
-    const filters = normalizeFilters(validated)
-    const filterOptions = await getHistoryFilterOptions(user.id)
-    const history = await getMatchHistory(user.id, filters)
 
-    return inertia.render('history/show', {
-      filters,
-      filterOptions,
-      items: history.items,
-      summary: history.summary,
-      pagination: history.pagination,
-      currentUserId: user.id,
-    })
+    return response.redirect().toPath(buildProfileHistoryPath(validated))
   }
 }

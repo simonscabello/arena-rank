@@ -1,3 +1,4 @@
+import { syncGoogleAvatarIfMissing } from '#helpers/avatar_storage'
 import { completeAuthLogin } from '#helpers/auth_login'
 import { findOrCreateGoogleUser, GoogleAuthError } from '#helpers/google_auth'
 import type { HttpContext } from '@adonisjs/core/http'
@@ -24,6 +25,8 @@ export default class GoogleAuthController {
         name: googleUser.name,
         emailVerificationState: googleUser.emailVerificationState,
       })
+
+      await syncGoogleAvatarIfMissing(user, googleUser.avatarUrl)
 
       await completeAuthLogin(auth, session, user, response)
     } catch (error) {

@@ -19,13 +19,39 @@ import {
   applyUnequipByItemType,
 } from '#helpers/cosmetic_equipment'
 import { getEquippedCosmetics } from '#helpers/cosmetic_display'
+import {
+  getHistoryFilterOptions,
+  getMatchHistory,
+  type HistoryFilters,
+} from '#helpers/player_history'
 import Achievement from '#models/achievement'
 import User from '#models/user'
 import { updateAccountValidator } from '#validators/account'
 import { equipCosmeticValidator, unequipCosmeticValidator } from '#validators/cosmetics'
+import { historyFiltersValidator } from '#validators/history'
 import { updateProfileValidator } from '#validators/profile'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
+
+const PROFILE_SECTIONS = ['progression', 'achievements', 'play', 'account', 'history'] as const
+
+type ProfileSection = (typeof PROFILE_SECTIONS)[number]
+
+function parseProfileSection(value: unknown): ProfileSection | null {
+  if (typeof value !== 'string') return null
+  return PROFILE_SECTIONS.includes(value as ProfileSection) ? (value as ProfileSection) : null
+}
+
+function normalizeHistoryFilters(raw: Record<string, unknown>): HistoryFilters {
+  return {
+    groupId: raw.groupId ? Number(raw.groupId) : undefined,
+    arenaId: raw.arenaId ? Number(raw.arenaId) : undefined,
+    partnerId: raw.partnerId ? Number(raw.partnerId) : undefined,
+    from: raw.from ? String(raw.from) : undefined,
+    to: raw.to ? String(raw.to) : undefined,
+    page: raw.page ? Number(raw.page) : undefined,
+  }
+}
 
 function parseFramePayload(payload: unknown) {
   if (typeof payload === 'string') {
@@ -42,9 +68,11 @@ function parseFramePayload(payload: unknown) {
 }
 
 export default class ProfileController {
-  async show({ inertia, auth }: HttpContext) {
+  async show({ inertia, auth, request }: HttpContext) {
     const user = auth.user!
     await user.refresh()
+
+    const section = parseProfileSection(request.qs().section)
 
     const cosmetics = await getEquippedCosmetics(user.id)
     const achievements = await getUserAchievements(user.id)
@@ -72,8 +100,48 @@ export default class ProfileController {
 
     const allAchievements = await Achievement.query().orderBy('sort_order', 'asc')
 
+    let historySummary = {
+      wins: 0,
+      losses: 0,
+      matchesPlayed: 0,
+      winRate: 0,
+    }
+    let history: {
+      filters: HistoryFilters
+      filterOptions: Awaited<ReturnType<typeof getHistoryFilterOptions>>
+      items: Awaited<ReturnType<typeof getMatchHistory>>['items']
+      summary: Awaited<ReturnType<typeof getMatchHistory>>['summary']
+      pagination: Awaited<ReturnType<typeof getMatchHistory>>['pagination']
+      currentUserId: number
+    } | null = null
+
+    if (section === 'history') {
+      const validated = await request.validateUsing(historyFiltersValidator, {
+        data: request.qs(),
+      })
+      const filters = normalizeHistoryFilters(validated)
+      const filterOptions = await getHistoryFilterOptions(user.id)
+      const historyData = await getMatchHistory(user.id, filters)
+
+      history = {
+        filters,
+        filterOptions,
+        items: historyData.items,
+        summary: historyData.summary,
+        pagination: historyData.pagination,
+        currentUserId: user.id,
+      }
+      historySummary = historyData.summary
+    } else {
+      const historyOverview = await getMatchHistory(user.id, {})
+      historySummary = historyOverview.summary
+    }
+
     return inertia.render('profile/show', {
+      section,
       maxTitleSlots: MAX_TITLE_SLOTS,
+      historySummary,
+      history,
       progression: {
         xp: cosmetics.xp,
         level: cosmetics.level,

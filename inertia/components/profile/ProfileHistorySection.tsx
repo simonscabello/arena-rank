@@ -1,62 +1,26 @@
 import { Link } from '@adonisjs/inertia/react'
-import { router } from '@inertiajs/react'
 import { Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import BackLink from '~/components/BackLink'
 import Card from '~/components/Card'
 import EmptyState from '~/components/EmptyState'
 import Input from '~/components/Input'
-import PageHeader from '~/components/PageHeader'
 import Select from '~/components/Select'
+import { navigateProfileHistory } from '~/components/profile/navigate_section'
+import type {
+  HistoryFilterOptions,
+  HistoryFilters,
+  HistoryMatchItem,
+  HistoryPagination,
+  HistorySummary,
+} from '~/components/profile/types'
 import { buttonClassName } from '~/lib/button_styles'
 
-type FilterOptions = {
-  groups: { id: number; name: string }[]
-  arenas: { id: number; name: string; city: string | null; groupId: number }[]
-  partners: { userId: number; name: string; groupId: number }[]
-}
-
-type Filters = {
-  groupId?: number
-  arenaId?: number
-  partnerId?: number
-  from?: string
-  to?: string
-  page?: number
-}
-
-type MatchItem = {
-  matchId: number
-  groupId: number
-  groupName: string
-  arenaName: string
-  city: string | null
-  won: boolean
-  partnerName: string | null
-  playedAt: string
-  scoreLabel: string | null
-}
-
-type MatchSummary = {
-  wins: number
-  losses: number
-  matchesPlayed: number
-  winRate: number
-}
-
-type Pagination = {
-  page: number
-  pageSize: number
-  total: number
-  lastPage: number
-}
-
 type Props = {
-  filters: Filters
-  filterOptions: FilterOptions
-  items: MatchItem[]
-  summary: MatchSummary
-  pagination: Pagination
+  filters: HistoryFilters
+  filterOptions: HistoryFilterOptions
+  items: HistoryMatchItem[]
+  summary: HistorySummary
+  pagination: HistoryPagination
   currentUserId: number
 }
 
@@ -67,7 +31,7 @@ function formatDate(value: string) {
   })
 }
 
-export default function HistoryShow({
+export default function ProfileHistorySection({
   filters,
   filterOptions,
   items,
@@ -88,18 +52,14 @@ export default function HistoryShow({
     return filterOptions.partners.filter((partner) => partner.groupId === filters.groupId)
   }, [filterOptions.partners, filters.groupId])
 
-  function navigate(next: Filters) {
-    router.get('/historico', next, { preserveState: true, preserveScroll: true })
-  }
-
-  function updateFilters(patch: Partial<Filters>) {
-    navigate({ ...filters, ...patch, page: 1 })
+  function updateFilters(patch: Partial<HistoryFilters>) {
+    navigateProfileHistory({ ...filters, ...patch, page: 1 })
   }
 
   function clearFilters() {
     setDraftFrom('')
     setDraftTo('')
-    navigate({ page: 1 })
+    navigateProfileHistory({ page: 1 })
   }
 
   function applyPeriod() {
@@ -107,14 +67,8 @@ export default function HistoryShow({
   }
 
   return (
-    <>
-      <PageHeader
-        back={<BackLink route="groups.index" label="Plays" />}
-        title="Meu histórico"
-        subtitle="Partidas em todas as suas Plays"
-      />
-
-      <Card title="Filtros" className="mb-4">
+    <div className="space-y-4">
+      <Card title="Filtros">
         <div className="space-y-3">
           <Select
             label="Play"
@@ -201,7 +155,7 @@ export default function HistoryShow({
       </Card>
 
       {filters.groupId && (
-        <p className="mb-4 text-sm">
+        <p className="text-sm">
           <Link
             route="members.show"
             routeParams={{ groupId: filters.groupId, userId: currentUserId }}
@@ -212,7 +166,7 @@ export default function HistoryShow({
         </p>
       )}
 
-      <div className="mb-4 grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Card className="text-center">
           <p className="text-2xl font-bold text-brand-700">{summary.wins}</p>
           <p className="text-xs text-stone-500">Vitórias</p>
@@ -278,11 +232,11 @@ export default function HistoryShow({
       </Card>
 
       {pagination.lastPage > 1 && (
-        <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             disabled={pagination.page <= 1}
-            onClick={() => navigate({ ...filters, page: pagination.page - 1 })}
+            onClick={() => navigateProfileHistory({ ...filters, page: pagination.page - 1 })}
             className={buttonClassName('secondary', 'md', false, 'disabled:opacity-40')}
           >
             Anterior
@@ -293,13 +247,13 @@ export default function HistoryShow({
           <button
             type="button"
             disabled={pagination.page >= pagination.lastPage}
-            onClick={() => navigate({ ...filters, page: pagination.page + 1 })}
+            onClick={() => navigateProfileHistory({ ...filters, page: pagination.page + 1 })}
             className={buttonClassName('secondary', 'md', false, 'disabled:opacity-40')}
           >
             Próxima
           </button>
         </div>
       )}
-    </>
+    </div>
   )
 }

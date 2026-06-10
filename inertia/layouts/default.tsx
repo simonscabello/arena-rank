@@ -1,14 +1,14 @@
 import { Data } from '@generated/data'
 import { Form, Link } from '@adonisjs/inertia/react'
 import { usePage } from '@inertiajs/react'
-import { History, Home, Trophy, UserCircle, Users, LogOut } from 'lucide-react'
+import { Home, Trophy, Users, LogOut } from 'lucide-react'
 import { ReactElement, useEffect, useRef } from 'react'
 import { toast, Toaster } from 'sonner'
 import Avatar from '~/components/Avatar'
 import { APP_NAME } from '~/lib/app_name'
 import { cn } from '~/lib/match'
 
-type NavKey = 'home' | 'plays' | 'history' | 'ranking' | 'profile'
+type NavKey = 'home' | 'plays' | 'ranking' | 'profile'
 
 function isNavActive(url: string, key: NavKey) {
   const path = url.split('?')[0]
@@ -17,12 +17,10 @@ function isNavActive(url: string, key: NavKey) {
       return path === '/'
     case 'plays':
       return path.startsWith('/grupos') || path.startsWith('/partidas')
-    case 'history':
-      return path.startsWith('/historico')
     case 'ranking':
       return path.startsWith('/ranking')
     case 'profile':
-      return path.startsWith('/perfil')
+      return path.startsWith('/perfil') || path.startsWith('/historico')
   }
 }
 
@@ -76,23 +74,28 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
                 <Link route="groups.index" className={desktopNavClass(isNavActive(url, 'plays'))}>
                   Plays
                 </Link>
-                <Link route="history.show" className={desktopNavClass(isNavActive(url, 'history'))}>
-                  Histórico
-                </Link>
                 <Link route="ranking.index" className={desktopNavClass(isNavActive(url, 'ranking'))}>
                   Ranking
                 </Link>
-                <Link route="profile.show" className={desktopNavClass(isNavActive(url, 'profile'))}>
-                  Perfil
-                </Link>
-                <Link route="profile.show" className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                <Link
+                  route="profile.show"
+                  className={cn(
+                    'inline-flex shrink-0 items-center gap-2 rounded-lg px-2 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+                    isNavActive(url, 'profile')
+                      ? 'bg-brand-50 text-brand-700'
+                      : 'text-stone-600 hover:bg-stone-100'
+                  )}
+                >
                   <Avatar
                     initials={user.initials}
                     src={user.avatarUrl}
                     size="sm"
                     frameSrc={user.avatarFrameSrc}
                     photoInset={user.avatarFrameInset}
+                    reserveFrameSlot
+                    slotInset={user.avatarFrameInset}
                   />
+                  <span className="text-sm font-medium">Perfil</span>
                 </Link>
                 <Form route="session.destroy">
                   <button
@@ -129,16 +132,25 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
               <Users className="h-5 w-5 shrink-0" />
               Plays
             </Link>
-            <Link route="history.show" className={mobileNavClass(isNavActive(url, 'history'))}>
-              <History className="h-5 w-5 shrink-0" />
-              Histórico
-            </Link>
             <Link route="ranking.index" className={mobileNavClass(isNavActive(url, 'ranking'))}>
               <Trophy className="h-5 w-5 shrink-0" />
               Ranking
             </Link>
-            <Link route="profile.show" className={mobileNavClass(isNavActive(url, 'profile'))}>
-              <UserCircle className="h-5 w-5 shrink-0" />
+            <Link
+              route="profile.show"
+              aria-label="Meu perfil"
+              className={mobileNavClass(isNavActive(url, 'profile'))}
+            >
+              <Avatar
+                initials={user.initials}
+                src={user.avatarUrl}
+                size="sm"
+                frameSrc={user.avatarFrameSrc}
+                photoInset={user.avatarFrameInset}
+                reserveFrameSlot
+                slotInset={user.avatarFrameInset}
+                className="shrink-0"
+              />
               Perfil
             </Link>
           </div>
