@@ -226,7 +226,7 @@ export class UserUnlockedFrameSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['avatarPath', 'courtSide', 'createdAt', 'dominantHand', 'elo', 'email', 'fullName', 'funLabel', 'id', 'level', 'nickname', 'password', 'skillLevel', 'updatedAt', 'xp'] as const
+  static $columns = ['avatarPath', 'courtSide', 'createdAt', 'dominantHand', 'elo', 'email', 'fullName', 'funLabel', 'googleId', 'id', 'level', 'nickname', 'password', 'skillLevel', 'updatedAt', 'xp'] as const
   $columns = UserSchema.$columns
   @column()
   declare avatarPath: string | null
@@ -244,6 +244,8 @@ export class UserSchema extends BaseModel {
   declare fullName: string | null
   @column()
   declare funLabel: string | null
+  @column()
+  declare googleId: string | null
   @column({ isPrimary: true })
   declare id: number
   @column()
@@ -251,7 +253,7 @@ export class UserSchema extends BaseModel {
   @column()
   declare nickname: string | null
   @column({ serializeAs: null })
-  declare password: string
+  declare password: string | null
   @column()
   declare skillLevel: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })

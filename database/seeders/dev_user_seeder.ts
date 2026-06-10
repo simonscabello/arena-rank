@@ -4,11 +4,11 @@ import GroupMember from '#models/group_member'
 import User from '#models/user'
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 
-const DEV_PASSWORD = 'password123'
 const GROUP_ID = 1
 
 const USERS = [
   {
+    googleId: 'dev-joao',
     email: 'joao@palpiteiro.test',
     fullName: 'João Silva',
     nickname: 'Juão',
@@ -18,6 +18,7 @@ const USERS = [
     skillLevel: 'intermediario',
   },
   {
+    googleId: 'dev-maria',
     email: 'maria@palpiteiro.test',
     fullName: 'Maria Costa',
     nickname: 'Mari',
@@ -27,6 +28,7 @@ const USERS = [
     skillLevel: 'avancado',
   },
   {
+    googleId: 'dev-pedro',
     email: 'pedro@palpiteiro.test',
     fullName: 'Pedro Alves',
     nickname: null,
@@ -35,6 +37,7 @@ const USERS = [
     skillLevel: 'intermediario',
   },
   {
+    googleId: 'dev-ana',
     email: 'ana@palpiteiro.test',
     fullName: 'Ana Ferreira',
     nickname: 'Aninha',
@@ -43,6 +46,7 @@ const USERS = [
     skillLevel: 'iniciante',
   },
   {
+    googleId: 'dev-lucas',
     email: 'lucas@palpiteiro.test',
     fullName: 'Lucas Mendes',
     nickname: null,
@@ -51,6 +55,7 @@ const USERS = [
     skillLevel: 'avancado',
   },
   {
+    googleId: 'dev-carla',
     email: 'carla@palpiteiro.test',
     fullName: 'Carla Ribeiro',
     nickname: 'Carlinha',
@@ -59,6 +64,7 @@ const USERS = [
     skillLevel: 'intermediario',
   },
   {
+    googleId: 'dev-rafa',
     email: 'rafa@palpiteiro.test',
     fullName: 'Rafael Souza',
     nickname: 'Rafa',
@@ -67,6 +73,7 @@ const USERS = [
     skillLevel: 'intermediario',
   },
   {
+    googleId: 'dev-bia',
     email: 'bia@palpiteiro.test',
     fullName: 'Beatriz Lima',
     nickname: 'Bia',
@@ -94,7 +101,7 @@ export default class extends BaseSeeder {
         { email: data.email },
         {
           ...data,
-          password: DEV_PASSWORD,
+          password: null,
           xp: 0,
           level: 1,
           elo: 1000,

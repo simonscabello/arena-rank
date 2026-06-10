@@ -24,7 +24,6 @@ import User from '#models/user'
 import { updateAccountValidator } from '#validators/account'
 import { equipCosmeticValidator, unequipCosmeticValidator } from '#validators/cosmetics'
 import { updateProfileValidator } from '#validators/profile'
-import hash from '@adonisjs/core/services/hash'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 
@@ -287,29 +286,6 @@ export default class ProfileController {
       session.flash('error', 'Este email já está em uso')
       response.redirect().toRoute('profile.show')
       return
-    }
-
-    if (payload.password) {
-      if (!payload.currentPassword) {
-        session.flash('error', 'Informe a senha atual para alterar a senha')
-        response.redirect().toRoute('profile.show')
-        return
-      }
-
-      if (payload.password !== payload.passwordConfirmation) {
-        session.flash('error', 'A confirmação da nova senha não confere')
-        response.redirect().toRoute('profile.show')
-        return
-      }
-
-      const passwordValid = await hash.verify(user.password, payload.currentPassword)
-      if (!passwordValid) {
-        session.flash('error', 'Senha atual incorreta')
-        response.redirect().toRoute('profile.show')
-        return
-      }
-
-      user.password = payload.password
     }
 
     user.fullName = payload.fullName ?? null

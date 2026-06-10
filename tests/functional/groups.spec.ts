@@ -71,7 +71,7 @@ test.group('Groups', (group) => {
     assert.isNotNull(membership)
   })
 
-  test('guest invite link plus signup joins play automatically', async ({ client, assert }) => {
+  test('guest invite link stores pending invite in session', async ({ client }) => {
     const organizer = await createUser('owner@test.com')
     const inviteCode = generateInviteCode()
     const play = await Group.create({ name: 'Play Auto Join', inviteCode })
@@ -79,22 +79,7 @@ test.group('Groups', (group) => {
 
     const inviteResponse = await client.get(`/convite/${inviteCode}`)
     inviteResponse.assertSession(PENDING_INVITE_SESSION_KEY, inviteCode)
-
-    const response = await client.post('/signup').withSession(inviteResponse.session()).form({
-      fullName: 'Novo Jogador',
-      email: 'novo@test.com',
-      password: 'password123',
-      passwordConfirmation: 'password123',
-    })
-
-    response.assertRedirectsTo(`/grupos/${play.id}`)
-
-    const user = await User.findByOrFail('email', 'novo@test.com')
-    const membership = await GroupMember.query()
-      .where('group_id', play.id)
-      .where('user_id', user.id)
-      .first()
-    assert.isNotNull(membership)
+    inviteResponse.assertStatus(200)
   })
 
   test('invalid invite code returns 404', async ({ client }) => {

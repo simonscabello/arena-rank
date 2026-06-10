@@ -21,14 +21,15 @@ export interface ApiDefinition {
     show: typeof routes['guest_invites.show']
     member: typeof routes['guest_invites.member']
   }
-  newAccount: {
-    create: typeof routes['new_account.create']
-    store: typeof routes['new_account.store']
-  }
   session: {
     create: typeof routes['session.create']
-    store: typeof routes['session.store']
     destroy: typeof routes['session.destroy']
+  }
+  auth: {
+    google: {
+      redirect: typeof routes['auth.google.redirect']
+      callback: typeof routes['auth.google.callback']
+    }
   }
   matches: {
     store: typeof routes['matches.store']

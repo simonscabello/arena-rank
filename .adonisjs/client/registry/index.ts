@@ -36,29 +36,23 @@ const routes = {
     tokens: [{"old":"/convite-jogador/:token","type":0,"val":"convite-jogador","end":""},{"old":"/convite-jogador/:token","type":1,"val":"token","end":""}],
     types: placeholder as Registry['guest_invites.show']['types'],
   },
-  'new_account.create': {
-    methods: ["GET","HEAD"],
-    pattern: '/signup',
-    tokens: [{"old":"/signup","type":0,"val":"signup","end":""}],
-    types: placeholder as Registry['new_account.create']['types'],
-  },
-  'new_account.store': {
-    methods: ["POST"],
-    pattern: '/signup',
-    tokens: [{"old":"/signup","type":0,"val":"signup","end":""}],
-    types: placeholder as Registry['new_account.store']['types'],
-  },
   'session.create': {
     methods: ["GET","HEAD"],
     pattern: '/login',
     tokens: [{"old":"/login","type":0,"val":"login","end":""}],
     types: placeholder as Registry['session.create']['types'],
   },
-  'session.store': {
-    methods: ["POST"],
-    pattern: '/login',
-    tokens: [{"old":"/login","type":0,"val":"login","end":""}],
-    types: placeholder as Registry['session.store']['types'],
+  'auth.google.redirect': {
+    methods: ["GET","HEAD"],
+    pattern: '/auth/google/redirect',
+    tokens: [{"old":"/auth/google/redirect","type":0,"val":"auth","end":""},{"old":"/auth/google/redirect","type":0,"val":"google","end":""},{"old":"/auth/google/redirect","type":0,"val":"redirect","end":""}],
+    types: placeholder as Registry['auth.google.redirect']['types'],
+  },
+  'auth.google.callback': {
+    methods: ["GET","HEAD"],
+    pattern: '/auth/google/callback',
+    tokens: [{"old":"/auth/google/callback","type":0,"val":"auth","end":""},{"old":"/auth/google/callback","type":0,"val":"google","end":""},{"old":"/auth/google/callback","type":0,"val":"callback","end":""}],
+    types: placeholder as Registry['auth.google.callback']['types'],
   },
   'session.destroy': {
     methods: ["POST"],

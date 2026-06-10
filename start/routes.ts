@@ -13,11 +13,14 @@ router.get('convite-jogador/:token', [controllers.GuestInvites, 'show']).as('gue
 
 router
   .group(() => {
-    router.get('signup', [controllers.NewAccount, 'create'])
-    router.post('signup', [controllers.NewAccount, 'store'])
+    router.get('login', [controllers.Session, 'create']).as('session.create')
 
-    router.get('login', [controllers.Session, 'create'])
-    router.post('login', [controllers.Session, 'store'])
+    router
+      .get('auth/google/redirect', [controllers.GoogleAuth, 'redirect'])
+      .as('auth.google.redirect')
+    router
+      .get('auth/google/callback', [controllers.GoogleAuth, 'callback'])
+      .as('auth.google.callback')
   })
   .use(middleware.guest())
 

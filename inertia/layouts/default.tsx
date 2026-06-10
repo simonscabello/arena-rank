@@ -105,20 +105,12 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
                 </Form>
               </>
             ) : (
-              <>
-                <Link
-                  route="session.create"
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-stone-600 hover:bg-stone-100"
-                >
-                  Entrar
-                </Link>
-                <Link
-                  route="new_account.create"
-                  className="rounded-xl bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
-                >
-                  Cadastrar
-                </Link>
-              </>
+              <Link
+                route="session.create"
+                className="rounded-xl bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
+              >
+                Entrar
+              </Link>
             )}
           </nav>
         </div>

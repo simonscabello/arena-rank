@@ -5,13 +5,13 @@
 
 export const controllers = {
   Avatars: () => import('#controllers/avatars_controller'),
+  GoogleAuth: () => import('#controllers/google_auth_controller'),
   Groups: () => import('#controllers/groups_controller'),
   GuestInvites: () => import('#controllers/guest_invites_controller'),
   History: () => import('#controllers/history_controller'),
   Home: () => import('#controllers/home_controller'),
   Matches: () => import('#controllers/matches_controller'),
   Members: () => import('#controllers/members_controller'),
-  NewAccount: () => import('#controllers/new_account_controller'),
   Profile: () => import('#controllers/profile_controller'),
   Ranking: () => import('#controllers/ranking_controller'),
   Session: () => import('#controllers/session_controller'),

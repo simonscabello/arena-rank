@@ -1,3 +1,4 @@
+import { completeAuthLogin } from '#helpers/auth_login'
 import { generateInviteCode } from '#helpers/group_access'
 import { PENDING_GUEST_INVITE_TOKEN_KEY } from '#helpers/guest_player_invite'
 import { getPlayerStats } from '#helpers/player_stats'
@@ -151,14 +152,33 @@ test.group('Guest invite flow', (suite) => {
     landing.assertStatus(200)
     landing.assertSession(PENDING_GUEST_INVITE_TOKEN_KEY, invite.token)
 
-    await client.post('/signup').withSession(landing.session()).form({
-      fullName: 'Carlos Convidado',
+    const guest = await User.create({
       email: 'carlos@convidado.com',
-      password: 'password123',
-      passwordConfirmation: 'password123',
+      googleId: 'google-carlos-flow',
+      fullName: 'Carlos Convidado',
+      password: null,
     })
 
-    const guest = await User.findByOrFail('email', 'carlos@convidado.com')
+    const sessionStore = new Map(Object.entries(landing.session()))
+    const mockSession = {
+      get: (key: string) => sessionStore.get(key),
+      forget: (key: string) => {
+        sessionStore.delete(key)
+      },
+      flash: () => {},
+    }
+    const mockResponse = {
+      redirect: () => ({
+        toRoute: () => mockResponse,
+      }),
+    }
+    const mockAuth = {
+      use: () => ({
+        login: async () => {},
+      }),
+    }
+
+    await completeAuthLogin(mockAuth as never, mockSession as never, guest, mockResponse as never)
     await invite.refresh()
     assert.equal(invite.claimedUserId, guest.id)
 

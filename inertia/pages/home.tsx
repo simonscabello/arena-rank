@@ -16,10 +16,7 @@ export default function Home() {
 
       <div className="mt-6 flex w-full flex-col gap-3">
         <Link route="session.create" className={buttonClassName('primary', 'lg', true)}>
-          Entrar
-        </Link>
-        <Link route="new_account.create" className={buttonClassName('secondary', 'lg', true)}>
-          Criar conta
+          Entrar com Google
         </Link>
       </div>
 

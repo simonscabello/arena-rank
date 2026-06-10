@@ -11,15 +11,4 @@ export const updateAccountValidator = vine.create({
     .nullable()
     .transform((value) => (value === '' || value === undefined ? null : value)),
   email: email(),
-  currentPassword: vine.string().optional(),
-  password: vine
-    .string()
-    .minLength(8)
-    .maxLength(32)
-    .optional()
-    .transform((value) => (value === '' || value === undefined ? undefined : value)),
-  passwordConfirmation: vine
-    .string()
-    .optional()
-    .transform((value) => (value === '' || value === undefined ? undefined : value)),
 })

@@ -10,7 +10,6 @@ import ProfileBadge from '~/components/ProfileBadge'
 import BackLink from '~/components/BackLink'
 import Card from '~/components/Card'
 import Input from '~/components/Input'
-import PasswordInput from '~/components/PasswordInput'
 import PageHeader from '~/components/PageHeader'
 import Select from '~/components/Select'
 import { buttonClassName } from '~/lib/button_styles'
@@ -475,32 +474,8 @@ export default function ProfileShow({
                     defaultValue={account.email}
                     error={errors.email}
                   />
-                  <p className="text-xs text-stone-500">Usado para fazer login no app</p>
+                  <p className="text-xs text-stone-500">Vinculado à sua conta Google</p>
                 </div>
-                <p className="text-xs text-stone-500">
-                  Deixe as senhas em branco se não quiser alterar
-                </p>
-                <PasswordInput
-                  label="Senha atual"
-                  name="currentPassword"
-                  id="currentPassword"
-                  autoComplete="current-password"
-                  error={errors.currentPassword}
-                />
-                <PasswordInput
-                  label="Nova senha"
-                  name="password"
-                  id="newPassword"
-                  autoComplete="new-password"
-                  error={errors.password}
-                />
-                <PasswordInput
-                  label="Confirmar nova senha"
-                  name="passwordConfirmation"
-                  id="passwordConfirmation"
-                  autoComplete="new-password"
-                  error={errors.passwordConfirmation}
-                />
                 <button type="submit" className={buttonClassName('primary', 'lg', true)}>
                   Salvar conta
                 </button>

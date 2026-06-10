@@ -3,12 +3,15 @@ import Achievement from '#models/achievement'
 import User from '#models/user'
 import UserAchievement from '#models/user_achievement'
 import db from '@adonisjs/lucid/services/db'
+import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
 
-test.group('achievements', () => {
+test.group('achievements', (group) => {
+  group.each.setup(() => testUtils.db().wrapInGlobalTransaction())
   test('unlocks level-based achievement when user reaches threshold', async ({ assert }) => {
+    const suffix = crypto.randomUUID()
     const user = await User.create({
-      email: 'ach@test.com',
+      email: `ach-${suffix}@test.com`,
       password: 'password123',
       fullName: 'ach',
       level: 5,
@@ -17,7 +20,7 @@ test.group('achievements', () => {
     })
 
     const achievement = await Achievement.create({
-      slug: 'level-5-test',
+      slug: `level-5-test-${suffix}`,
       name: 'Nível 5',
       description: 'Alcançou nível 5',
       icon: 'star',

@@ -9,10 +9,9 @@ export type ScannedRoutes = {
     'avatars.show': { paramsTuple: [ParamValue]; params: {'file': ParamValue} }
     'groups.invite': { paramsTuple: [ParamValue]; params: {'code': ParamValue} }
     'guest_invites.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
-    'new_account.create': { paramsTuple?: []; params?: {} }
-    'new_account.store': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
-    'session.store': { paramsTuple?: []; params?: {} }
+    'auth.google.redirect': { paramsTuple?: []; params?: {} }
+    'auth.google.callback': { paramsTuple?: []; params?: {} }
     'session.destroy': { paramsTuple?: []; params?: {} }
     'groups.index': { paramsTuple?: []; params?: {} }
     'groups.store': { paramsTuple?: []; params?: {} }
@@ -40,8 +39,9 @@ export type ScannedRoutes = {
     'avatars.show': { paramsTuple: [ParamValue]; params: {'file': ParamValue} }
     'groups.invite': { paramsTuple: [ParamValue]; params: {'code': ParamValue} }
     'guest_invites.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
-    'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
+    'auth.google.redirect': { paramsTuple?: []; params?: {} }
+    'auth.google.callback': { paramsTuple?: []; params?: {} }
     'groups.index': { paramsTuple?: []; params?: {} }
     'groups.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'groups.matches.create': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -58,8 +58,9 @@ export type ScannedRoutes = {
     'avatars.show': { paramsTuple: [ParamValue]; params: {'file': ParamValue} }
     'groups.invite': { paramsTuple: [ParamValue]; params: {'code': ParamValue} }
     'guest_invites.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
-    'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
+    'auth.google.redirect': { paramsTuple?: []; params?: {} }
+    'auth.google.callback': { paramsTuple?: []; params?: {} }
     'groups.index': { paramsTuple?: []; params?: {} }
     'groups.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'groups.matches.create': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -71,8 +72,6 @@ export type ScannedRoutes = {
     'guest_invites.member': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'inviteId': ParamValue} }
   }
   POST: {
-    'new_account.store': { paramsTuple?: []; params?: {} }
-    'session.store': { paramsTuple?: []; params?: {} }
     'session.destroy': { paramsTuple?: []; params?: {} }
     'groups.store': { paramsTuple?: []; params?: {} }
     'groups.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }

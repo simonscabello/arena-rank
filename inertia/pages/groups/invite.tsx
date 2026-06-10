@@ -15,16 +15,13 @@ export default function GroupInvite({ groupName }: Props) {
         </div>
         <h1 className="text-2xl font-bold text-stone-900">Convite para {groupName}</h1>
         <p className="mt-2 text-sm text-stone-500">
-          Ao criar conta ou entrar, você já entra na Play automaticamente.
+          Ao entrar com Google, você já entra na Play automaticamente.
         </p>
       </div>
 
-      <div className="space-y-3 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-        <Link route="new_account.create" className={buttonClassName('primary', 'lg', true)}>
-          Criar conta
-        </Link>
-        <Link route="session.create" className={buttonClassName('secondary', 'lg', true)}>
-          Já tenho conta
+      <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+        <Link route="session.create" className={buttonClassName('primary', 'lg', true)}>
+          Entrar com Google
         </Link>
       </div>
     </div>

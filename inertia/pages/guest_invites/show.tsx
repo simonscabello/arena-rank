@@ -61,17 +61,14 @@ export default function GuestInviteShow({ groupName, displayName, claimed, inval
           .
         </p>
         <p className="mt-3 text-sm text-stone-600">
-          Ao criar conta ou entrar, suas partidas registradas serão vinculadas automaticamente ao
-          seu perfil.
+          Ao entrar com Google, suas partidas registradas serão vinculadas automaticamente ao seu
+          perfil.
         </p>
       </div>
 
-      <div className="space-y-3 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-        <Link route="new_account.create" className={buttonClassName('primary', 'lg', true)}>
-          Criar conta
-        </Link>
-        <Link route="session.create" className={buttonClassName('secondary', 'lg', true)}>
-          Já tenho conta
+      <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+        <Link route="session.create" className={buttonClassName('primary', 'lg', true)}>
+          Entrar com Google
         </Link>
       </div>
     </div>
