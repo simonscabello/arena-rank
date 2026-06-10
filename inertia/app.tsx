@@ -7,11 +7,10 @@ import { createRoot } from 'react-dom/client'
 import { createInertiaApp } from '@inertiajs/react'
 import { TuyauProvider } from '@adonisjs/inertia/react'
 import { resolvePageComponent } from '@adonisjs/inertia/helpers'
-
-const appName = import.meta.env.VITE_APP_NAME || 'Palpiteiro'
+import { APP_NAME } from '~/lib/app_name'
 
 createInertiaApp({
-  title: (title) => (title ? `${title} - ${appName}` : appName),
+  title: (title) => (title ? `${title} - ${APP_NAME}` : APP_NAME),
   resolve: (name) => {
     return resolvePageComponent(
       `./pages/${name}.tsx`,

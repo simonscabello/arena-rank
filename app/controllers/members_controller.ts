@@ -29,7 +29,14 @@ export default class MembersController {
     const member = await getMemberDisplay(userId)
     const stats = await getPlayerStats(groupId, userId)
     const ranking = await getGroupRanking(groupId)
-    const betRanking = ranking.find((entry) => entry.userId === userId) ?? null
+    const rankIndex = ranking.findIndex((entry) => entry.userId === userId)
+    const playRanking =
+      rankIndex === -1
+        ? null
+        : {
+            ...ranking[rankIndex],
+            position: rankIndex + 1,
+          }
 
     return inertia.render('members/show', {
       group: { id: group.id, name: group.name },
@@ -44,7 +51,7 @@ export default class MembersController {
           : null,
       },
       stats,
-      betRanking,
+      playRanking,
       isSelf: viewer.id === userId,
     })
   }

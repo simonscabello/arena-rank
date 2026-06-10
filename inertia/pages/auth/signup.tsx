@@ -10,7 +10,9 @@ export default function Signup() {
       <div className="mb-8 text-center">
         <Logo className="mx-auto mb-4 h-16 w-16" />
         <h1 className="text-2xl font-bold text-stone-900">Cadastrar</h1>
-        <p className="mt-2 text-sm text-stone-500">Crie sua conta para participar dos palpites</p>
+        <p className="mt-2 text-sm text-stone-500">
+          Crie sua conta para jogar com a galera e subir no ranking
+        </p>
       </div>
 
       <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">

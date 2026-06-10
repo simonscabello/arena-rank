@@ -101,7 +101,7 @@ export default class GroupsController {
 
     const matches = await GameMatch.query()
       .where('group_id', groupId)
-      .whereIn('status', ['palpites_abertos', 'em_andamento'])
+      .whereIn('status', ['em_andamento'])
       .preload('arena')
       .preload('players', (query) => query.preload('user').preload('guestInvite'))
       .orderBy('created_at', 'desc')
@@ -142,7 +142,6 @@ export default class GroupsController {
 
     return inertia.render('matches/create', {
       group: { id: group.id, name: group.name },
-      memberCount: members.length,
       members: members.map((m) => ({
         id: m.user.id,
         fullName: m.user.fullName,

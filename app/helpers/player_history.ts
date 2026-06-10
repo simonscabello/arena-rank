@@ -4,11 +4,9 @@ import {
   partnerNameSelectColumns,
   resolvePartnerName,
 } from '#helpers/match_partner_queries'
-import { compactPlayerName, playerDisplayName } from '#helpers/match_players'
-import { displayPerson } from '#helpers/person_display'
 import { formatMatchScore, parseMatchScore } from '#helpers/match_score'
+import { displayPerson } from '#helpers/person_display'
 import GroupMember from '#models/group_member'
-import MatchPlayer from '#models/match_player'
 import db from '@adonisjs/lucid/services/db'
 import type { DatabaseQueryBuilderContract } from '@adonisjs/lucid/types/querybuilder'
 import type { Knex } from 'knex'
@@ -16,7 +14,6 @@ import type { Knex } from 'knex'
 export const HISTORY_PAGE_SIZE = 20
 
 export type HistoryFilters = {
-  tab: 'matches' | 'bets'
   groupId?: number
   arenaId?: number
   partnerId?: number
@@ -50,26 +47,6 @@ export type MatchHistorySummary = {
   winRate: number
 }
 
-export type BetHistoryItem = {
-  matchId: number
-  groupId: number
-  groupName: string
-  arenaName: string
-  predictedSide: number
-  predictedSideLabel: string
-  pointsAwarded: number | null
-  correct: boolean | null
-  playedAt: string
-}
-
-export type BetHistorySummary = {
-  totalBets: number
-  correctBets: number
-  wrongBets: number
-  pendingBets: number
-  totalPoints: number
-}
-
 export type PaginatedResult<TItem, TSummary> = {
   items: TItem[]
   summary: TSummary
@@ -83,30 +60,6 @@ export type PaginatedResult<TItem, TSummary> = {
 
 function pageNumber(filters: HistoryFilters) {
   return Math.max(1, filters.page ?? 1)
-}
-
-function teamSideLabel(players: MatchPlayer[], side: number) {
-  return players
-    .filter((player) => player.side === side)
-    .map((player) => compactPlayerName(playerDisplayName(player)))
-    .join(' & ')
-}
-
-async function loadPlayersByMatchId(matchIds: number[]) {
-  if (matchIds.length === 0) {
-    return new Map<number, MatchPlayer[]>()
-  }
-
-  const players = await MatchPlayer.query().whereIn('matchId', matchIds).preload('user')
-  const playersByMatchId = new Map<number, MatchPlayer[]>()
-
-  for (const player of players) {
-    const list = playersByMatchId.get(player.matchId) ?? []
-    list.push(player)
-    playersByMatchId.set(player.matchId, list)
-  }
-
-  return playersByMatchId
 }
 
 function applyDateFilters(
@@ -157,31 +110,6 @@ function applyMatchFilters(
   applyDateFilters(query, filters, 'm.created_at')
 }
 
-function applyBetFilters(
-  query: DatabaseQueryBuilderContract,
-  filters: HistoryFilters,
-  userId: number
-) {
-  query
-    .innerJoin('matches as m', 'b.match_id', 'm.id')
-    .innerJoin('group_members as gm', (join: Knex.JoinClause) => {
-      join.on('gm.group_id', 'm.group_id').andOnVal('gm.user_id', userId)
-    })
-    .innerJoin('groups as g', 'g.id', 'm.group_id')
-    .innerJoin('arenas as a', 'a.id', 'm.arena_id')
-    .where('b.user_id', userId)
-    .where('m.status', 'finalizada')
-
-  if (filters.groupId) {
-    query.where('m.group_id', filters.groupId)
-  }
-  if (filters.arenaId) {
-    query.where('m.arena_id', filters.arenaId)
-  }
-
-  applyDateFilters(query, filters, 'm.created_at')
-}
-
 export async function getHistoryFilterOptions(userId: number): Promise<HistoryFilterOptions> {
   const memberships = await GroupMember.query()
     .where('user_id', userId)
@@ -204,31 +132,6 @@ export async function getHistoryFilterOptions(userId: number): Promise<HistoryFi
     .where('mp.user_id', userId)
     .groupBy('a.id', 'a.name', 'a.city', 'm.group_id')
     .select('a.id as id', 'a.name as name', 'a.city as city', 'm.group_id as groupId')
-
-  const betArenaRows = await db
-    .from('bets as b')
-    .innerJoin('matches as m', 'b.match_id', 'm.id')
-    .innerJoin('group_members as gm', (join: Knex.JoinClause) => {
-      join.on('gm.group_id', 'm.group_id').andOnVal('gm.user_id', userId)
-    })
-    .innerJoin('arenas as a', 'a.id', 'm.arena_id')
-    .where('b.user_id', userId)
-    .where('m.status', 'finalizada')
-    .groupBy('a.id', 'a.name', 'a.city', 'm.group_id')
-    .select('a.id as id', 'a.name as name', 'a.city as city', 'm.group_id as groupId')
-
-  const arenaMap = new Map<
-    number,
-    { id: number; name: string; city: string | null; groupId: number }
-  >()
-  for (const row of [...arenaRows, ...betArenaRows]) {
-    arenaMap.set(Number(row.id), {
-      id: Number(row.id),
-      name: row.name,
-      city: row.city,
-      groupId: Number(row.groupId),
-    })
-  }
 
   const partnerRows = await db
     .from('match_players as mp')
@@ -267,7 +170,14 @@ export async function getHistoryFilterOptions(userId: number): Promise<HistoryFi
 
   return {
     groups,
-    arenas: [...arenaMap.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    arenas: arenaRows
+      .map((row) => ({
+        id: Number(row.id),
+        name: row.name,
+        city: row.city,
+        groupId: Number(row.groupId),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
     partners,
   }
 }
@@ -300,7 +210,6 @@ export async function getMatchHistory(
 
   const listQuery = db.from('match_players as mp')
   joinTeammateForUser(listQuery, userId)
-
   applyMatchFilters(listQuery, filters, userId)
 
   const rows = await listQuery
@@ -337,88 +246,6 @@ export async function getMatchHistory(
       losses,
       matchesPlayed,
       winRate: matchesPlayed > 0 ? Math.round((wins / matchesPlayed) * 100) : 0,
-    },
-    pagination: {
-      page,
-      pageSize: HISTORY_PAGE_SIZE,
-      total,
-      lastPage: Math.max(1, Math.ceil(total / HISTORY_PAGE_SIZE)),
-    },
-  }
-}
-
-export async function getBetHistory(
-  userId: number,
-  filters: HistoryFilters
-): Promise<PaginatedResult<BetHistoryItem, BetHistorySummary>> {
-  const page = pageNumber(filters)
-  const offset = (page - 1) * HISTORY_PAGE_SIZE
-
-  const countQuery = db.from('bets as b')
-  applyBetFilters(countQuery, filters, userId)
-  const countRow = await countQuery.count('* as total').first()
-  const total = Number(countRow?.total ?? 0)
-
-  const summaryQuery = db.from('bets as b')
-  applyBetFilters(summaryQuery, filters, userId)
-  const summaryRow = await summaryQuery
-    .select(
-      db.raw('COUNT(*) as totalBets'),
-      db.raw('SUM(CASE WHEN b.points_awarded > 0 THEN 1 ELSE 0 END) as correctBets'),
-      db.raw('SUM(CASE WHEN b.points_awarded = 0 THEN 1 ELSE 0 END) as wrongBets'),
-      db.raw('SUM(CASE WHEN b.points_awarded IS NULL THEN 1 ELSE 0 END) as pendingBets'),
-      db.raw('COALESCE(SUM(b.points_awarded), 0) as totalPoints')
-    )
-    .first()
-
-  const listQuery = db.from('bets as b')
-  applyBetFilters(listQuery, filters, userId)
-
-  const rows = await listQuery
-    .select(
-      'm.id as matchId',
-      'm.group_id as groupId',
-      'g.name as groupName',
-      'a.name as arenaName',
-      'b.predicted_side as predictedSide',
-      'b.points_awarded as pointsAwarded',
-      'm.created_at as playedAt'
-    )
-    .orderBy('m.created_at', 'desc')
-    .offset(offset)
-    .limit(HISTORY_PAGE_SIZE)
-
-  const matchIds = [...new Set(rows.map((row) => Number(row.matchId)))]
-  const playersByMatchId = await loadPlayersByMatchId(matchIds)
-
-  return {
-    items: rows.map((row) => {
-      const pointsAwarded =
-        row.pointsAwarded === null || row.pointsAwarded === undefined
-          ? null
-          : Number(row.pointsAwarded)
-      const predictedSide = Number(row.predictedSide)
-      const players = playersByMatchId.get(Number(row.matchId)) ?? []
-      const predictedSideLabel = teamSideLabel(players, predictedSide) || `Dupla ${predictedSide}`
-
-      return {
-        matchId: Number(row.matchId),
-        groupId: Number(row.groupId),
-        groupName: row.groupName,
-        arenaName: row.arenaName,
-        predictedSide,
-        predictedSideLabel,
-        pointsAwarded,
-        correct: pointsAwarded === null ? null : pointsAwarded > 0,
-        playedAt: String(row.playedAt),
-      }
-    }),
-    summary: {
-      totalBets: Number(summaryRow?.totalBets ?? 0),
-      correctBets: Number(summaryRow?.correctBets ?? 0),
-      wrongBets: Number(summaryRow?.wrongBets ?? 0),
-      pendingBets: Number(summaryRow?.pendingBets ?? 0),
-      totalPoints: Number(summaryRow?.totalPoints ?? 0),
     },
     pagination: {
       page,

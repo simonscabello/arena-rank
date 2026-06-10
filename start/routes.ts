@@ -1,12 +1,3 @@
-/*
-|--------------------------------------------------------------------------
-| Routes file
-|--------------------------------------------------------------------------
-|
-| The routes file is used for defining the HTTP routes.
-|
-*/
-
 import { middleware } from '#start/kernel'
 import { controllers } from '#generated/controllers'
 import router from '@adonisjs/core/services/router'
@@ -44,25 +35,20 @@ router
     router.post('grupos/:groupId/partidas', [controllers.Matches, 'store']).as('matches.store')
 
     router.get('partidas/:id', [controllers.Matches, 'show']).as('matches.show')
-    router.post('partidas/:id/palpite', [controllers.Matches, 'placeBet']).as('matches.bet')
-    router.post('partidas/:id/iniciar', [controllers.Matches, 'start']).as('matches.start')
     router.post('partidas/:id/finalizar', [controllers.Matches, 'finalize']).as('matches.finalize')
-    router
-      .post('partidas/:id/reabrir-palpites', [controllers.Matches, 'reopenBets'])
-      .as('matches.reopenBets')
     router
       .post('partidas/:id/desfazer-resultado', [controllers.Matches, 'undoFinalize'])
       .as('matches.undoFinalize')
     router.post('partidas/:id/cancelar', [controllers.Matches, 'cancel']).as('matches.cancel')
 
+    router.get('ranking', [controllers.Ranking, 'index']).as('ranking.index')
+
     router.get('perfil', [controllers.Profile, 'show']).as('profile.show')
     router.post('perfil', [controllers.Profile, 'update']).as('profile.update')
     router.post('perfil/conta', [controllers.Profile, 'updateAccount']).as('profile.updateAccount')
+    router.post('perfil/equipar', [controllers.Profile, 'equip']).as('profile.equip')
+    router.post('perfil/desequipar', [controllers.Profile, 'unequip']).as('profile.unequip')
     router.get('historico', [controllers.History, 'show']).as('history.show')
-    router.get('loja', [controllers.Shop, 'index']).as('shop.index')
-    router.post('loja/:id/comprar', [controllers.Shop, 'purchase']).as('shop.purchase')
-    router.post('loja/equipar', [controllers.Shop, 'equip']).as('shop.equip')
-    router.post('loja/desequipar', [controllers.Shop, 'unequip']).as('shop.unequip')
     router.get('grupos/:groupId/membros/:userId', [controllers.Members, 'show']).as('members.show')
     router
       .get('grupos/:groupId/convidados/:inviteId', [controllers.GuestInvites, 'member'])

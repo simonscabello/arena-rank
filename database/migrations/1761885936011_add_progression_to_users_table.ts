@@ -5,13 +5,17 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
-      table.integer('shop_balance').notNullable().defaultTo(0)
+      table.integer('xp').notNullable().defaultTo(0)
+      table.smallint('level').unsigned().notNullable().defaultTo(1)
+      table.integer('elo').notNullable().defaultTo(1000)
     })
   }
 
   async down() {
     this.schema.alterTable(this.tableName, (table) => {
-      table.dropColumn('shop_balance')
+      table.dropColumn('xp')
+      table.dropColumn('level')
+      table.dropColumn('elo')
     })
   }
 }

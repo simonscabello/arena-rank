@@ -1,4 +1,4 @@
-export const PWA_INSTALL_DISMISS_KEY = 'palpiteiro_pwa_install_dismissed'
+export const PWA_INSTALL_DISMISS_KEY = 'amigos_do_bt_pwa_install_dismissed'
 
 export type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>

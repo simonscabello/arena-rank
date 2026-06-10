@@ -126,3 +126,18 @@ export function formatMatchScore(score: MatchScore | null): string | null {
   if (!score?.sets.length) return null
   return score.sets.map((set) => `${set.side1}-${set.side2}`).join(' · ')
 }
+
+export function getMatchMargin(score: MatchScore, winnerSide: 1 | 2): number {
+  let gamesWinner = 0
+  let gamesLoser = 0
+
+  for (const set of score.sets) {
+    const winnerGames = winnerSide === 1 ? set.side1 : set.side2
+    const loserGames = winnerSide === 1 ? set.side2 : set.side1
+    gamesWinner += winnerGames
+    gamesLoser += loserGames
+  }
+
+  if (gamesWinner === 0) return 0
+  return Math.abs(gamesWinner - gamesLoser) / gamesWinner
+}

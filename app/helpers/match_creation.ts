@@ -12,15 +12,13 @@ type CreateMatchPayload = {
   arenaId?: number
   arenaName?: string
   arenaCity?: string | null
-  skipBets?: boolean
 }
 
 export async function createMatchWithPlayers(
   groupId: number,
   user: User,
   payload: CreateMatchPayload,
-  resolvedPlayers: MatchPlayerInput[],
-  initialStatus: 'em_andamento' | 'palpites_abertos'
+  resolvedPlayers: MatchPlayerInput[]
 ) {
   let arenaId = payload.arenaId
   if (!arenaId && payload.arenaName) {
@@ -46,7 +44,7 @@ export async function createMatchWithPlayers(
         groupId,
         arenaId,
         createdByUserId: user.id,
-        status: initialStatus,
+        status: 'em_andamento',
         statusChangedAt: now,
       },
       { client: trx }

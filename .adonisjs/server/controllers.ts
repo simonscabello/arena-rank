@@ -13,6 +13,6 @@ export const controllers = {
   Members: () => import('#controllers/members_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
   Profile: () => import('#controllers/profile_controller'),
+  Ranking: () => import('#controllers/ranking_controller'),
   Session: () => import('#controllers/session_controller'),
-  Shop: () => import('#controllers/shop_controller'),
 }

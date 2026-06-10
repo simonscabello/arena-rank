@@ -1,5 +1,6 @@
 import { Smartphone, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { APP_NAME } from '~/lib/app_name'
 import { buttonClassName } from '~/lib/button_styles'
 import {
   type BeforeInstallPromptEvent,
@@ -64,7 +65,7 @@ export default function InstallPwaPrompt() {
             <Smartphone className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-stone-900">Instalar o Palpiteiro</p>
+            <p className="font-semibold text-stone-900">Instalar o {APP_NAME}</p>
             <p className="mt-1 text-sm leading-relaxed text-stone-600">
               {isIos
                 ? 'Acesse mais rápido pela tela inicial do iPhone.'

@@ -1,7 +1,6 @@
 import { generateInviteCode } from '#helpers/group_access'
 import { PENDING_GUEST_INVITE_TOKEN_KEY } from '#helpers/guest_player_invite'
 import { getPlayerStats } from '#helpers/player_stats'
-import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
 import Group from '#models/group'
 import GroupMember from '#models/group_member'
@@ -88,8 +87,8 @@ test.group('Guest invite flow', (suite) => {
     assert.isNull(invite.claimedUserId)
   })
 
-  test('guest does not block bets for non-playing members', async ({ client, assert }) => {
-    const { owner, player1, player2, player3, bettor, group } = await createGroupWithMembers()
+  test('guest dummy player creates match in em_andamento', async ({ client, assert }) => {
+    const { owner, player1, player2, player3, group } = await createGroupWithMembers()
 
     const matchId = await createMatchViaHttp(
       client,
@@ -105,12 +104,7 @@ test.group('Guest invite flow', (suite) => {
     )
 
     const match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'palpites_abertos')
-
-    await client.post(`/partidas/${matchId}/palpite`).loginAs(bettor).json({ predictedSide: 1 })
-
-    const bet = await Bet.query().where('match_id', matchId).where('user_id', bettor.id).first()
-    assert.isNotNull(bet)
+    assert.equal(match.status, 'em_andamento')
   })
 
   test('claim links guest history across multiple matches', async ({ client, assert }) => {

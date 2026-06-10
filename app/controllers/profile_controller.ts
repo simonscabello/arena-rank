@@ -7,29 +7,117 @@ import {
   SKILL_LEVEL_LABELS,
   SKILL_LEVELS,
 } from '#enums/sport_profile'
+import { ACHIEVEMENT_CATEGORY_LABELS } from '#enums/achievement_criteria_type'
+import { MAX_TITLE_SLOTS } from '#enums/cosmetic_item_type'
+import { getUnlockedFrames, getUserAchievements } from '#helpers/achievements'
 import { removeUserAvatar, saveUserAvatar } from '#helpers/avatar_storage'
-import { getEquippedRewards } from '#helpers/shop_rewards'
+import {
+  applyEquipAchievement,
+  applyEquipFrame,
+  applyUnequipByAchievementId,
+  applyUnequipByFrameId,
+  applyUnequipByItemType,
+} from '#helpers/cosmetic_equipment'
+import { getEquippedCosmetics } from '#helpers/cosmetic_display'
+import Achievement from '#models/achievement'
 import User from '#models/user'
-import UserPurchase from '#models/user_purchase'
 import { updateAccountValidator } from '#validators/account'
+import { equipCosmeticValidator, unequipCosmeticValidator } from '#validators/cosmetics'
 import { updateProfileValidator } from '#validators/profile'
 import hash from '@adonisjs/core/services/hash'
 import type { HttpContext } from '@adonisjs/core/http'
+import db from '@adonisjs/lucid/services/db'
+
+function parseFramePayload(payload: unknown) {
+  if (typeof payload === 'string') {
+    try {
+      return JSON.parse(payload) as { frameSrc?: string; inset?: number }
+    } catch {
+      return {}
+    }
+  }
+  if (payload && typeof payload === 'object') {
+    return payload as { frameSrc?: string; inset?: number }
+  }
+  return {}
+}
 
 export default class ProfileController {
   async show({ inertia, auth }: HttpContext) {
     const user = auth.user!
     await user.refresh()
 
-    const purchases = await UserPurchase.query().where('user_id', user.id).preload('shopItem')
-    const rewards = await getEquippedRewards(user.id)
+    const cosmetics = await getEquippedCosmetics(user.id)
+    const achievements = await getUserAchievements(user.id)
+    const frames = await getUnlockedFrames(user.id)
+
+    const equippedRows = await db
+      .from('user_equipped_items')
+      .where('user_id', user.id)
+      .where((query) => {
+        query.whereNotNull('achievement_id').orWhereNotNull('avatar_frame_id')
+      })
+      .select(
+        'item_type as itemType',
+        'achievement_id as achievementId',
+        'avatar_frame_id as avatarFrameId',
+        'slot'
+      )
+
+    const equippedAchievementIds = new Set(
+      equippedRows.filter((row) => row.achievementId).map((row) => Number(row.achievementId))
+    )
+    const equippedFrameId = equippedRows.find(
+      (row) => row.itemType === 'avatar_frame'
+    )?.avatarFrameId
+
+    const allAchievements = await Achievement.query().orderBy('sort_order', 'asc')
 
     return inertia.render('profile/show', {
-      lifetimeBetPoints: rewards.lifetimeBetPoints,
-      ownedItems: purchases.map((purchase) => ({
-        id: purchase.shopItem.id,
-        name: purchase.shopItem.name,
-        itemType: purchase.shopItem.itemType,
+      maxTitleSlots: MAX_TITLE_SLOTS,
+      progression: {
+        xp: cosmetics.xp,
+        level: cosmetics.level,
+        xpToNextLevel: cosmetics.xpToNextLevel,
+        xpProgressCurrent: cosmetics.xpProgressCurrent,
+        xpProgressNeeded: cosmetics.xpProgressNeeded,
+        elo: cosmetics.elo,
+        eloTier: cosmetics.eloTier,
+        eloTierLabel: cosmetics.eloTierLabel,
+      },
+      achievements: achievements.map((row) => ({
+        id: Number(row.id),
+        slug: String(row.slug),
+        name: String(row.name),
+        description: String(row.description ?? ''),
+        icon: String(row.icon),
+        category: String(row.category),
+        categoryLabel: ACHIEVEMENT_CATEGORY_LABELS[String(row.category)] ?? String(row.category),
+        unlockedAt: row.unlockedAt,
+        equipped: equippedAchievementIds.has(Number(row.id)),
+      })),
+      lockedAchievements: allAchievements
+        .filter(
+          (achievement) => !achievements.some((unlocked) => Number(unlocked.id) === achievement.id)
+        )
+        .map((achievement) => ({
+          id: achievement.id,
+          slug: achievement.slug,
+          name: achievement.name,
+          description: achievement.description ?? '',
+          icon: achievement.icon,
+          category: achievement.category,
+          categoryLabel: ACHIEVEMENT_CATEGORY_LABELS[achievement.category] ?? achievement.category,
+        })),
+      frames: frames.map((row) => ({
+        id: Number(row.id),
+        slug: String(row.slug),
+        name: String(row.name),
+        description: String(row.description ?? ''),
+        unlockLevel: Number(row.unlockLevel),
+        frameSrc: parseFramePayload(row.payload).frameSrc ?? null,
+        inset: parseFramePayload(row.payload).inset ?? 18,
+        equipped: Number(equippedFrameId) === Number(row.id),
       })),
       account: {
         fullName: user.fullName,
@@ -42,9 +130,9 @@ export default class ProfileController {
         courtSide: user.courtSide,
         skillLevel: user.skillLevel,
         avatarUrl: user.avatarUrl,
-        avatarFrameSrc: rewards.avatarFrameSrc,
-        avatarFrameInset: rewards.avatarFrameInset,
-        equippedTitles: rewards.equippedTitles,
+        avatarFrameSrc: cosmetics.avatarFrameSrc,
+        avatarFrameInset: cosmetics.avatarFrameInset,
+        equippedTitles: cosmetics.equippedTitles,
         initials: user.initials,
       },
       statusSuggestions: [...STATUS_SUGGESTIONS],
@@ -63,6 +151,87 @@ export default class ProfileController {
         })),
       },
     })
+  }
+
+  async equip({ request, response, auth, session }: HttpContext) {
+    const user = auth.user!
+    const payload = await request.validateUsing(equipCosmeticValidator)
+
+    if (payload.achievementId) {
+      const unlocked = await db
+        .from('user_achievements')
+        .where('user_id', user.id)
+        .where('achievement_id', payload.achievementId)
+        .first()
+
+      if (!unlocked) {
+        session.flash('error', 'Conquista ainda não desbloqueada')
+        response.redirect().back()
+        return
+      }
+
+      const result = await applyEquipAchievement(user, payload.achievementId, payload.slot)
+      if (!result.ok) {
+        session.flash('error', 'Os 3 slots de título estão cheios. Desequipe um ou escolha o slot.')
+        response.redirect().back()
+        return
+      }
+
+      session.flash('success', 'Título equipado')
+      response.redirect().back()
+      return
+    }
+
+    if (payload.avatarFrameId) {
+      const unlocked = await db
+        .from('user_unlocked_frames')
+        .where('user_id', user.id)
+        .where('avatar_frame_id', payload.avatarFrameId)
+        .first()
+
+      if (!unlocked) {
+        session.flash('error', 'Moldura ainda não desbloqueada')
+        response.redirect().back()
+        return
+      }
+
+      await applyEquipFrame(user, payload.avatarFrameId)
+      session.flash('success', 'Moldura equipada')
+      response.redirect().back()
+      return
+    }
+
+    session.flash('error', 'Item inválido')
+    response.redirect().back()
+  }
+
+  async unequip({ request, response, auth, session }: HttpContext) {
+    const user = auth.user!
+    const payload = await request.validateUsing(unequipCosmeticValidator)
+
+    if (payload.achievementId) {
+      await applyUnequipByAchievementId(user, payload.achievementId)
+      session.flash('success', 'Título desequipado')
+      response.redirect().back()
+      return
+    }
+
+    if (payload.avatarFrameId) {
+      await applyUnequipByFrameId(user, payload.avatarFrameId)
+      session.flash('success', 'Moldura desequipada')
+      response.redirect().back()
+      return
+    }
+
+    if (payload.itemType) {
+      await applyUnequipByItemType(user, payload.itemType)
+      session.flash('success', 'Item desequipado')
+      response.redirect().back()
+      return
+    }
+
+    session.flash('error', 'Item inválido')
+    response.redirect().back()
   }
 
   async update({ request, response, auth, session }: HttpContext) {

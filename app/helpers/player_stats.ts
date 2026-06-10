@@ -7,7 +7,7 @@ import {
   winLossAggregation,
 } from '#helpers/match_partner_queries'
 import { formatMatchScore, parseMatchScore } from '#helpers/match_score'
-import { getMemberDisplayWithRewards } from '#helpers/shop_rewards'
+import { getMemberDisplayWithCosmetics } from '#helpers/cosmetic_display'
 import db from '@adonisjs/lucid/services/db'
 
 const RECENT_LIMIT = 10
@@ -45,7 +45,6 @@ export type PlayerStats = {
   wins: number
   losses: number
   matchesPlayed: number
-  betPoints: number
   bestPartner: PartnerSummary | null
   worstPartner: PartnerSummary | null
   byArena: ArenaPerformance[]
@@ -106,15 +105,6 @@ export async function getPlayerStats(groupId: number, userId: number): Promise<P
   const aggregation = winLossAggregation()
   const wl = await wlQuery.select(aggregation.wins, aggregation.losses, aggregation.played).first()
 
-  const betRow = await db
-    .from('bets')
-    .innerJoin('matches', 'bets.match_id', 'matches.id')
-    .where('matches.group_id', groupId)
-    .where('bets.user_id', userId)
-    .whereNotNull('bets.points_awarded')
-    .select(db.raw('COALESCE(SUM(bets.points_awarded), 0) as total'))
-    .first()
-
   const partnerRows = await getPartnerRows(groupId, userId)
   const bestPartner = partnerRows[0] ? mapPartnerRow(partnerRows[0]) : null
 
@@ -169,7 +159,6 @@ export async function getPlayerStats(groupId: number, userId: number): Promise<P
     wins: Number(wl?.wins ?? 0),
     losses: Number(wl?.losses ?? 0),
     matchesPlayed: Number(wl?.played ?? 0),
-    betPoints: Number(betRow?.total ?? 0),
     bestPartner,
     worstPartner,
     byArena: arenaRows.map((row) => ({
@@ -193,5 +182,5 @@ export async function getPlayerStats(groupId: number, userId: number): Promise<P
 }
 
 export async function getMemberDisplay(userId: number) {
-  return getMemberDisplayWithRewards(userId)
+  return getMemberDisplayWithCosmetics(userId)
 }

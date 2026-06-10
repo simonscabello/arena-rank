@@ -4,6 +4,7 @@ import { useState } from 'react'
 import BackLink from '~/components/BackLink'
 import Avatar from '~/components/Avatar'
 import AvatarPreviewModal from '~/components/AvatarPreviewModal'
+import EloTierBadge from '~/components/EloTierBadge'
 import ProfileBadge from '~/components/ProfileBadge'
 import Card from '~/components/Card'
 import EmptyState from '~/components/EmptyState'
@@ -20,7 +21,11 @@ type Member = {
   avatarFrameSrc: string | null
   avatarFrameInset: number
   equippedTitles: { icon: string; name: string }[]
-  lifetimeBetPoints: number
+  xp: number
+  level: number
+  elo: number
+  eloTier: string
+  eloTierLabel: string
   dominantHandLabel: string | null
   courtSideLabel: string | null
   skillLevelLabel: string | null
@@ -39,7 +44,6 @@ type Stats = {
   wins: number
   losses: number
   matchesPlayed: number
-  betPoints: number
   bestPartner: PartnerSummary | null
   worstPartner: PartnerSummary | null
   byArena: {
@@ -61,19 +65,19 @@ type Stats = {
   }[]
 }
 
-type BetRanking = {
-  totalPoints: number
-  betsPlaced: number
-  betsCorrect: number
-  accuracyPercent: number | null
-  currentStreak: number
+type PlayRanking = {
+  elo: number
+  level: number
+  eloTier: string
+  eloTierLabel: string
+  position?: number
 } | null
 
 type Props = {
   group: { id: number; name: string }
   member: Member
   stats: Stats
-  betRanking: BetRanking
+  playRanking: PlayRanking
   isSelf: boolean
 }
 
@@ -81,7 +85,7 @@ function partnerName(partner: PartnerSummary) {
   return partner.nickname || partner.fullName || partner.email.split('@')[0]
 }
 
-export default function MemberShow({ group, member, stats, betRanking, isSelf }: Props) {
+export default function MemberShow({ group, member, stats, playRanking, isSelf }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false)
   const winRate = stats.matchesPlayed > 0 ? Math.round((stats.wins / stats.matchesPlayed) * 100) : 0
 
@@ -157,7 +161,8 @@ export default function MemberShow({ group, member, stats, betRanking, isSelf }:
           )}
 
           <p className="text-xs text-stone-500">
-            {member.lifetimeBetPoints} pts acumulados no Palpiteiro
+            Nível {member.level} · {member.elo} ELO ·{' '}
+            <EloTierBadge tier={member.eloTier} label={member.eloTierLabel} />
           </p>
 
           {!isSelf && !member.funLabel && member.equippedTitles.length === 0 && (
@@ -197,12 +202,17 @@ export default function MemberShow({ group, member, stats, betRanking, isSelf }:
           </Card>
         </div>
 
-        <Card title="Palpites na Play">
-          <p className="text-2xl font-bold text-brand-700">{stats.betPoints}</p>
-          <p className="text-sm text-stone-500">pontos acumulados</p>
-          {betRanking && betRanking.betsPlaced > 0 && (
+        <Card title="Ranking global">
+          <p className="text-2xl font-bold text-brand-700">{member.elo} ELO</p>
+          <p className="text-sm text-stone-500">
+            Nível {member.level} · {member.xp} XP ·{' '}
+            <EloTierBadge tier={member.eloTier} label={member.eloTierLabel} />
+          </p>
+          {playRanking && (
             <p className="mt-2 text-sm text-stone-600">
-              {betRanking.accuracyPercent}% de acerto · sequência atual: {betRanking.currentStreak}
+              {playRanking.position
+                ? `${playRanking.position}º na Play por ELO`
+                : 'Posição na Play por ELO'}
             </p>
           )}
         </Card>

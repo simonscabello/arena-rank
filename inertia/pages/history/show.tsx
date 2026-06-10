@@ -1,6 +1,6 @@
 import { Link } from '@adonisjs/inertia/react'
 import { router } from '@inertiajs/react'
-import { Target, Trophy } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import BackLink from '~/components/BackLink'
 import Card from '~/components/Card'
@@ -9,7 +9,6 @@ import Input from '~/components/Input'
 import PageHeader from '~/components/PageHeader'
 import Select from '~/components/Select'
 import { buttonClassName } from '~/lib/button_styles'
-import { cn } from '~/lib/match'
 
 type FilterOptions = {
   groups: { id: number; name: string }[]
@@ -18,7 +17,6 @@ type FilterOptions = {
 }
 
 type Filters = {
-  tab: 'matches' | 'bets'
   groupId?: number
   arenaId?: number
   partnerId?: number
@@ -39,31 +37,11 @@ type MatchItem = {
   scoreLabel: string | null
 }
 
-type BetItem = {
-  matchId: number
-  groupId: number
-  groupName: string
-  arenaName: string
-  predictedSide: number
-  predictedSideLabel: string
-  pointsAwarded: number | null
-  correct: boolean | null
-  playedAt: string
-}
-
 type MatchSummary = {
   wins: number
   losses: number
   matchesPlayed: number
   winRate: number
-}
-
-type BetSummary = {
-  totalBets: number
-  correctBets: number
-  wrongBets: number
-  pendingBets: number
-  totalPoints: number
 }
 
 type Pagination = {
@@ -76,8 +54,8 @@ type Pagination = {
 type Props = {
   filters: Filters
   filterOptions: FilterOptions
-  items: MatchItem[] | BetItem[]
-  summary: MatchSummary | BetSummary
+  items: MatchItem[]
+  summary: MatchSummary
   pagination: Pagination
   currentUserId: number
 }
@@ -86,41 +64,7 @@ function formatDate(value: string) {
   return new Date(value).toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'short',
-    year: 'numeric',
   })
-}
-
-function buildQuery(filters: Filters) {
-  const query: Record<string, string | number> = { tab: filters.tab }
-
-  if (filters.groupId) query.groupId = filters.groupId
-  if (filters.arenaId) query.arenaId = filters.arenaId
-  if (filters.partnerId) query.partnerId = filters.partnerId
-  if (filters.from) query.from = filters.from
-  if (filters.to) query.to = filters.to
-  if (filters.page && filters.page > 1) query.page = filters.page
-
-  return query
-}
-
-function historyUrl(filters: Filters) {
-  const params = new URLSearchParams()
-  const query = buildQuery(filters)
-
-  for (const [key, value] of Object.entries(query)) {
-    params.set(key, String(value))
-  }
-
-  const qs = params.toString()
-  return qs ? `/historico?${qs}` : '/historico'
-}
-
-function navigate(filters: Filters) {
-  router.get(historyUrl(filters), {}, { preserveState: true, replace: true })
-}
-
-function isMatchSummary(summary: MatchSummary | BetSummary): summary is MatchSummary {
-  return 'matchesPlayed' in summary
 }
 
 export default function HistoryShow({
@@ -131,7 +75,6 @@ export default function HistoryShow({
   pagination,
   currentUserId,
 }: Props) {
-  const isMatchesTab = filters.tab === 'matches'
   const [draftFrom, setDraftFrom] = useState(filters.from ?? '')
   const [draftTo, setDraftTo] = useState(filters.to ?? '')
 
@@ -145,14 +88,18 @@ export default function HistoryShow({
     return filterOptions.partners.filter((partner) => partner.groupId === filters.groupId)
   }, [filterOptions.partners, filters.groupId])
 
-  function updateFilters(updates: Partial<Filters>) {
-    navigate({ ...filters, ...updates, page: 1 })
+  function navigate(next: Filters) {
+    router.get('/historico', next, { preserveState: true, preserveScroll: true })
+  }
+
+  function updateFilters(patch: Partial<Filters>) {
+    navigate({ ...filters, ...patch, page: 1 })
   }
 
   function clearFilters() {
     setDraftFrom('')
     setDraftTo('')
-    navigate({ tab: filters.tab, page: 1 })
+    navigate({ page: 1 })
   }
 
   function applyPeriod() {
@@ -164,35 +111,8 @@ export default function HistoryShow({
       <PageHeader
         back={<BackLink route="groups.index" label="Plays" />}
         title="Meu histórico"
-        subtitle="Partidas e palpites em todas as suas Plays"
+        subtitle="Partidas em todas as suas Plays"
       />
-
-      <div className="mb-4 flex rounded-xl border border-stone-200 bg-stone-50 p-1">
-        <button
-          type="button"
-          onClick={() => updateFilters({ tab: 'matches', partnerId: undefined })}
-          className={cn(
-            'flex-1 rounded-lg py-2 text-sm font-medium transition',
-            isMatchesTab
-              ? 'bg-white text-brand-700 shadow-sm'
-              : 'text-stone-600 hover:text-stone-900'
-          )}
-        >
-          Partidas
-        </button>
-        <button
-          type="button"
-          onClick={() => updateFilters({ tab: 'bets', partnerId: undefined })}
-          className={cn(
-            'flex-1 rounded-lg py-2 text-sm font-medium transition',
-            !isMatchesTab
-              ? 'bg-white text-brand-700 shadow-sm'
-              : 'text-stone-600 hover:text-stone-900'
-          )}
-        >
-          Palpites
-        </button>
-      </div>
 
       <Card title="Filtros" className="mb-4">
         <div className="space-y-3">
@@ -233,24 +153,22 @@ export default function HistoryShow({
             ))}
           </Select>
 
-          {isMatchesTab && (
-            <Select
-              label="Parceiro"
-              value={filters.partnerId ?? ''}
-              onChange={(event) =>
-                updateFilters({
-                  partnerId: event.target.value ? Number(event.target.value) : undefined,
-                })
-              }
-            >
-              <option value="">Todos</option>
-              {partnerOptions.map((partner) => (
-                <option key={`${partner.groupId}-${partner.userId}`} value={partner.userId}>
-                  {partner.name}
-                </option>
-              ))}
-            </Select>
-          )}
+          <Select
+            label="Parceiro"
+            value={filters.partnerId ?? ''}
+            onChange={(event) =>
+              updateFilters({
+                partnerId: event.target.value ? Number(event.target.value) : undefined,
+              })
+            }
+          >
+            <option value="">Todos</option>
+            {partnerOptions.map((partner) => (
+              <option key={`${partner.groupId}-${partner.userId}`} value={partner.userId}>
+                {partner.name}
+              </option>
+            ))}
+          </Select>
 
           <div className="grid grid-cols-2 gap-3">
             <Input
@@ -294,54 +212,30 @@ export default function HistoryShow({
         </p>
       )}
 
-      {isMatchesTab && isMatchSummary(summary) ? (
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          <Card className="text-center">
-            <p className="text-2xl font-bold text-brand-700">{summary.wins}</p>
-            <p className="text-xs text-stone-500">Vitórias</p>
-          </Card>
-          <Card className="text-center">
-            <p className="text-2xl font-bold text-stone-700">{summary.losses}</p>
-            <p className="text-xs text-stone-500">Derrotas</p>
-          </Card>
-          <Card className="text-center">
-            <p className="text-2xl font-bold text-stone-900">{summary.matchesPlayed}</p>
-            <p className="text-xs text-stone-500">Partidas</p>
-          </Card>
-          <Card className="text-center">
-            <p className="text-2xl font-bold text-stone-900">{summary.winRate}%</p>
-            <p className="text-xs text-stone-500">Aproveitamento</p>
-          </Card>
-        </div>
-      ) : (
-        !isMatchesTab &&
-        !isMatchSummary(summary) && (
-          <div className="mb-4 grid grid-cols-2 gap-3">
-            <Card className="text-center">
-              <p className="text-2xl font-bold text-stone-900">{summary.totalBets}</p>
-              <p className="text-xs text-stone-500">Palpites</p>
-            </Card>
-            <Card className="text-center">
-              <p className="text-2xl font-bold text-brand-700">{summary.correctBets}</p>
-              <p className="text-xs text-stone-500">Acertos</p>
-            </Card>
-            <Card className="text-center">
-              <p className="text-2xl font-bold text-stone-700">{summary.wrongBets}</p>
-              <p className="text-xs text-stone-500">Erros</p>
-            </Card>
-            <Card className="text-center">
-              <p className="text-2xl font-bold text-brand-700">{summary.totalPoints}</p>
-              <p className="text-xs text-stone-500">Pontos</p>
-            </Card>
-          </div>
-        )
-      )}
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <Card className="text-center">
+          <p className="text-2xl font-bold text-brand-700">{summary.wins}</p>
+          <p className="text-xs text-stone-500">Vitórias</p>
+        </Card>
+        <Card className="text-center">
+          <p className="text-2xl font-bold text-stone-700">{summary.losses}</p>
+          <p className="text-xs text-stone-500">Derrotas</p>
+        </Card>
+        <Card className="text-center">
+          <p className="text-2xl font-bold text-stone-900">{summary.matchesPlayed}</p>
+          <p className="text-xs text-stone-500">Partidas</p>
+        </Card>
+        <Card className="text-center">
+          <p className="text-2xl font-bold text-stone-900">{summary.winRate}%</p>
+          <p className="text-xs text-stone-500">Aproveitamento</p>
+        </Card>
+      </div>
 
-      <Card title={isMatchesTab ? 'Partidas' : 'Palpites'}>
+      <Card title="Partidas">
         {items.length === 0 ? (
           <EmptyState
-            icon={isMatchesTab ? Trophy : Target}
-            title={isMatchesTab ? 'Nenhuma partida encontrada' : 'Nenhum palpite encontrado'}
+            icon={Trophy}
+            title="Nenhuma partida encontrada"
             description={
               filterOptions.groups.length === 0
                 ? 'Entre em uma Play para começar a registrar histórico.'
@@ -350,67 +244,35 @@ export default function HistoryShow({
           />
         ) : (
           <ul className="space-y-2">
-            {isMatchesTab
-              ? (items as MatchItem[]).map((match) => (
-                  <li key={match.matchId}>
-                    <Link
-                      route="matches.show"
-                      routeParams={{ id: match.matchId }}
-                      className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-3 transition hover:border-brand-200"
-                    >
-                      <div>
-                        <p className="font-medium text-stone-900">{match.arenaName}</p>
-                        <p className="text-xs text-stone-500">
-                          {match.groupName}
-                          {match.partnerName ? ` · com ${match.partnerName}` : ''}
-                          {match.city ? ` · ${match.city}` : ''}
-                          {match.scoreLabel ? ` · ${match.scoreLabel}` : ''}
-                          {` · ${formatDate(match.playedAt)}`}
-                        </p>
-                      </div>
-                      <span
-                        className={
-                          match.won
-                            ? 'rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 ring-inset'
-                            : 'rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600 ring-1 ring-stone-200 ring-inset'
-                        }
-                      >
-                        {match.won ? 'Vitória' : 'Derrota'}
-                      </span>
-                    </Link>
-                  </li>
-                ))
-              : (items as BetItem[]).map((bet) => (
-                  <li key={`${bet.matchId}-${bet.predictedSide}`}>
-                    <Link
-                      route="matches.show"
-                      routeParams={{ id: bet.matchId }}
-                      className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-3 transition hover:border-brand-200"
-                    >
-                      <div>
-                        <p className="font-medium text-stone-900">{bet.arenaName}</p>
-                        <p className="text-xs text-stone-500">
-                          {bet.groupName} · {bet.predictedSideLabel} · {formatDate(bet.playedAt)}
-                        </p>
-                      </div>
-                      <span
-                        className={
-                          bet.correct === null
-                            ? 'rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200 ring-inset'
-                            : bet.correct
-                              ? 'rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 ring-inset'
-                              : 'rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600 ring-1 ring-stone-200 ring-inset'
-                        }
-                      >
-                        {bet.correct === null
-                          ? 'Pendente'
-                          : bet.correct
-                            ? `+${bet.pointsAwarded} pts`
-                            : '0 pts'}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+            {items.map((match) => (
+              <li key={match.matchId}>
+                <Link
+                  route="matches.show"
+                  routeParams={{ id: match.matchId }}
+                  className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-3 transition hover:border-brand-200"
+                >
+                  <div>
+                    <p className="font-medium text-stone-900">{match.arenaName}</p>
+                    <p className="text-xs text-stone-500">
+                      {match.groupName}
+                      {match.partnerName ? ` · com ${match.partnerName}` : ''}
+                      {match.city ? ` · ${match.city}` : ''}
+                      {match.scoreLabel ? ` · ${match.scoreLabel}` : ''}
+                      {` · ${formatDate(match.playedAt)}`}
+                    </p>
+                  </div>
+                  <span
+                    className={
+                      match.won
+                        ? 'rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 ring-inset'
+                        : 'rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600 ring-1 ring-stone-200 ring-inset'
+                    }
+                  >
+                    {match.won ? 'Vitória' : 'Derrota'}
+                  </span>
+                </Link>
+              </li>
+            ))}
           </ul>
         )}
       </Card>

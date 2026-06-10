@@ -112,7 +112,7 @@ export default function GroupShow({
             <EmptyState
               icon={Calendar}
               title="Nenhuma partida ativa"
-              description="Crie uma partida para começar os palpites."
+              description="Crie uma partida para começar a registrar resultados."
             />
           ) : (
             <ul className="space-y-2">

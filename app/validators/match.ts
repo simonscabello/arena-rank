@@ -15,11 +15,6 @@ export const createMatchValidator = vine.create({
     )
     .minLength(4)
     .maxLength(4),
-  skipBets: vine.boolean().optional(),
-})
-
-export const placeBetValidator = vine.create({
-  predictedSide: vine.number().in([1, 2]),
 })
 
 export const finalizeMatchValidator = vine.create({

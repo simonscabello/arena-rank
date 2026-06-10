@@ -1,5 +1,5 @@
 import type User from '#models/user'
-import { DEFAULT_FRAME_INSET } from '#helpers/shop_rewards'
+import { buildProgressionDisplay, DEFAULT_FRAME_INSET } from '#helpers/cosmetic_display'
 import { BaseTransformer } from '@adonisjs/core/transformers'
 
 type AvatarFrame = {
@@ -16,6 +16,8 @@ export default class UserTransformer extends BaseTransformer<User> {
   }
 
   toObject() {
+    const progression = buildProgressionDisplay(this.resource)
+
     return {
       ...this.pick(this.resource, [
         'id',
@@ -26,9 +28,16 @@ export default class UserTransformer extends BaseTransformer<User> {
         'initials',
       ]),
       avatarUrl: this.resource.avatarUrl,
-      shopBalance: this.resource.shopBalance ?? 0,
       avatarFrameSrc: this.#frame.avatarFrameSrc,
       avatarFrameInset: this.#frame.avatarFrameInset,
+      xp: progression.xp,
+      level: progression.level,
+      xpToNextLevel: progression.xpToNextLevel,
+      xpProgressCurrent: progression.xpProgressCurrent,
+      xpProgressNeeded: progression.xpProgressNeeded,
+      elo: progression.elo,
+      eloTier: progression.eloTier,
+      eloTierLabel: progression.eloTierLabel,
     }
   }
 }

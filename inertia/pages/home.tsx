@@ -1,5 +1,6 @@
 import { Link } from '@adonisjs/inertia/react'
 import Logo from '~/components/Logo'
+import { APP_NAME } from '~/lib/app_name'
 import { buttonClassName } from '~/lib/button_styles'
 
 export default function Home() {
@@ -7,10 +8,9 @@ export default function Home() {
     <div className="mx-auto flex w-full max-w-sm flex-col py-8">
       <div className="flex flex-col items-center text-center">
         <Logo className="mb-5 h-36 w-36" />
-        <h1 className="text-3xl font-bold tracking-tight text-stone-900">Palpiteiro</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-stone-900">{APP_NAME}</h1>
         <p className="mt-3 text-base leading-relaxed text-stone-600">
-          O app onde amizade vale menos que posição no ranking. Seu grupo nunca mais terá uma
-          convivência esportivamente saudável.
+          Partidas de beach tennis, ranking da galera e evolução de quem joga de verdade.
         </p>
       </div>
 
@@ -31,8 +31,8 @@ export default function Home() {
           <strong className="text-stone-900">2.</strong> Cadastre a partida 2x2 na hora
         </li>
         <li className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <strong className="text-stone-900">3.</strong> Palpite na dupla vencedora e suba no
-          ranking
+          <strong className="text-stone-900">3.</strong> Registre os resultados, suba no ranking e
+          acompanhe a evolução dos jogadores
         </li>
       </ul>
     </div>

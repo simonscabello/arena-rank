@@ -1,5 +1,4 @@
 import {
-  getBetHistory,
   getHistoryFilterOptions,
   getMatchHistory,
   type HistoryFilters,
@@ -9,7 +8,6 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 function normalizeFilters(raw: Record<string, unknown>): HistoryFilters {
   return {
-    tab: raw.tab === 'bets' ? 'bets' : 'matches',
     groupId: raw.groupId ? Number(raw.groupId) : undefined,
     arenaId: raw.arenaId ? Number(raw.arenaId) : undefined,
     partnerId: raw.partnerId ? Number(raw.partnerId) : undefined,
@@ -27,10 +25,7 @@ export default class HistoryController {
     })
     const filters = normalizeFilters(validated)
     const filterOptions = await getHistoryFilterOptions(user.id)
-    const history =
-      filters.tab === 'bets'
-        ? await getBetHistory(user.id, filters)
-        : await getMatchHistory(user.id, filters)
+    const history = await getMatchHistory(user.id, filters)
 
     return inertia.render('history/show', {
       filters,

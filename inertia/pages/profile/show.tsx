@@ -1,7 +1,10 @@
 import { Form } from '@adonisjs/inertia/react'
-import { router, usePage } from '@inertiajs/react'
-import { Data } from '@generated/data'
+import { router } from '@inertiajs/react'
 import { useEffect, useRef, useState } from 'react'
+import AchievementGrid from '~/components/AchievementGrid'
+import EloTierBadge from '~/components/EloTierBadge'
+import FramePicker from '~/components/FramePicker'
+import XpBar from '~/components/XpBar'
 import Avatar from '~/components/Avatar'
 import ProfileBadge from '~/components/ProfileBadge'
 import BackLink from '~/components/BackLink'
@@ -16,6 +19,47 @@ import { cn } from '~/lib/match'
 type Option = { value: string; label: string }
 
 type Props = {
+  maxTitleSlots: number
+  progression: {
+    xp: number
+    level: number
+    xpToNextLevel: number
+    xpProgressCurrent: number
+    xpProgressNeeded: number
+    elo: number
+    eloTier: string
+    eloTierLabel: string
+  }
+  achievements: {
+    id: number
+    slug: string
+    name: string
+    description: string
+    icon: string
+    category: string
+    categoryLabel: string
+    unlockedAt: string
+    equipped: boolean
+  }[]
+  lockedAchievements: {
+    id: number
+    slug: string
+    name: string
+    description: string
+    icon: string
+    category: string
+    categoryLabel: string
+  }[]
+  frames: {
+    id: number
+    slug: string
+    name: string
+    description: string
+    unlockLevel: number
+    frameSrc: string | null
+    inset: number
+    equipped: boolean
+  }[]
   account: {
     fullName: string | null
     email: string
@@ -32,8 +76,6 @@ type Props = {
     equippedTitles: { icon: string; name: string }[]
     initials: string
   }
-  lifetimeBetPoints: number
-  ownedItems: { id: number; name: string; itemType: string }[]
   statusSuggestions: string[]
   options: {
     dominantHands: Option[]
@@ -47,14 +89,16 @@ const MAX_FUN_LABEL_LENGTH = 60
 type ProfileTab = 'profile' | 'account'
 
 export default function ProfileShow({
+  maxTitleSlots,
+  progression,
+  achievements,
+  lockedAchievements,
+  frames,
   account,
   profile,
-  lifetimeBetPoints,
-  ownedItems,
   statusSuggestions,
   options,
 }: Props) {
-  const shopBalance = usePage<Data.SharedProps>().props.shopBalance
   const [activeTab, setActiveTab] = useState<ProfileTab>('profile')
   const [nickname, setNickname] = useState(profile.nickname ?? '')
   const [funLabel, setFunLabel] = useState(profile.funLabel ?? '')
@@ -172,25 +216,46 @@ export default function ProfileShow({
         }
       />
 
-      <Card title="Loja e recompensas" className="mb-4">
-        <p className="text-sm text-stone-600">
-          <span className="font-semibold text-brand-700">{shopBalance} pts</span> disponíveis ·{' '}
-          <span className="font-medium text-stone-800">{lifetimeBetPoints} pts</span> acumulados no
-          Palpiteiro
-        </p>
-        {profile.equippedTitles.length > 0 && (
-          <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-stone-700">
-            <span className="font-medium text-stone-600">Títulos equipados:</span>
-            {profile.equippedTitles.map((title) => (
-              <ProfileBadge key={title.name} icon={title.icon} title={title.name} />
-            ))}
-          </p>
-        )}
-        <p className="mt-2 text-sm text-stone-500">
-          {ownedItems.length > 0
-            ? `${ownedItems.length} item(ns) adquirido(s) · acesse a Loja pelo menu`
-            : 'Nenhum item da loja ainda · acesse a Loja pelo menu'}
-        </p>
+      <Card title="Progressão" className="mb-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm text-stone-500">Ranking competitivo</p>
+              <p className="text-2xl font-bold text-brand-700">{progression.elo} ELO</p>
+            </div>
+            <EloTierBadge tier={progression.eloTier} label={progression.eloTierLabel} />
+          </div>
+          <XpBar
+            current={progression.xpProgressCurrent}
+            needed={progression.xpProgressNeeded}
+            level={progression.level}
+            xpToNextLevel={progression.xpToNextLevel}
+          />
+          {profile.equippedTitles.length > 0 && (
+            <p className="flex flex-wrap items-center gap-1.5 text-sm text-stone-700">
+              <span className="font-medium text-stone-600">Títulos equipados:</span>
+              {profile.equippedTitles.map((title) => (
+                <ProfileBadge key={title.name} icon={title.icon} title={title.name} />
+              ))}
+            </p>
+          )}
+        </div>
+      </Card>
+
+      <Card title="Conquistas" className="mb-4">
+        <AchievementGrid
+          achievements={achievements}
+          lockedAchievements={lockedAchievements}
+          maxTitleSlots={maxTitleSlots}
+        />
+      </Card>
+
+      <Card title="Molduras de avatar" className="mb-4">
+        <FramePicker
+          frames={frames}
+          initials={profile.initials}
+          avatarUrl={profile.avatarUrl}
+        />
       </Card>
 
       <div className="mb-4 flex rounded-xl border border-stone-200 bg-stone-50 p-1">

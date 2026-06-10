@@ -7,6 +7,31 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
+export class AchievementSchema extends BaseModel {
+  static $columns = ['category', 'createdAt', 'criteriaType', 'criteriaValue', 'description', 'icon', 'id', 'name', 'slug', 'sortOrder'] as const
+  $columns = AchievementSchema.$columns
+  @column()
+  declare category: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare criteriaType: string
+  @column()
+  declare criteriaValue: any | null
+  @column()
+  declare description: string | null
+  @column()
+  declare icon: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
+  @column()
+  declare slug: string
+  @column()
+  declare sortOrder: number
+}
+
 export class ArenaSchema extends BaseModel {
   static $columns = ['city', 'createdAt', 'id', 'name', 'updatedAt'] as const
   $columns = ArenaSchema.$columns
@@ -22,21 +47,25 @@ export class ArenaSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
-export class BetSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'matchId', 'pointsAwarded', 'predictedSide', 'userId'] as const
-  $columns = BetSchema.$columns
+export class AvatarFrameSchema extends BaseModel {
+  static $columns = ['createdAt', 'description', 'id', 'name', 'payload', 'slug', 'sortOrder', 'unlockLevel'] as const
+  $columns = AvatarFrameSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
+  @column()
+  declare description: string | null
   @column({ isPrimary: true })
   declare id: number
   @column()
-  declare matchId: number
+  declare name: string
   @column()
-  declare pointsAwarded: number | null
+  declare payload: any
   @column()
-  declare predictedSide: number
+  declare slug: string
   @column()
-  declare userId: number
+  declare sortOrder: number
+  @column()
+  declare unlockLevel: number
 }
 
 export class GroupMemberSchema extends BaseModel {
@@ -109,6 +138,25 @@ export class MatchPlayerSchema extends BaseModel {
   declare userId: number | null
 }
 
+export class MatchRewardSchema extends BaseModel {
+  static $columns = ['createdAt', 'eloAfter', 'eloDelta', 'id', 'matchId', 'userId', 'xpAwarded'] as const
+  $columns = MatchRewardSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare eloAfter: number
+  @column()
+  declare eloDelta: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare matchId: number
+  @column()
+  declare userId: number
+  @column()
+  declare xpAwarded: number
+}
+
 export class MatchSchema extends BaseModel {
   static $columns = ['arenaId', 'createdAt', 'createdByUserId', 'groupId', 'id', 'score', 'status', 'statusChangedAt', 'updatedAt', 'winnerSide'] as const
   $columns = MatchSchema.$columns
@@ -134,63 +182,51 @@ export class MatchSchema extends BaseModel {
   declare winnerSide: number | null
 }
 
-export class ShopItemSchema extends BaseModel {
-  static $columns = ['active', 'createdAt', 'description', 'id', 'itemType', 'name', 'payload', 'price', 'slug', 'sortOrder'] as const
-  $columns = ShopItemSchema.$columns
+export class UserAchievementSchema extends BaseModel {
+  static $columns = ['achievementId', 'id', 'unlockedAt', 'userId'] as const
+  $columns = UserAchievementSchema.$columns
   @column()
-  declare active: boolean
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-  @column()
-  declare description: string | null
+  declare achievementId: number
   @column({ isPrimary: true })
   declare id: number
+  @column.dateTime()
+  declare unlockedAt: DateTime
   @column()
-  declare itemType: string
-  @column()
-  declare name: string
-  @column()
-  declare payload: any
-  @column()
-  declare price: number
-  @column()
-  declare slug: string
-  @column()
-  declare sortOrder: number
+  declare userId: number
 }
 
 export class UserEquippedItemSchema extends BaseModel {
-  static $columns = ['id', 'itemType', 'shopItemId', 'slot', 'userId'] as const
+  static $columns = ['achievementId', 'avatarFrameId', 'id', 'itemType', 'slot', 'userId'] as const
   $columns = UserEquippedItemSchema.$columns
+  @column()
+  declare achievementId: number | null
+  @column()
+  declare avatarFrameId: number | null
   @column({ isPrimary: true })
   declare id: number
   @column()
   declare itemType: string
-  @column()
-  declare shopItemId: number | null
   @column()
   declare slot: boolean
   @column()
   declare userId: number
 }
 
-export class UserPurchaseSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'pricePaid', 'shopItemId', 'userId'] as const
-  $columns = UserPurchaseSchema.$columns
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+export class UserUnlockedFrameSchema extends BaseModel {
+  static $columns = ['avatarFrameId', 'id', 'unlockedAt', 'userId'] as const
+  $columns = UserUnlockedFrameSchema.$columns
+  @column()
+  declare avatarFrameId: number
   @column({ isPrimary: true })
   declare id: number
-  @column()
-  declare pricePaid: number
-  @column()
-  declare shopItemId: number
+  @column.dateTime()
+  declare unlockedAt: DateTime
   @column()
   declare userId: number
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['avatarPath', 'courtSide', 'createdAt', 'dominantHand', 'email', 'fullName', 'funLabel', 'id', 'nickname', 'password', 'shopBalance', 'skillLevel', 'updatedAt'] as const
+  static $columns = ['avatarPath', 'courtSide', 'createdAt', 'dominantHand', 'elo', 'email', 'fullName', 'funLabel', 'id', 'level', 'nickname', 'password', 'skillLevel', 'updatedAt', 'xp'] as const
   $columns = UserSchema.$columns
   @column()
   declare avatarPath: string | null
@@ -201,6 +237,8 @@ export class UserSchema extends BaseModel {
   @column()
   declare dominantHand: string | null
   @column()
+  declare elo: number
+  @column()
   declare email: string
   @column()
   declare fullName: string | null
@@ -209,32 +247,15 @@ export class UserSchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column()
+  declare level: number
+  @column()
   declare nickname: string | null
   @column({ serializeAs: null })
   declare password: string
   @column()
-  declare shopBalance: number
-  @column()
   declare skillLevel: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
-}
-
-export class WalletTransactionSchema extends BaseModel {
-  static $columns = ['amount', 'createdAt', 'id', 'referenceId', 'referenceType', 'type', 'userId'] as const
-  $columns = WalletTransactionSchema.$columns
   @column()
-  declare amount: number
-  @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-  @column({ isPrimary: true })
-  declare id: number
-  @column()
-  declare referenceId: number | null
-  @column()
-  declare referenceType: string | null
-  @column()
-  declare type: string
-  @column()
-  declare userId: number
+  declare xp: number
 }

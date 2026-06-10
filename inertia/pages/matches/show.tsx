@@ -1,12 +1,6 @@
-import { router } from '@inertiajs/react'
-import { Target, Users } from 'lucide-react'
-import { useState } from 'react'
 import BackLink from '~/components/BackLink'
-import Avatar from '~/components/Avatar'
 import Badge from '~/components/Badge'
 import Card from '~/components/Card'
-import ConfirmDialog from '~/components/ConfirmDialog'
-import EmptyState from '~/components/EmptyState'
 import MatchAdminSection from '~/components/MatchAdminSection'
 import MatchFinalizeCard from '~/components/MatchFinalizeCard'
 import MatchManageCard from '~/components/MatchManageCard'
@@ -14,8 +8,7 @@ import MatchTeamsBlock from '~/components/MatchTeamsBlock'
 import PageHeader from '~/components/PageHeader'
 import ShareMatchResult from '~/components/ShareMatchResult'
 import RankingList, { type RankingEntry } from '~/components/RankingList'
-import { buttonClassName } from '~/lib/button_styles'
-import { cn, displayName, teamLabel } from '~/lib/match'
+import { formatEloDelta, teamLabel } from '~/lib/match'
 import type { PlayerType } from '~/lib/player_type'
 
 type Player = {
@@ -32,34 +25,18 @@ type Player = {
   equippedTitles?: { icon: string; name: string }[]
   claimStatus?: 'pending' | 'claimed'
   guestInviteId?: number | null
-}
-
-type Bet = {
-  userId: number
-  predictedSide: number
-  pointsAwarded: number | null
-  fullName: string | null
-  email: string
+  xpAwarded?: number | null
+  eloDelta?: number | null
+  eloAfter?: number | null
 }
 
 type RankContext = {
   position: number | null
-  totalPoints: number
-  pointsToNext: number | null
-  leaderPoints: number
+  elo: number
+  eloToNext: number | null
+  leaderElo: number
   nextRankName: string | null
   nextRankPosition: number | null
-}
-
-type BetParticipation = {
-  eligibleCount: number
-  betCount: number
-  pendingMembers: {
-    userId: number
-    name: string
-    initials: string
-    avatarUrl: string | null
-  }[]
 }
 
 type Props = {
@@ -75,37 +52,23 @@ type Props = {
     shareText: string | null
   }
   players: Player[]
-  bets: Bet[]
   ranking: RankingEntry[]
   rankContext: RankContext
-  betParticipation: BetParticipation | null
-  isPlayer: boolean
-  userBet: { predictedSide: number; pointsAwarded: number | null } | null
   currentUserId: number
   canManageMatch: boolean
-  betsPossible: boolean
-  skipsBets: boolean
 }
 
 function playersBySide(players: Player[], side: number) {
   return players.filter((p) => p.side === side)
 }
 
-function sideLabelFor(side: number, side1Label: string, side2Label: string) {
-  return side === 1 ? side1Label : side2Label
-}
-
-function rankContextMessage(rankContext: RankContext, hasUserBet: boolean) {
-  if (!hasUserBet && rankContext.position === null && rankContext.totalPoints === 0) {
-    return 'Faça seu primeiro palpite para entrar no ranking.'
-  }
-
+function rankContextMessage(rankContext: RankContext) {
   if (rankContext.position === 1) {
-    return `Você lidera com ${rankContext.totalPoints} pts`
+    return `Você lidera a Play com ${rankContext.elo} ELO`
   }
 
-  if (rankContext.position && rankContext.pointsToNext && rankContext.nextRankName) {
-    return `Faltam ${rankContext.pointsToNext} pts para alcançar ${rankContext.nextRankName} (${rankContext.nextRankPosition}º)`
+  if (rankContext.position && rankContext.eloToNext && rankContext.nextRankName) {
+    return `Faltam ${rankContext.eloToNext} ELO para alcançar ${rankContext.nextRankName} (${rankContext.nextRankPosition}º)`
   }
 
   return null
@@ -114,52 +77,22 @@ function rankContextMessage(rankContext: RankContext, hasUserBet: boolean) {
 export default function MatchShow({
   match,
   players,
-  bets,
   ranking,
   rankContext,
-  betParticipation,
-  isPlayer,
-  userBet,
   currentUserId,
   canManageMatch,
-  betsPossible,
-  skipsBets,
 }: Props) {
   const side1 = playersBySide(players, 1)
   const side2 = playersBySide(players, 2)
   const side1Label = teamLabel(side1)
   const side2Label = teamLabel(side2)
-  const rankMessage = rankContextMessage(rankContext, Boolean(userBet))
-  const betsRevealed = match.status !== 'palpites_abertos' && betsPossible
-  const betsTitle = betsRevealed ? `Palpites (${bets.length})` : 'Palpites'
-  const pendingPreview = betParticipation?.pendingMembers.slice(0, 5) ?? []
-  const pendingOverflow =
-    betParticipation && betParticipation.pendingMembers.length > pendingPreview.length
-      ? betParticipation.pendingMembers.length - pendingPreview.length
-      : 0
-  const [pendingBetSide, setPendingBetSide] = useState<number | null>(null)
-  const showFinalizeCard =
-    canManageMatch &&
-    (match.status === 'em_andamento' || (match.status === 'palpites_abertos' && skipsBets))
+  const rankMessage = rankContextMessage(rankContext)
+  const showFinalizeCard = canManageMatch && match.status === 'em_andamento'
   const showAdminSection =
     canManageMatch &&
     (showFinalizeCard ||
-      (match.status === 'palpites_abertos' && betsPossible) ||
       (match.manageWindowOpen &&
-        (match.status === 'em_andamento' ||
-          match.status === 'finalizada' ||
-          match.status === 'palpites_abertos')))
-
-  function betButtonVariant(side: number) {
-    if (!userBet) return 'secondary'
-    return userBet.predictedSide === side ? 'primary' : 'secondary'
-  }
-
-  function confirmBet() {
-    if (pendingBetSide === null) return
-    router.post(`/partidas/${match.id}/palpite`, { predictedSide: pendingBetSide })
-    setPendingBetSide(null)
-  }
+        (match.status === 'em_andamento' || match.status === 'finalizada')))
 
   if (match.status === 'cancelada') {
     return (
@@ -211,119 +144,24 @@ export default function MatchShow({
         </div>
       )}
 
-      {skipsBets && match.status !== 'finalizada' && (
-        <p className="mb-6 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700">
-          Partida sem palpites — apenas histórico de vitórias e derrotas.
-        </p>
-      )}
-
-      {match.status === 'palpites_abertos' && betsPossible && betParticipation && (
-        <Card className="mb-6 border-brand-100 bg-brand-50/30">
-          <p className="text-sm font-medium text-stone-900">
-            {betParticipation.betCount} de {betParticipation.eligibleCount} já palpitaram
-          </p>
-          {pendingPreview.length > 0 && (
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-xs text-stone-500">Faltam:</span>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {pendingPreview.map((member) => (
-                  <span
-                    key={member.userId}
-                    title={member.name}
-                    className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2 py-0.5 text-xs text-stone-600"
-                  >
-                    <Avatar initials={member.initials} src={member.avatarUrl} size="sm" />
-                    {member.name}
+      {match.status === 'finalizada' && (
+        <Card title="Progressão da partida" className="mb-6">
+          <ul className="divide-y divide-stone-100">
+            {players
+              .filter((player) => player.userId && player.xpAwarded !== null)
+              .map((player) => (
+                <li key={player.id} className="flex items-center justify-between py-3 first:pt-0">
+                  <span className="font-medium text-stone-800">{player.displayName}</span>
+                  <span className="text-sm text-stone-600">
+                    +{player.xpAwarded} XP · {formatEloDelta(player.eloDelta ?? 0)} ELO
+                    {player.eloAfter !== null && (
+                      <span className="ml-1 text-stone-500">({player.eloAfter})</span>
+                    )}
                   </span>
-                ))}
-                {pendingOverflow > 0 && (
-                  <span className="text-xs font-medium text-stone-500">+{pendingOverflow}</span>
-                )}
-              </div>
-            </div>
-          )}
+                </li>
+              ))}
+          </ul>
         </Card>
-      )}
-
-      {match.status === 'palpites_abertos' && betsPossible && !isPlayer && (
-        <Card title={userBet ? 'Alterar palpite' : 'Seu palpite'} className="mb-6">
-          <p className="mb-4 text-sm text-stone-500">
-            {userBet
-              ? `Seu palpite atual: ${sideLabelFor(userBet.predictedSide, side1Label, side2Label)}. Toque na outra dupla para trocar.`
-              : 'Quem vence esta partida?'}
-          </p>
-          <div className="flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={() => setPendingBetSide(1)}
-              className={buttonClassName(betButtonVariant(1), 'lg', true)}
-            >
-              {side1Label}
-            </button>
-            <button
-              type="button"
-              onClick={() => setPendingBetSide(2)}
-              className={buttonClassName(betButtonVariant(2), 'lg', true)}
-            >
-              {side2Label}
-            </button>
-          </div>
-          <ConfirmDialog
-            open={pendingBetSide !== null}
-            title={userBet ? 'Alterar palpite?' : 'Confirmar palpite?'}
-            description={
-              pendingBetSide === null
-                ? ''
-                : `Palpite em ${sideLabelFor(pendingBetSide, side1Label, side2Label)}. Você pode trocar enquanto os palpites estiverem abertos.`
-            }
-            confirmLabel={userBet ? 'Alterar palpite' : 'Confirmar palpite'}
-            confirmVariant="success"
-            onConfirm={confirmBet}
-            onCancel={() => setPendingBetSide(null)}
-          />
-        </Card>
-      )}
-
-      {userBet && match.status !== 'palpites_abertos' && (
-        <Card
-          className={cn(
-            'mb-6',
-            match.status === 'finalizada' &&
-              userBet.pointsAwarded !== null &&
-              userBet.pointsAwarded > 0
-              ? 'border-emerald-200 bg-emerald-50/80'
-              : match.status === 'finalizada'
-                ? 'border-stone-200 bg-stone-50'
-                : 'border-brand-200 bg-brand-50/50'
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-brand-600" />
-            <div>
-              <p className="font-semibold text-stone-900">
-                Seu palpite: {sideLabelFor(userBet.predictedSide, side1Label, side2Label)}
-              </p>
-              {userBet.pointsAwarded !== null && (
-                <p
-                  className={cn(
-                    'text-sm',
-                    userBet.pointsAwarded > 0 ? 'font-medium text-emerald-700' : 'text-stone-600'
-                  )}
-                >
-                  {userBet.pointsAwarded > 0
-                    ? `+${userBet.pointsAwarded} pts — subiu no ranking!`
-                    : 'Errou desta vez — 0 pts nesta partida'}
-                </p>
-              )}
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {isPlayer && match.status === 'palpites_abertos' && betsPossible && (
-        <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Você está jogando — não pode palpitar nesta partida.
-        </p>
       )}
 
       {showAdminSection && (
@@ -334,7 +172,6 @@ export default function MatchShow({
           <MatchManageCard
             matchId={match.id}
             status={match.status}
-            betsPossible={betsPossible}
             manageWindowOpen={match.manageWindowOpen}
             manageWindowExpiresAt={match.manageWindowExpiresAt}
           />
@@ -342,38 +179,6 @@ export default function MatchShow({
       )}
 
       <div className="space-y-6">
-        <Card title={betsTitle}>
-          {!betsRevealed && betsPossible ? (
-            <EmptyState
-              icon={Users}
-              title="Palpites em segredo"
-              description="Os palpites ficam em segredo até a partida começar."
-            />
-          ) : bets.length === 0 ? (
-            <EmptyState
-              icon={Users}
-              title={skipsBets ? 'Partida sem palpites' : 'Nenhum palpite ainda'}
-              description={skipsBets ? 'O ranking de pontos não muda nesta partida.' : undefined}
-            />
-          ) : (
-            <ul className="divide-y divide-stone-100">
-              {bets.map((bet) => (
-                <li key={bet.userId} className="flex items-center justify-between py-3 first:pt-0">
-                  <span className="font-medium text-stone-800">{displayName(bet)}</span>
-                  <span className="text-sm text-stone-500">
-                    {sideLabelFor(bet.predictedSide, side1Label, side2Label)}
-                    {bet.pointsAwarded !== null && (
-                      <span className="ml-2 font-semibold text-brand-700">
-                        {bet.pointsAwarded > 0 ? `+${bet.pointsAwarded}` : '0'} pts
-                      </span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
         {rankMessage && (
           <Card className="border-brand-100 bg-brand-50/40">
             <p className="text-sm font-medium text-brand-800">{rankMessage}</p>

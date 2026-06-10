@@ -33,26 +33,22 @@ export interface ApiDefinition {
   matches: {
     store: typeof routes['matches.store']
     show: typeof routes['matches.show']
-    bet: typeof routes['matches.bet']
-    start: typeof routes['matches.start']
     finalize: typeof routes['matches.finalize']
-    reopenBets: typeof routes['matches.reopenBets']
     undoFinalize: typeof routes['matches.undoFinalize']
     cancel: typeof routes['matches.cancel']
+  }
+  ranking: {
+    index: typeof routes['ranking.index']
   }
   profile: {
     show: typeof routes['profile.show']
     update: typeof routes['profile.update']
     updateAccount: typeof routes['profile.updateAccount']
+    equip: typeof routes['profile.equip']
+    unequip: typeof routes['profile.unequip']
   }
   history: {
     show: typeof routes['history.show']
-  }
-  shop: {
-    index: typeof routes['shop.index']
-    purchase: typeof routes['shop.purchase']
-    equip: typeof routes['shop.equip']
-    unequip: typeof routes['shop.unequip']
   }
   members: {
     show: typeof routes['members.show']

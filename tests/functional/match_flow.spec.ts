@@ -1,13 +1,11 @@
 import { generateInviteCode } from '#helpers/group_access'
-import { canHaveBets } from '#helpers/match_bets'
-import { getBetHistory, getMatchHistory } from '#helpers/player_history'
-import Bet from '#models/bet'
+import { getMatchHistory } from '#helpers/player_history'
+import MatchReward from '#models/match_reward'
 import GameMatch from '#models/game_match'
 import Group from '#models/group'
 import GroupMember from '#models/group_member'
 import User from '#models/user'
 import { finalizePayload } from '#tests/helpers/finalize_match'
-import { inertiaPropsFromHtml } from '#tests/helpers/inertia_page'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
 import { DateTime } from 'luxon'
@@ -66,13 +64,7 @@ test.group('Match flow', (suite) => {
     await match.save()
   }
 
-  async function refreshManageWindow(matchId: number) {
-    const match = await GameMatch.findOrFail(matchId)
-    match.statusChangedAt = DateTime.now()
-    await match.save()
-  }
-
-  test('member creates match', async ({ client, assert }) => {
+  test('member creates match in em_andamento', async ({ client, assert }) => {
     const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
 
     const matchId = await createMatchViaHttp(client, owner, group.id, [
@@ -83,11 +75,11 @@ test.group('Match flow', (suite) => {
     ])
 
     const match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'palpites_abertos')
+    assert.equal(match.status, 'em_andamento')
     assert.equal(match.groupId, group.id)
   })
 
-  test('regular member can create and manage own match', async ({ client, assert }) => {
+  test('regular member can create and finalize own match', async ({ client, assert }) => {
     const { owner, member, player1, player2, player3, player4, group } =
       await createGroupWithMembers()
 
@@ -101,13 +93,6 @@ test.group('Match flow', (suite) => {
     const match = await GameMatch.findOrFail(matchId)
     assert.equal(match.createdByUserId, member.id)
 
-    const ownerStart = await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-    ownerStart.assertStatus(403)
-
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(member)
-    await match.refresh()
-    assert.equal(match.status, 'em_andamento')
-
     const ownerFinalize = await client
       .post(`/partidas/${matchId}/finalizar`)
       .loginAs(owner)
@@ -119,27 +104,7 @@ test.group('Match flow', (suite) => {
     assert.equal(match.status, 'finalizada')
   })
 
-  test('non-member cannot create match', async ({ client }) => {
-    const { player1, player2, player3, player4, group } = await createGroupWithMembers()
-    const outsider = await createUser('outsider@test.com')
-
-    const response = await client
-      .post(`/grupos/${group.id}/partidas`)
-      .loginAs(outsider)
-      .json({
-        arenaName: 'Arena',
-        players: [
-          { userId: player1.id, side: 1 },
-          { userId: player2.id, side: 1 },
-          { userId: player3.id, side: 2 },
-          { userId: player4.id, side: 2 },
-        ],
-      })
-
-    response.assertStatus(403)
-  })
-
-  test('player cannot bet on own match', async ({ client }) => {
+  test('finalize awards xp and elo to players', async ({ client, assert }) => {
     const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
     const matchId = await createMatchViaHttp(client, owner, group.id, [
       { userId: player1.id, side: 1 },
@@ -148,150 +113,17 @@ test.group('Match flow', (suite) => {
       { userId: player4.id, side: 2 },
     ])
 
-    const response = await client
-      .post(`/partidas/${matchId}/palpite`)
-      .loginAs(player1)
-      .json({ predictedSide: 1 })
-
-    response.assertStatus(403)
-  })
-
-  test('user can change bet while palpites are open', async ({ client, assert }) => {
-    const { owner, member, player1, player2, player3, player4, group } =
-      await createGroupWithMembers()
-    const matchId = await createMatchViaHttp(client, owner, group.id, [
-      { userId: player1.id, side: 1 },
-      { userId: player2.id, side: 1 },
-      { userId: player3.id, side: 2 },
-      { userId: player4.id, side: 2 },
-    ])
-
-    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
-    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 2 })
-
-    const bets = await Bet.query().where('match_id', matchId).where('user_id', member.id)
-    assert.lengthOf(bets, 1)
-    assert.equal(bets[0].predictedSide, 2)
-  })
-
-  test('bets list hidden until match starts', async ({ client, assert }) => {
-    const { owner, member, player1, player2, player3, player4, group } =
-      await createGroupWithMembers()
-    const matchId = await createMatchViaHttp(client, owner, group.id, [
-      { userId: player1.id, side: 1 },
-      { userId: player2.id, side: 1 },
-      { userId: player3.id, side: 2 },
-      { userId: player4.id, side: 2 },
-    ])
-
-    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
-
-    const openResponse = await client.get(`/partidas/${matchId}`).loginAs(owner)
-    openResponse.assertStatus(200)
-
-    const openProps = inertiaPropsFromHtml<{
-      match: { status: string }
-      bets: { userId: number; predictedSide: number }[]
-      userBet: { predictedSide: number } | null
-    }>(openResponse.text())
-
-    assert.equal(openProps.match.status, 'palpites_abertos')
-    assert.lengthOf(openProps.bets, 0)
-    assert.isNull(openProps.userBet)
-
-    const memberOpenResponse = await client.get(`/partidas/${matchId}`).loginAs(member)
-    const memberOpenProps = inertiaPropsFromHtml<{
-      bets: { userId: number; predictedSide: number }[]
-      userBet: { predictedSide: number } | null
-    }>(memberOpenResponse.text())
-
-    assert.lengthOf(memberOpenProps.bets, 0)
-    assert.equal(memberOpenProps.userBet?.predictedSide, 1)
-
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-
-    const startedResponse = await client.get(`/partidas/${matchId}`).loginAs(owner)
-    const startedProps = inertiaPropsFromHtml<{
-      match: { status: string }
-      bets: { userId: number; predictedSide: number }[]
-    }>(startedResponse.text())
-
-    assert.equal(startedProps.match.status, 'em_andamento')
-    assert.isAtLeast(startedProps.bets.length, 1)
-    assert.equal(startedProps.bets.find((bet) => bet.userId === member.id)?.predictedSide, 1)
-  })
-
-  test('four players only can register match without bets', async ({ client, assert }) => {
-    const owner = await createUser('quadra@test.com')
-    const p1 = await createUser('q1@test.com')
-    const p2 = await createUser('q2@test.com')
-    const p3 = await createUser('q3@test.com')
-
-    const groupRecord = await Group.create({ name: 'Quadra', inviteCode: generateInviteCode() })
-    await GroupMember.create({
-      groupId: groupRecord.id,
-      userId: owner.id,
-      role: 'organizador',
-    })
-    for (const user of [p1, p2, p3]) {
-      await GroupMember.create({ groupId: groupRecord.id, userId: user.id, role: 'membro' })
-    }
-
-    const players = [owner.id, p1.id, p2.id, p3.id]
-    assert.isFalse(await canHaveBets(groupRecord.id, players))
-
-    const createResponse = await client
-      .post(`/grupos/${groupRecord.id}/partidas`)
-      .loginAs(owner)
-      .json({
-        arenaName: 'Arena Quadra',
-        players: [
-          { userId: owner.id, side: 1 },
-          { userId: p1.id, side: 1 },
-          { userId: p2.id, side: 2 },
-          { userId: p3.id, side: 2 },
-        ],
-      })
-
-    const matchUrl = createResponse.redirects().pop()!
-    const matchId = Number(matchUrl.split('/').pop())
-    const match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'em_andamento')
-
     await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
 
-    await match.refresh()
-    assert.equal(match.status, 'finalizada')
-    assert.equal(match.winnerSide, 1)
+    const rewards = await MatchReward.query().where('match_id', matchId)
+    assert.lengthOf(rewards, 4)
 
-    const bets = await Bet.query().where('match_id', matchId)
-    assert.lengthOf(bets, 0)
-  })
-
-  test('finalize awards correct points', async ({ client, assert }) => {
-    const { owner, member, player1, player2, player3, player4, group } =
-      await createGroupWithMembers()
-    const matchId = await createMatchViaHttp(client, owner, group.id, [
-      { userId: player1.id, side: 1 },
-      { userId: player2.id, side: 1 },
-      { userId: player3.id, side: 2 },
-      { userId: player4.id, side: 2 },
-    ])
-
-    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
-
-    const bet = await Bet.query()
-      .where('match_id', matchId)
-      .where('user_id', member.id)
-      .firstOrFail()
-    assert.equal(bet.pointsAwarded, 10)
-
-    const match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'finalizada')
-    assert.equal(match.winnerSide, 1)
-    assert.deepEqual(match.score, { sets: [{ side1: 6, side2: 4 }] })
+    const winner = await User.findOrFail(player1.id)
+    const loser = await User.findOrFail(player3.id)
+    assert.isAbove(winner.xp, 0)
+    assert.isAbove(loser.xp, 0)
+    assert.isAbove(winner.elo, 1000)
+    assert.isBelow(loser.elo, 1000)
   })
 
   test('finalize with sets persists score', async ({ client, assert }) => {
@@ -303,7 +135,6 @@ test.group('Match flow', (suite) => {
       { userId: player4.id, side: 2 },
     ])
 
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
     await client
       .post(`/partidas/${matchId}/finalizar`)
       .loginAs(owner)
@@ -334,7 +165,6 @@ test.group('Match flow', (suite) => {
       { userId: player4.id, side: 2 },
     ])
 
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
     await client
       .post(`/partidas/${matchId}/finalizar`)
       .loginAs(owner)
@@ -351,63 +181,7 @@ test.group('Match flow', (suite) => {
     assert.isNull(match.score)
   })
 
-  test('creator can reopen bets after starting match', async ({ client, assert }) => {
-    const { owner, member, player1, player2, player3, player4, group } =
-      await createGroupWithMembers()
-    const matchId = await createMatchViaHttp(client, owner, group.id, [
-      { userId: player1.id, side: 1 },
-      { userId: player2.id, side: 1 },
-      { userId: player3.id, side: 2 },
-      { userId: player4.id, side: 2 },
-    ])
-
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-
-    const match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'em_andamento')
-
-    await client.post(`/partidas/${matchId}/reabrir-palpites`).loginAs(owner)
-    await match.refresh()
-    assert.equal(match.status, 'palpites_abertos')
-
-    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 2 })
-
-    const bet = await Bet.query()
-      .where('match_id', matchId)
-      .where('user_id', member.id)
-      .firstOrFail()
-    assert.equal(bet.predictedSide, 2)
-  })
-
-  test('creator can undo finalize and clear awarded points', async ({ client, assert }) => {
-    const { owner, member, player1, player2, player3, player4, group } =
-      await createGroupWithMembers()
-    const matchId = await createMatchViaHttp(client, owner, group.id, [
-      { userId: player1.id, side: 1 },
-      { userId: player2.id, side: 1 },
-      { userId: player3.id, side: 2 },
-      { userId: player4.id, side: 2 },
-    ])
-
-    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
-
-    await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(owner)
-
-    const match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'em_andamento')
-    assert.isNull(match.winnerSide)
-    assert.isNull(match.score)
-
-    const bet = await Bet.query()
-      .where('match_id', matchId)
-      .where('user_id', member.id)
-      .firstOrFail()
-    assert.isNull(bet.pointsAwarded)
-  })
-
-  test('undo finalize clears stored score', async ({ client, assert }) => {
+  test('creator can undo finalize and revert progression', async ({ client, assert }) => {
     const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
     const matchId = await createMatchViaHttp(client, owner, group.id, [
       { userId: player1.id, side: 1 },
@@ -416,19 +190,27 @@ test.group('Match flow', (suite) => {
       { userId: player4.id, side: 2 },
     ])
 
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-    await client
-      .post(`/partidas/${matchId}/finalizar`)
-      .loginAs(owner)
-      .json(finalizePayload(2, [{ side1: 4, side2: 6 }]))
+    const playerBefore = await User.findOrFail(player1.id)
+    const xpBefore = playerBefore.xp
+    const eloBefore = playerBefore.elo
 
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
     await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(owner)
 
     const match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'em_andamento')
+    assert.isNull(match.winnerSide)
     assert.isNull(match.score)
+
+    const rewards = await MatchReward.query().where('match_id', matchId)
+    assert.lengthOf(rewards, 0)
+
+    const playerAfter = await User.findOrFail(player1.id)
+    assert.equal(playerAfter.xp, xpBefore)
+    assert.equal(playerAfter.elo, eloBefore)
   })
 
-  test('cancelled open match disappears from active play list', async ({ client, assert }) => {
+  test('cancelled finalized match is removed from history', async ({ client, assert }) => {
     const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
     const matchId = await createMatchViaHttp(client, owner, group.id, [
       { userId: player1.id, side: 1 },
@@ -437,55 +219,17 @@ test.group('Match flow', (suite) => {
       { userId: player4.id, side: 2 },
     ])
 
-    await client.post(`/partidas/${matchId}/cancelar`).loginAs(owner)
-
-    const match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'cancelada')
-
-    const activeMatches = await GameMatch.query()
-      .where('group_id', group.id)
-      .whereIn('status', ['palpites_abertos', 'em_andamento'])
-
-    assert.lengthOf(activeMatches, 0)
-  })
-
-  test('cancelled finalized match is removed from history and clears points', async ({
-    client,
-    assert,
-  }) => {
-    const { owner, member, player1, player2, player3, player4, group } =
-      await createGroupWithMembers()
-    const matchId = await createMatchViaHttp(client, owner, group.id, [
-      { userId: player1.id, side: 1 },
-      { userId: player2.id, side: 1 },
-      { userId: player3.id, side: 2 },
-      { userId: player4.id, side: 2 },
-    ])
-
-    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
     await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
-
     await client.post(`/partidas/${matchId}/cancelar`).loginAs(owner)
 
     const match = await GameMatch.findOrFail(matchId)
     assert.equal(match.status, 'cancelada')
-    assert.isNull(match.winnerSide)
 
-    const bet = await Bet.query()
-      .where('match_id', matchId)
-      .where('user_id', member.id)
-      .firstOrFail()
-    assert.isNull(bet.pointsAwarded)
-
-    const betHistory = await getBetHistory(member.id, { tab: 'bets' })
-    assert.isFalse(betHistory.items.some((entry) => entry.matchId === matchId))
-
-    const matchHistory = await getMatchHistory(player1.id, { tab: 'matches' })
+    const matchHistory = await getMatchHistory(player1.id, {})
     assert.isFalse(matchHistory.items.some((entry) => entry.matchId === matchId))
   })
 
-  test('non-creator cannot reopen undo or cancel match', async ({ client }) => {
+  test('non-creator cannot undo or cancel match', async ({ client }) => {
     const { owner, member, player1, player2, player3, player4, group } =
       await createGroupWithMembers()
     const matchId = await createMatchViaHttp(client, owner, group.id, [
@@ -494,11 +238,6 @@ test.group('Match flow', (suite) => {
       { userId: player3.id, side: 2 },
       { userId: player4.id, side: 2 },
     ])
-
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-
-    const reopen = await client.post(`/partidas/${matchId}/reabrir-palpites`).loginAs(member)
-    reopen.assertStatus(403)
 
     await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
 
@@ -509,10 +248,7 @@ test.group('Match flow', (suite) => {
     cancel.assertStatus(403)
   })
 
-  test('start works after window expires but other manage actions do not', async ({
-    client,
-    assert,
-  }) => {
+  test('manage window blocks undo after expiry', async ({ client, assert }) => {
     const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
     const matchId = await createMatchViaHttp(client, owner, group.id, [
       { userId: player1.id, side: 1 },
@@ -521,49 +257,12 @@ test.group('Match flow', (suite) => {
       { userId: player4.id, side: 2 },
     ])
 
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
     await expireManageWindow(matchId)
 
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
+    await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(owner)
 
-    let match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'em_andamento')
-
-    await expireManageWindow(matchId)
-
-    await client.post(`/partidas/${matchId}/reabrir-palpites`).loginAs(owner)
-
-    match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'em_andamento')
-
-    await client.post(`/partidas/${matchId}/cancelar`).loginAs(owner)
-
-    match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'em_andamento')
-  })
-
-  test('manage window resets after status change', async ({ client, assert }) => {
-    const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
-    const matchId = await createMatchViaHttp(client, owner, group.id, [
-      { userId: player1.id, side: 1 },
-      { userId: player2.id, side: 1 },
-      { userId: player3.id, side: 2 },
-      { userId: player4.id, side: 2 },
-    ])
-
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
-
-    await expireManageWindow(matchId)
-
-    await client.post(`/partidas/${matchId}/reabrir-palpites`).loginAs(owner)
-
-    let match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'em_andamento')
-
-    await refreshManageWindow(matchId)
-
-    await client.post(`/partidas/${matchId}/reabrir-palpites`).loginAs(owner)
-
-    match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'palpites_abertos')
+    const match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'finalizada')
   })
 })

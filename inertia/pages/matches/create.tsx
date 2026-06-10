@@ -20,7 +20,6 @@ type Arena = {
 
 type Props = {
   group: { id: number; name: string }
-  memberCount: number
   members: Member[]
   pendingGuestInvites: PendingGuestInvite[]
   arenas: Arena[]
@@ -77,7 +76,6 @@ function isSlotFilled(slot: Slot) {
 
 export default function MatchCreate({
   group,
-  memberCount,
   members,
   pendingGuestInvites,
   arenas,
@@ -86,7 +84,6 @@ export default function MatchCreate({
   const [arenaName, setArenaName] = useState('')
   const [arenaCity, setArenaCity] = useState('')
   const [useNewArena, setUseNewArena] = useState(arenas.length === 0)
-  const [skipBets, setSkipBets] = useState(memberCount === 4)
   const [slots, setSlots] = useState<Slot[]>(createInitialSlots)
 
   function updateSlot(slotIndex: number, patch: Partial<Slot>) {
@@ -112,7 +109,6 @@ export default function MatchCreate({
       arenaName: useNewArena ? arenaName : undefined,
       arenaCity: useNewArena && arenaCity.trim() ? arenaCity.trim() : undefined,
       players,
-      skipBets,
     })
   }
 
@@ -181,29 +177,6 @@ export default function MatchCreate({
             slots={slots}
             onChange={updateSlot}
           />
-        </Card>
-
-        <Card title="Palpites">
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              checked={skipBets}
-              onChange={(e) => setSkipBets(e.target.checked)}
-              className="mt-1 rounded border-stone-300 text-brand-600 focus:ring-brand-500"
-            />
-            <span className="text-sm text-stone-700">
-              <span className="font-medium text-stone-900">Sem palpites (só histórico)</span>
-              <span className="mt-1 block text-stone-500">
-                Use quando todos da Play estão jogando ou não haverá apostas nesta partida. Vitórias
-                e derrotas entram no histórico normalmente.
-              </span>
-            </span>
-          </label>
-          {memberCount === 4 && (
-            <p className="mt-3 text-xs text-amber-800">
-              Play com 4 pessoas: palpites desativados por padrão.
-            </p>
-          )}
         </Card>
       </div>
 

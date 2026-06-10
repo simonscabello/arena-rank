@@ -108,29 +108,11 @@ const routes = {
     tokens: [{"old":"/partidas/:id","type":0,"val":"partidas","end":""},{"old":"/partidas/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['matches.show']['types'],
   },
-  'matches.bet': {
-    methods: ["POST"],
-    pattern: '/partidas/:id/palpite',
-    tokens: [{"old":"/partidas/:id/palpite","type":0,"val":"partidas","end":""},{"old":"/partidas/:id/palpite","type":1,"val":"id","end":""},{"old":"/partidas/:id/palpite","type":0,"val":"palpite","end":""}],
-    types: placeholder as Registry['matches.bet']['types'],
-  },
-  'matches.start': {
-    methods: ["POST"],
-    pattern: '/partidas/:id/iniciar',
-    tokens: [{"old":"/partidas/:id/iniciar","type":0,"val":"partidas","end":""},{"old":"/partidas/:id/iniciar","type":1,"val":"id","end":""},{"old":"/partidas/:id/iniciar","type":0,"val":"iniciar","end":""}],
-    types: placeholder as Registry['matches.start']['types'],
-  },
   'matches.finalize': {
     methods: ["POST"],
     pattern: '/partidas/:id/finalizar',
     tokens: [{"old":"/partidas/:id/finalizar","type":0,"val":"partidas","end":""},{"old":"/partidas/:id/finalizar","type":1,"val":"id","end":""},{"old":"/partidas/:id/finalizar","type":0,"val":"finalizar","end":""}],
     types: placeholder as Registry['matches.finalize']['types'],
-  },
-  'matches.reopenBets': {
-    methods: ["POST"],
-    pattern: '/partidas/:id/reabrir-palpites',
-    tokens: [{"old":"/partidas/:id/reabrir-palpites","type":0,"val":"partidas","end":""},{"old":"/partidas/:id/reabrir-palpites","type":1,"val":"id","end":""},{"old":"/partidas/:id/reabrir-palpites","type":0,"val":"reabrir-palpites","end":""}],
-    types: placeholder as Registry['matches.reopenBets']['types'],
   },
   'matches.undoFinalize': {
     methods: ["POST"],
@@ -143,6 +125,12 @@ const routes = {
     pattern: '/partidas/:id/cancelar',
     tokens: [{"old":"/partidas/:id/cancelar","type":0,"val":"partidas","end":""},{"old":"/partidas/:id/cancelar","type":1,"val":"id","end":""},{"old":"/partidas/:id/cancelar","type":0,"val":"cancelar","end":""}],
     types: placeholder as Registry['matches.cancel']['types'],
+  },
+  'ranking.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/ranking',
+    tokens: [{"old":"/ranking","type":0,"val":"ranking","end":""}],
+    types: placeholder as Registry['ranking.index']['types'],
   },
   'profile.show': {
     methods: ["GET","HEAD"],
@@ -162,35 +150,23 @@ const routes = {
     tokens: [{"old":"/perfil/conta","type":0,"val":"perfil","end":""},{"old":"/perfil/conta","type":0,"val":"conta","end":""}],
     types: placeholder as Registry['profile.updateAccount']['types'],
   },
+  'profile.equip': {
+    methods: ["POST"],
+    pattern: '/perfil/equipar',
+    tokens: [{"old":"/perfil/equipar","type":0,"val":"perfil","end":""},{"old":"/perfil/equipar","type":0,"val":"equipar","end":""}],
+    types: placeholder as Registry['profile.equip']['types'],
+  },
+  'profile.unequip': {
+    methods: ["POST"],
+    pattern: '/perfil/desequipar',
+    tokens: [{"old":"/perfil/desequipar","type":0,"val":"perfil","end":""},{"old":"/perfil/desequipar","type":0,"val":"desequipar","end":""}],
+    types: placeholder as Registry['profile.unequip']['types'],
+  },
   'history.show': {
     methods: ["GET","HEAD"],
     pattern: '/historico',
     tokens: [{"old":"/historico","type":0,"val":"historico","end":""}],
     types: placeholder as Registry['history.show']['types'],
-  },
-  'shop.index': {
-    methods: ["GET","HEAD"],
-    pattern: '/loja',
-    tokens: [{"old":"/loja","type":0,"val":"loja","end":""}],
-    types: placeholder as Registry['shop.index']['types'],
-  },
-  'shop.purchase': {
-    methods: ["POST"],
-    pattern: '/loja/:id/comprar',
-    tokens: [{"old":"/loja/:id/comprar","type":0,"val":"loja","end":""},{"old":"/loja/:id/comprar","type":1,"val":"id","end":""},{"old":"/loja/:id/comprar","type":0,"val":"comprar","end":""}],
-    types: placeholder as Registry['shop.purchase']['types'],
-  },
-  'shop.equip': {
-    methods: ["POST"],
-    pattern: '/loja/equipar',
-    tokens: [{"old":"/loja/equipar","type":0,"val":"loja","end":""},{"old":"/loja/equipar","type":0,"val":"equipar","end":""}],
-    types: placeholder as Registry['shop.equip']['types'],
-  },
-  'shop.unequip': {
-    methods: ["POST"],
-    pattern: '/loja/desequipar',
-    tokens: [{"old":"/loja/desequipar","type":0,"val":"loja","end":""},{"old":"/loja/desequipar","type":0,"val":"desequipar","end":""}],
-    types: placeholder as Registry['shop.unequip']['types'],
   },
   'members.show': {
     methods: ["GET","HEAD"],

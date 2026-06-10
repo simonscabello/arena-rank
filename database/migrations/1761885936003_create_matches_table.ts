@@ -27,7 +27,7 @@ export default class extends BaseSchema {
         .references('id')
         .inTable('users')
         .onDelete('RESTRICT')
-      table.string('status', 30).notNullable().defaultTo('palpites_abertos')
+      table.string('status', 30).notNullable().defaultTo('em_andamento')
       table.smallint('winner_side').unsigned().nullable()
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').nullable()

@@ -1,9 +1,7 @@
-import { scoreBetsForMatch } from '#helpers/match_bet_scoring'
+import { scoreMatchProgression } from '#helpers/match_progression'
 import { createMatchWithPlayers } from '#helpers/match_creation'
-import ForbiddenException from '#exceptions/forbidden_exception'
 import { assertGroupMember } from '#helpers/group_access'
 import { assertMatchCreator, isMatchCreator } from '#helpers/match_access'
-import { canHaveBets } from '#helpers/match_bets'
 import { clearMatchResult } from '#helpers/match_lifecycle'
 import {
   isManageWindowOpen,
@@ -11,8 +9,8 @@ import {
   markStatusChanged,
   rejectExpiredManageWindow,
 } from '#helpers/match_manage_window'
-import { realPlayerUserIds, serializeMatchPlayer } from '#helpers/match_players'
-import { DEFAULT_FRAME_INSET, getEquippedDisplayByUserIds } from '#helpers/shop_rewards'
+import { serializeMatchPlayer } from '#helpers/match_players'
+import { DEFAULT_FRAME_INSET, getEquippedDisplayByUserIds } from '#helpers/cosmetic_display'
 import { validateAndResolveMatchPlayers } from '#helpers/match_player_validation'
 import { buildMatchShareText } from '#helpers/match_share'
 import {
@@ -24,18 +22,9 @@ import {
   validateSets,
   type MatchScore,
 } from '#helpers/match_score'
-import { isUniqueConstraintError } from '#helpers/db_errors'
-import {
-  getBetParticipation,
-  getGroupRanking,
-  getMatchWithRelations,
-  getRankContext,
-  isMatchPlayer,
-} from '#helpers/ranking'
-import Bet from '#models/bet'
+import { getGroupRanking, getMatchWithRelations, getRankContext } from '#helpers/ranking'
 import GameMatch from '#models/game_match'
-import MatchPlayer from '#models/match_player'
-import { createMatchValidator, finalizeMatchValidator, placeBetValidator } from '#validators/match'
+import { createMatchValidator, finalizeMatchValidator } from '#validators/match'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 
@@ -54,18 +43,7 @@ export default class MatchesController {
       return
     }
 
-    const realUserIds = realPlayerUserIds(validation.resolved)
-    const betsPossible = await canHaveBets(groupId, realUserIds)
-    const skipBets = payload.skipBets === true || !betsPossible
-    const initialStatus = skipBets ? 'em_andamento' : 'palpites_abertos'
-
-    const created = await createMatchWithPlayers(
-      groupId,
-      user,
-      payload,
-      validation.resolved,
-      initialStatus
-    )
+    const created = await createMatchWithPlayers(groupId, user, payload, validation.resolved)
 
     if (!created.ok) {
       session.flash('error', created.error)
@@ -73,10 +51,7 @@ export default class MatchesController {
       return
     }
 
-    session.flash(
-      'success',
-      skipBets ? 'Partida criada — registre o resultado (sem palpites)' : 'Partida criada'
-    )
+    session.flash('success', 'Partida criada')
     response.redirect().toRoute('matches.show', { id: created.match.id })
   }
 
@@ -85,25 +60,26 @@ export default class MatchesController {
     const match = await getMatchWithRelations(Number(params.id))
     await assertGroupMember(match.groupId, user)
 
-    const playerUserIds = realPlayerUserIds(match.players)
-    const betsPossible = await canHaveBets(match.groupId, playerUserIds)
-    const skipsBets = !betsPossible
     const ranking = await getGroupRanking(match.groupId)
     const rankContext = getRankContext(ranking, user.id)
-    const betParticipation =
-      match.status === 'palpites_abertos' && betsPossible
-        ? await getBetParticipation(match.id, match.groupId, playerUserIds)
-        : null
-    const isPlayer = await isMatchPlayer(match.id, user.id)
-    const userBet = match.bets.find((b) => b.userId === user.id)
     const canManageMatch = isMatchCreator(match, user.id)
-    const betsRevealed = match.status !== 'palpites_abertos' || !betsPossible
     const parsedScore = parseMatchScore(match.score)
     const serializedPlayers = match.players.map((player) => serializeMatchPlayer(player))
     const playerUserIdsForRewards = serializedPlayers
       .map((player) => player.userId)
       .filter((userId): userId is number => userId !== null)
     const equippedDisplayByUserId = await getEquippedDisplayByUserIds(playerUserIdsForRewards)
+
+    const rewardsByUserId = new Map(
+      match.rewards.map((reward) => [
+        reward.userId,
+        {
+          xpAwarded: reward.xpAwarded,
+          eloDelta: reward.eloDelta,
+          eloAfter: reward.eloAfter,
+        },
+      ])
+    )
 
     return inertia.render('matches/show', {
       match: {
@@ -121,117 +97,28 @@ export default class MatchesController {
                 score: parsedScore,
                 winnerSide: match.winnerSide,
                 players: match.players,
-                bets: match.bets,
-                skipsBets,
               })
             : null,
       },
       players: serializedPlayers.map((player) => {
         const rewards = player.userId ? equippedDisplayByUserId.get(player.userId) : null
+        const progression = player.userId ? rewardsByUserId.get(player.userId) : null
 
         return {
           ...player,
           equippedTitles: rewards?.equippedTitles ?? [],
           avatarFrameSrc: rewards?.avatarFrameSrc ?? null,
           avatarFrameInset: rewards?.avatarFrameInset ?? DEFAULT_FRAME_INSET,
+          xpAwarded: progression?.xpAwarded ?? null,
+          eloDelta: progression?.eloDelta ?? null,
+          eloAfter: progression?.eloAfter ?? null,
         }
       }),
-      bets: betsRevealed
-        ? match.bets.map((b) => ({
-            userId: b.userId,
-            predictedSide: b.predictedSide,
-            pointsAwarded: b.pointsAwarded,
-            fullName: b.user.fullName,
-            email: b.user.email,
-            nickname: b.user.nickname,
-            funLabel: b.user.funLabel,
-          }))
-        : [],
       ranking,
       rankContext,
-      betParticipation,
-      isPlayer,
-      userBet: userBet
-        ? { predictedSide: userBet.predictedSide, pointsAwarded: userBet.pointsAwarded }
-        : null,
       currentUserId: user.id,
       canManageMatch,
-      betsPossible,
-      skipsBets,
     })
-  }
-
-  async placeBet({ request, response, auth, session, params }: HttpContext) {
-    const user = auth.user!
-    const match = await GameMatch.findOrFail(Number(params.id))
-    await assertGroupMember(match.groupId, user)
-
-    if (match.status !== 'palpites_abertos') {
-      session.flash('error', 'Palpites fechados para esta partida')
-      response.redirect().back()
-      return
-    }
-
-    if (await isMatchPlayer(match.id, user.id)) {
-      throw new ForbiddenException('Jogadores não podem palpitar na própria partida')
-    }
-
-    const { predictedSide } = await request.validateUsing(placeBetValidator)
-
-    let existing = await Bet.query().where('match_id', match.id).where('user_id', user.id).first()
-
-    if (!existing) {
-      try {
-        await Bet.create({
-          matchId: match.id,
-          userId: user.id,
-          predictedSide,
-        })
-        session.flash('success', 'Palpite registrado')
-        response.redirect().back()
-        return
-      } catch (error) {
-        if (!isUniqueConstraintError(error)) {
-          throw error
-        }
-
-        existing = await Bet.query()
-          .where('match_id', match.id)
-          .where('user_id', user.id)
-          .firstOrFail()
-      }
-    }
-
-    if (existing.predictedSide === predictedSide) {
-      session.flash('success', 'Palpite mantido')
-      response.redirect().back()
-      return
-    }
-
-    existing.predictedSide = predictedSide
-    await existing.save()
-    session.flash('success', 'Palpite atualizado')
-    response.redirect().back()
-  }
-
-  async start({ response, auth, session, params }: HttpContext) {
-    const user = auth.user!
-    const match = await GameMatch.findOrFail(Number(params.id))
-    await assertGroupMember(match.groupId, user)
-    await assertMatchCreator(match, user)
-
-    if (match.status !== 'palpites_abertos') {
-      session.flash('error', 'Partida não está aberta para palpites')
-      response.redirect().back()
-      return
-    }
-
-    match.status = 'em_andamento'
-    markStatusChanged(match)
-    await match.save()
-
-    session.flash('success', 'Partida iniciada — palpites fechados')
-    response.redirect().back()
   }
 
   async finalize({ request, response, auth, session, params }: HttpContext) {
@@ -240,13 +127,7 @@ export default class MatchesController {
     await assertGroupMember(match.groupId, user)
     await assertMatchCreator(match, user)
 
-    const matchPlayers = await MatchPlayer.query().where('match_id', match.id).select('user_id')
-    const playerIds = realPlayerUserIds(matchPlayers)
-    const betsPossible = await canHaveBets(match.groupId, playerIds)
-    const canFinalizeNow =
-      match.status === 'em_andamento' || (match.status === 'palpites_abertos' && !betsPossible)
-
-    if (!canFinalizeNow) {
+    if (match.status !== 'em_andamento') {
       session.flash('error', 'Partida precisa estar em andamento para finalizar')
       response.redirect().back()
       return
@@ -278,41 +159,10 @@ export default class MatchesController {
     const score: MatchScore = { sets: sets! }
 
     await db.transaction(async (trx) => {
-      await scoreBetsForMatch(match, winnerSide, score, trx)
+      await scoreMatchProgression(match, winnerSide, score, trx)
     })
 
     session.flash('success', 'Partida finalizada')
-    response.redirect().back()
-  }
-
-  async reopenBets({ response, auth, session, params }: HttpContext) {
-    const user = auth.user!
-    const match = await GameMatch.findOrFail(Number(params.id))
-    await assertGroupMember(match.groupId, user)
-    await assertMatchCreator(match, user)
-    if (rejectExpiredManageWindow(match, { session, response })) return
-
-    if (match.status !== 'em_andamento') {
-      session.flash('error', 'Só é possível reabrir palpites em partida em andamento')
-      response.redirect().back()
-      return
-    }
-
-    const matchPlayers = await MatchPlayer.query().where('match_id', match.id).select('user_id')
-    const playerIds = realPlayerUserIds(matchPlayers)
-    const betsPossible = await canHaveBets(match.groupId, playerIds)
-
-    if (!betsPossible) {
-      session.flash('error', 'Esta partida não aceita palpites')
-      response.redirect().back()
-      return
-    }
-
-    match.status = 'palpites_abertos'
-    markStatusChanged(match)
-    await match.save()
-
-    session.flash('success', 'Palpites reabertos')
     response.redirect().back()
   }
 

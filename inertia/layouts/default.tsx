@@ -1,13 +1,14 @@
 import { Data } from '@generated/data'
 import { Form, Link } from '@adonisjs/inertia/react'
 import { usePage } from '@inertiajs/react'
-import { History, Home, ShoppingBag, UserCircle, Users, LogOut } from 'lucide-react'
+import { History, Home, Trophy, UserCircle, Users, LogOut } from 'lucide-react'
 import { ReactElement, useEffect, useRef } from 'react'
 import { toast, Toaster } from 'sonner'
 import Avatar from '~/components/Avatar'
+import { APP_NAME } from '~/lib/app_name'
 import { cn } from '~/lib/match'
 
-type NavKey = 'home' | 'plays' | 'history' | 'shop' | 'profile'
+type NavKey = 'home' | 'plays' | 'history' | 'ranking' | 'profile'
 
 function isNavActive(url: string, key: NavKey) {
   const path = url.split('?')[0]
@@ -18,8 +19,8 @@ function isNavActive(url: string, key: NavKey) {
       return path.startsWith('/grupos') || path.startsWith('/partidas')
     case 'history':
       return path.startsWith('/historico')
-    case 'shop':
-      return path.startsWith('/loja')
+    case 'ranking':
+      return path.startsWith('/ranking')
     case 'profile':
       return path.startsWith('/perfil')
   }
@@ -67,7 +68,7 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
       <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-white/90 px-4 py-3 backdrop-blur-md">
         <div className="flex items-center justify-between gap-3">
           <Link route="home" className="text-lg font-bold tracking-tight text-brand-700">
-            Palpiteiro
+            {APP_NAME}
           </Link>
           <nav className="flex items-center gap-2">
             {user ? (
@@ -78,8 +79,8 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
                 <Link route="history.show" className={desktopNavClass(isNavActive(url, 'history'))}>
                   Histórico
                 </Link>
-                <Link route="shop.index" className={desktopNavClass(isNavActive(url, 'shop'))}>
-                  Loja
+                <Link route="ranking.index" className={desktopNavClass(isNavActive(url, 'ranking'))}>
+                  Ranking
                 </Link>
                 <Link route="profile.show" className={desktopNavClass(isNavActive(url, 'profile'))}>
                   Perfil
@@ -140,9 +141,9 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
               <History className="h-5 w-5 shrink-0" />
               Histórico
             </Link>
-            <Link route="shop.index" className={mobileNavClass(isNavActive(url, 'shop'))}>
-              <ShoppingBag className="h-5 w-5 shrink-0" />
-              Loja
+            <Link route="ranking.index" className={mobileNavClass(isNavActive(url, 'ranking'))}>
+              <Trophy className="h-5 w-5 shrink-0" />
+              Ranking
             </Link>
             <Link route="profile.show" className={mobileNavClass(isNavActive(url, 'profile'))}>
               <UserCircle className="h-5 w-5 shrink-0" />

@@ -90,13 +90,14 @@ export default class extends BaseSeeder {
     }
 
     for (const data of USERS) {
-      const isDevLoginUser = data.email === 'joao@palpiteiro.test'
       const user = await User.updateOrCreate(
         { email: data.email },
         {
           ...data,
           password: DEV_PASSWORD,
-          shopBalance: isDevLoginUser ? 1000 : 0,
+          xp: 0,
+          level: 1,
+          elo: 1000,
         }
       )
 

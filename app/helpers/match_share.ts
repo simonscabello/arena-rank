@@ -1,6 +1,5 @@
-import { compactPlayerName, displayPersonFromUser, playerDisplayName } from '#helpers/match_players'
+import { compactPlayerName, playerDisplayName } from '#helpers/match_players'
 import type { MatchScore } from '#helpers/match_score'
-import type Bet from '#models/bet'
 import type MatchPlayer from '#models/match_player'
 
 export function formatShareScore(score: MatchScore | null): string | null {
@@ -15,29 +14,13 @@ function winnerNames(players: MatchPlayer[], winnerSide: number): string {
     .join(', ')
 }
 
-function correctBettorNames(bets: Bet[]): string {
-  return bets
-    .filter((bet) => bet.pointsAwarded !== null && bet.pointsAwarded > 0)
-    .map((bet) => compactPlayerName(displayPersonFromUser(bet.user)))
-    .join(', ')
-}
-
 export function buildMatchShareText(params: {
   score: MatchScore | null
   winnerSide: number
   players: MatchPlayer[]
-  bets: Bet[]
-  skipsBets: boolean
 }): string {
   const scoreText = formatShareScore(params.score) ?? '—'
   const winners = winnerNames(params.players, params.winnerSide)
 
-  const lines = [`🏓 Resultado: ${scoreText}`, `🥇 Vencedores: ${winners}`]
-
-  if (!params.skipsBets) {
-    const correct = correctBettorNames(params.bets)
-    lines.push(`✅ Palpiteiros certos: ${correct || 'Nenhum'}`)
-  }
-
-  return lines.join('\n')
+  return [`🏓 Resultado: ${scoreText}`, `🥇 Vencedores: ${winners}`].join('\n')
 }

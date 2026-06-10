@@ -9,7 +9,7 @@ type RouteName =
   | 'matches.show'
   | 'profile.show'
   | 'history.show'
-  | 'shop.index'
+  | 'ranking.index'
 
 type Props = {
   label: string

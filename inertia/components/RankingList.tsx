@@ -2,6 +2,7 @@ import { Link } from '@adonisjs/inertia/react'
 import { Trophy } from 'lucide-react'
 import { cn, displayName } from '~/lib/match'
 import Avatar from '~/components/Avatar'
+import EloTierBadge from '~/components/EloTierBadge'
 import ProfileBadge from '~/components/ProfileBadge'
 
 export type RankingEntry = {
@@ -9,11 +10,10 @@ export type RankingEntry = {
   fullName: string | null
   email: string
   nickname?: string | null
-  totalPoints: number
-  betsPlaced: number
-  betsCorrect: number
-  accuracyPercent: number | null
-  currentStreak: number
+  elo: number
+  level: number
+  eloTier: string
+  eloTierLabel: string
   initials?: string
   avatarUrl?: string | null
   equippedTitles?: { icon: string; name: string }[]
@@ -34,22 +34,14 @@ const podiumStyles = [
   'border-orange-200 bg-gradient-to-r from-orange-50/80 to-white',
 ]
 
-function rankingSubtitle(entry: RankingEntry) {
-  if (entry.betsPlaced === 0) {
-    return 'ainda não palpitou'
-  }
-
-  return `${entry.accuracyPercent}% acerto (${entry.betsCorrect}/${entry.betsPlaced})`
-}
-
 export default function RankingList({
   entries,
   highlightUserId,
   groupId,
-  emptyMessage = 'Nenhum ponto ainda.',
+  emptyMessage = 'Nenhum jogador no ranking ainda.',
 }: Props) {
   if (entries.length === 0) {
-    return <p className="text-center text-sm text-stone-500 py-4">{emptyMessage}</p>
+    return <p className="py-4 text-center text-sm text-stone-500">{emptyMessage}</p>
   }
 
   const frameSlotInset = entries.reduce(
@@ -110,15 +102,12 @@ export default function RankingList({
                   </span>
                 ))}
                 {isMe && <span className="ml-1 text-xs text-brand-600">(você)</span>}
-                {entry.currentStreak >= 3 && (
-                  <span className="ml-1.5 text-xs font-semibold text-orange-600">
-                    🔥 {entry.currentStreak}
-                  </span>
-                )}
               </p>
-              <p className="truncate text-xs text-stone-500">{rankingSubtitle(entry)}</p>
+              <p className="truncate text-xs text-stone-500">
+                Nível {entry.level} · <EloTierBadge tier={entry.eloTier} label={entry.eloTierLabel} />
+              </p>
             </div>
-            <span className="shrink-0 font-semibold text-brand-700">{entry.totalPoints} pts</span>
+            <span className="shrink-0 font-semibold text-brand-700">{entry.elo} ELO</span>
           </>
         )
 

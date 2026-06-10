@@ -1,7 +1,7 @@
 {
-  "name": "Palpiteiro",
-  "short_name": "Palpiteiro",
-  "description": "Palpites e rankings entre amigos",
+  "name": "Amigos do BT",
+  "short_name": "Amigos BT",
+  "description": "Partidas, ranking e evolução dos jogadores de beach tennis",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

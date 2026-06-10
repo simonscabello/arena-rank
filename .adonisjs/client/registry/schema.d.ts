@@ -211,30 +211,6 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['show']>>>
     }
   }
-  'matches.bet': {
-    methods: ["POST"]
-    pattern: '/partidas/:id/palpite'
-    types: {
-      body: ExtractBody<InferInput<(typeof import('#validators/match').placeBetValidator)>>
-      paramsTuple: [ParamValue]
-      params: { id: ParamValue }
-      query: ExtractQuery<InferInput<(typeof import('#validators/match').placeBetValidator)>>
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['placeBet']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['placeBet']>>> | { status: 422; response: { errors: SimpleError[] } }
-    }
-  }
-  'matches.start': {
-    methods: ["POST"]
-    pattern: '/partidas/:id/iniciar'
-    types: {
-      body: {}
-      paramsTuple: [ParamValue]
-      params: { id: ParamValue }
-      query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['start']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['start']>>>
-    }
-  }
   'matches.finalize': {
     methods: ["POST"]
     pattern: '/partidas/:id/finalizar'
@@ -245,18 +221,6 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/match').finalizeMatchValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['finalize']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['finalize']>>> | { status: 422; response: { errors: SimpleError[] } }
-    }
-  }
-  'matches.reopenBets': {
-    methods: ["POST"]
-    pattern: '/partidas/:id/reabrir-palpites'
-    types: {
-      body: {}
-      paramsTuple: [ParamValue]
-      params: { id: ParamValue }
-      query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['reopenBets']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['reopenBets']>>>
     }
   }
   'matches.undoFinalize': {
@@ -281,6 +245,18 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['cancel']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/matches_controller').default['cancel']>>>
+    }
+  }
+  'ranking.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/ranking'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/ranking_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/ranking_controller').default['index']>>>
     }
   }
   'profile.show': {
@@ -319,6 +295,30 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['updateAccount']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'profile.equip': {
+    methods: ["POST"]
+    pattern: '/perfil/equipar'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/cosmetics').equipCosmeticValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/cosmetics').equipCosmeticValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['equip']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['equip']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'profile.unequip': {
+    methods: ["POST"]
+    pattern: '/perfil/desequipar'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/cosmetics').unequipCosmeticValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/cosmetics').unequipCosmeticValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['unequip']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['unequip']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'history.show': {
     methods: ["GET","HEAD"]
     pattern: '/historico'
@@ -329,54 +329,6 @@ export interface Registry {
       query: ExtractQueryForGet<InferInput<(typeof import('#validators/history').historyFiltersValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/history_controller').default['show']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/history_controller').default['show']>>> | { status: 422; response: { errors: SimpleError[] } }
-    }
-  }
-  'shop.index': {
-    methods: ["GET","HEAD"]
-    pattern: '/loja'
-    types: {
-      body: {}
-      paramsTuple: []
-      params: {}
-      query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['index']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['index']>>>
-    }
-  }
-  'shop.purchase': {
-    methods: ["POST"]
-    pattern: '/loja/:id/comprar'
-    types: {
-      body: {}
-      paramsTuple: [ParamValue]
-      params: { id: ParamValue }
-      query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['purchase']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['purchase']>>>
-    }
-  }
-  'shop.equip': {
-    methods: ["POST"]
-    pattern: '/loja/equipar'
-    types: {
-      body: ExtractBody<InferInput<(typeof import('#validators/shop').equipShopItemValidator)>>
-      paramsTuple: []
-      params: {}
-      query: ExtractQuery<InferInput<(typeof import('#validators/shop').equipShopItemValidator)>>
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['equip']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['equip']>>> | { status: 422; response: { errors: SimpleError[] } }
-    }
-  }
-  'shop.unequip': {
-    methods: ["POST"]
-    pattern: '/loja/desequipar'
-    types: {
-      body: ExtractBody<InferInput<(typeof import('#validators/shop').unequipShopItemValidator)>>
-      paramsTuple: []
-      params: {}
-      query: ExtractQuery<InferInput<(typeof import('#validators/shop').unequipShopItemValidator)>>
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['unequip']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/shop_controller').default['unequip']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'members.show': {

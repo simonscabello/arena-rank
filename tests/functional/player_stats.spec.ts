@@ -1,7 +1,6 @@
 import { generateInviteCode } from '#helpers/group_access'
 import { getPlayerStats } from '#helpers/player_stats'
 import Arena from '#models/arena'
-import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
 import Group from '#models/group'
 import GroupMember from '#models/group_member'
@@ -90,41 +89,8 @@ test.group('Player stats and profile', (group) => {
     assert.equal(user.initials, 'BE')
   })
 
-  test('profile update persists cone and pro skill levels', async ({ client, assert }) => {
-    const user = await createUser('levels@test.com')
-
-    const coneResponse = await client.post('/perfil').loginAs(user).form({
-      skillLevel: 'cone',
-    })
-    coneResponse.assertRedirectsTo('/perfil')
-    await user.refresh()
-    assert.equal(user.skillLevel, 'cone')
-
-    const proResponse = await client.post('/perfil').loginAs(user).form({
-      skillLevel: 'pro',
-    })
-    proResponse.assertRedirectsTo('/perfil')
-    await user.refresh()
-    assert.equal(user.skillLevel, 'pro')
-  })
-
-  test('profile rejects fun label over 60 characters', async ({ client, assert }) => {
-    const user = await createUser('longlabel@test.com')
-
-    await client
-      .post('/perfil')
-      .loginAs(user)
-      .form({
-        funLabel: 'A'.repeat(61),
-      })
-
-    await user.refresh()
-    assert.isNull(user.funLabel)
-  })
-
   test('finalize match updates stats via http flow', async ({ client, assert }) => {
     const owner = await createUser('owner2@test.com')
-    const member = await createUser('member@test.com')
     const p1 = await createUser('p1@test.com')
     const p2 = await createUser('p2@test.com')
     const p3 = await createUser('p3@test.com')
@@ -136,7 +102,7 @@ test.group('Player stats and profile', (group) => {
       userId: owner.id,
       role: 'organizador',
     })
-    for (const user of [member, p1, p2, p3, p4]) {
+    for (const user of [p1, p2, p3, p4]) {
       await GroupMember.create({ groupId: groupRecord.id, userId: user.id, role: 'membro' })
     }
 
@@ -156,21 +122,11 @@ test.group('Player stats and profile', (group) => {
     const matchUrl = createResponse.redirects().pop()!
     const matchId = Number(matchUrl.split('/').pop())
 
-    await client.post(`/partidas/${matchId}/palpite`).loginAs(member).json({ predictedSide: 1 })
-    await client.post(`/partidas/${matchId}/iniciar`).loginAs(owner)
     await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
 
     const playerStats = await getPlayerStats(groupRecord.id, p1.id)
-    const memberStats = await getPlayerStats(groupRecord.id, member.id)
 
     assert.equal(playerStats.wins, 1)
     assert.equal(playerStats.matchesPlayed, 1)
-    assert.equal(memberStats.betPoints, 10)
-
-    const bet = await Bet.query()
-      .where('match_id', matchId)
-      .where('user_id', member.id)
-      .firstOrFail()
-    assert.equal(bet.pointsAwarded, 10)
   })
 })

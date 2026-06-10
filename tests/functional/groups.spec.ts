@@ -150,7 +150,7 @@ test.group('Groups', (group) => {
 
     const activeMatch = await GameMatch.query()
       .where('group_id', play.id)
-      .whereIn('status', ['palpites_abertos', 'em_andamento'])
+      .where('status', 'em_andamento')
       .first()
     assert.isNotNull(activeMatch)
 

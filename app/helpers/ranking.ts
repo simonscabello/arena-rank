@@ -1,10 +1,10 @@
+import { eloTierFromRating, ELO_TIER_LABELS } from '#enums/elo_tier'
+import { enrichRankingEntries } from '#helpers/cosmetic_display'
 import { displayPerson } from '#helpers/person_display'
-import { enrichRankingEntries } from '#helpers/shop_rewards'
-import Bet from '#models/bet'
 import GameMatch from '#models/game_match'
 import GroupMember from '#models/group_member'
 import MatchPlayer from '#models/match_player'
-import db from '@adonisjs/lucid/services/db'
+import User from '#models/user'
 
 export type RankingEntry = {
   userId: number
@@ -12,11 +12,10 @@ export type RankingEntry = {
   email: string
   nickname: string | null
   avatarUrl: string | null
-  totalPoints: number
-  betsPlaced: number
-  betsCorrect: number
-  accuracyPercent: number | null
-  currentStreak: number
+  elo: number
+  level: number
+  eloTier: string
+  eloTierLabel: string
   equippedTitles?: { icon: string; name: string }[]
   avatarFrameSrc?: string | null
   avatarFrameInset?: number
@@ -24,115 +23,27 @@ export type RankingEntry = {
 
 export type RankContext = {
   position: number | null
-  totalPoints: number
-  pointsToNext: number | null
-  leaderPoints: number
+  elo: number
+  eloToNext: number | null
+  leaderElo: number
   nextRankName: string | null
   nextRankPosition: number | null
 }
 
-export type BetParticipation = {
-  eligibleCount: number
-  betCount: number
-  pendingMembers: {
-    userId: number
-    name: string
-    initials: string
-    avatarUrl: string | null
-  }[]
-}
-
-function computeStreak(outcomes: boolean[]) {
-  let streak = 0
-  for (const correct of outcomes) {
-    if (!correct) break
-    streak++
-  }
-  return streak
-}
-
-async function buildStreakMap(groupId: number) {
-  const rows = await db
-    .from('bets')
-    .innerJoin('matches', 'bets.match_id', 'matches.id')
-    .where('matches.group_id', groupId)
-    .where('matches.status', 'finalizada')
-    .whereNotNull('bets.points_awarded')
-    .select(
-      'bets.user_id as userId',
-      'bets.points_awarded as pointsAwarded',
-      'matches.created_at as playedAt'
-    )
-    .orderBy('matches.created_at', 'desc')
-    .orderBy('matches.id', 'desc')
-
-  const outcomesByUser = new Map<number, boolean[]>()
-
-  for (const row of rows) {
-    const userId = Number(row.userId)
-    const outcomes = outcomesByUser.get(userId) ?? []
-    outcomes.push(Number(row.pointsAwarded) > 0)
-    outcomesByUser.set(userId, outcomes)
-  }
-
-  const streakMap = new Map<number, number>()
-  for (const [userId, outcomes] of outcomesByUser) {
-    streakMap.set(userId, computeStreak(outcomes))
-  }
-
-  return streakMap
-}
-
 function sortRankingEntries(entries: RankingEntry[]) {
   return entries.sort((a, b) => {
-    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints
-    if (b.betsCorrect !== a.betsCorrect) return b.betsCorrect - a.betsCorrect
-
-    const accuracyA = a.accuracyPercent ?? -1
-    const accuracyB = b.accuracyPercent ?? -1
-    if (accuracyB !== accuracyA) return accuracyB - accuracyA
-
-    return a.betsPlaced - b.betsPlaced
+    if (b.elo !== a.elo) return b.elo - a.elo
+    if (b.level !== a.level) return b.level - a.level
+    return displayPerson(a).localeCompare(displayPerson(b))
   })
 }
 
 export async function getGroupRanking(groupId: number): Promise<RankingEntry[]> {
   const members = await GroupMember.query().where('group_id', groupId).preload('user')
 
-  const statsRows = await db
-    .from('bets')
-    .innerJoin('matches', 'bets.match_id', 'matches.id')
-    .where('matches.group_id', groupId)
-    .where('matches.status', 'finalizada')
-    .whereNotNull('bets.points_awarded')
-    .groupBy('bets.user_id')
-    .select(
-      'bets.user_id as userId',
-      db.raw('COALESCE(SUM(bets.points_awarded), 0) as totalPoints'),
-      db.raw('COUNT(*) as betsPlaced'),
-      db.raw('SUM(CASE WHEN bets.points_awarded > 0 THEN 1 ELSE 0 END) as betsCorrect')
-    )
-
-  const statsMap = new Map(
-    statsRows.map((row) => [
-      Number(row.userId),
-      {
-        totalPoints: Number(row.totalPoints),
-        betsPlaced: Number(row.betsPlaced),
-        betsCorrect: Number(row.betsCorrect),
-      },
-    ])
-  )
-
-  const streakMap = await buildStreakMap(groupId)
-
   const entries = members.map((membership) => {
     const user = membership.user
-    const stats = statsMap.get(user.id) ?? {
-      totalPoints: 0,
-      betsPlaced: 0,
-      betsCorrect: 0,
-    }
+    const tier = eloTierFromRating(user.elo)
 
     return {
       userId: user.id,
@@ -140,12 +51,10 @@ export async function getGroupRanking(groupId: number): Promise<RankingEntry[]> 
       email: user.email,
       nickname: user.nickname,
       avatarUrl: user.avatarUrl,
-      totalPoints: stats.totalPoints,
-      betsPlaced: stats.betsPlaced,
-      betsCorrect: stats.betsCorrect,
-      accuracyPercent:
-        stats.betsPlaced > 0 ? Math.round((stats.betsCorrect / stats.betsPlaced) * 100) : null,
-      currentStreak: streakMap.get(user.id) ?? 0,
+      elo: user.elo,
+      level: user.level,
+      eloTier: tier,
+      eloTierLabel: ELO_TIER_LABELS[tier],
     }
   })
 
@@ -153,41 +62,29 @@ export async function getGroupRanking(groupId: number): Promise<RankingEntry[]> 
 }
 
 export function getRankContext(ranking: RankingEntry[], userId: number): RankContext {
-  const leaderPoints = ranking[0]?.totalPoints ?? 0
+  const leaderElo = ranking[0]?.elo ?? 0
   const index = ranking.findIndex((entry) => entry.userId === userId)
 
   if (index === -1) {
     return {
       position: null,
-      totalPoints: 0,
-      pointsToNext: null,
-      leaderPoints,
+      elo: 0,
+      eloToNext: null,
+      leaderElo,
       nextRankName: null,
       nextRankPosition: null,
     }
   }
 
   const entry = ranking[index]
-
-  if (entry.betsPlaced === 0) {
-    return {
-      position: null,
-      totalPoints: 0,
-      pointsToNext: null,
-      leaderPoints,
-      nextRankName: null,
-      nextRankPosition: null,
-    }
-  }
-
   const position = index + 1
 
   if (position === 1) {
     return {
       position: 1,
-      totalPoints: entry.totalPoints,
-      pointsToNext: null,
-      leaderPoints: entry.totalPoints,
+      elo: entry.elo,
+      eloToNext: null,
+      leaderElo: entry.elo,
       nextRankName: null,
       nextRankPosition: null,
     }
@@ -197,36 +94,46 @@ export function getRankContext(ranking: RankingEntry[], userId: number): RankCon
 
   return {
     position,
-    totalPoints: entry.totalPoints,
-    pointsToNext: above.totalPoints - entry.totalPoints,
-    leaderPoints,
+    elo: entry.elo,
+    eloToNext: above.elo - entry.elo,
+    leaderElo,
     nextRankName: displayPerson(above),
     nextRankPosition: index,
   }
 }
 
-export async function getBetParticipation(
-  matchId: number,
-  groupId: number,
-  playerUserIds: number[]
-): Promise<BetParticipation> {
-  const members = await GroupMember.query().where('group_id', groupId).preload('user')
-  const bets = await Bet.query().where('match_id', matchId).select('user_id')
-  const bettorIds = new Set(bets.map((bet) => bet.userId))
-  const playerSet = new Set(playerUserIds)
+export async function getGlobalRanking(page = 1, perPage = 50) {
+  const paginator = await User.query()
+    .orderBy('elo', 'desc')
+    .orderBy('level', 'desc')
+    .orderBy('id', 'asc')
+    .paginate(page, perPage)
 
-  const eligible = members.filter((membership) => !playerSet.has(membership.userId))
-  const pending = eligible.filter((membership) => !bettorIds.has(membership.userId))
+  const entries: RankingEntry[] = paginator.all().map((user) => {
+    const tier = eloTierFromRating(user.elo)
+    return {
+      userId: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      nickname: user.nickname,
+      avatarUrl: user.avatarUrl,
+      elo: user.elo,
+      level: user.level,
+      eloTier: tier,
+      eloTierLabel: ELO_TIER_LABELS[tier],
+    }
+  })
+
+  const enriched = await enrichRankingEntries(entries)
 
   return {
-    eligibleCount: eligible.length,
-    betCount: eligible.length - pending.length,
-    pendingMembers: pending.map((membership) => ({
-      userId: membership.userId,
-      name: displayPerson(membership.user),
-      initials: membership.user.initials,
-      avatarUrl: membership.user.avatarUrl,
-    })),
+    entries: enriched,
+    meta: {
+      total: paginator.total,
+      perPage: paginator.perPage,
+      currentPage: paginator.currentPage,
+      lastPage: paginator.lastPage,
+    },
   }
 }
 
@@ -235,7 +142,7 @@ export async function getMatchWithRelations(matchId: number) {
     .where('id', matchId)
     .preload('arena')
     .preload('players', (query) => query.preload('user').preload('guestInvite'))
-    .preload('bets', (query) => query.preload('user'))
+    .preload('rewards')
     .firstOrFail()
 }
 
