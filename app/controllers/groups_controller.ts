@@ -1,3 +1,4 @@
+import { getGroupRecentMatches } from '#helpers/group_history'
 import { listPendingGuestInvites } from '#helpers/guest_player_invite'
 import {
   assertGroupMember,
@@ -9,12 +10,10 @@ import {
   joinGroupByCode,
   PENDING_INVITE_SESSION_KEY,
 } from '#helpers/group_access'
-import { formatMatchPlayersLabel } from '#helpers/match_players'
 import { getGroupRanking } from '#helpers/ranking'
 import Arena from '#models/arena'
 import Group from '#models/group'
 import GroupMember from '#models/group_member'
-import GameMatch from '#models/game_match'
 import { createGroupValidator, updateGroupValidator } from '#validators/group'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
@@ -99,13 +98,7 @@ export default class GroupsController {
 
     const group = await Group.findOrFail(groupId)
 
-    const matches = await GameMatch.query()
-      .where('group_id', groupId)
-      .whereIn('status', ['em_andamento'])
-      .preload('arena')
-      .preload('players', (query) => query.preload('user').preload('guestInvite'))
-      .orderBy('created_at', 'desc')
-
+    const recentMatches = await getGroupRecentMatches(groupId)
     const ranking = await getGroupRanking(groupId)
     const canManageGroup = await isGroupOrganizer(groupId, user.id)
 
@@ -115,12 +108,7 @@ export default class GroupsController {
         name: group.name,
         inviteUrl: buildInviteUrl(group.inviteCode),
       },
-      matches: matches.map((m) => ({
-        id: m.id,
-        status: m.status,
-        arenaName: m.arena.name,
-        playersLabel: formatMatchPlayersLabel(m.players),
-      })),
+      recentMatches,
       ranking,
       currentUserId: user.id,
       canManageGroup,

@@ -5,6 +5,7 @@ import GroupMember from '#models/group_member'
 import User from '#models/user'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { inertiaPropsFromHtml } from '#tests/helpers/inertia_page'
+import { finalizePayload } from '#tests/helpers/finalize_match'
 import { test } from '@japa/runner'
 
 test.group('Groups', (group) => {
@@ -88,7 +89,10 @@ test.group('Groups', (group) => {
     response.assertStatus(404)
   })
 
-  test('active matches list shows compact player names', async ({ client, assert }) => {
+  test('recent matches list shows finalized matches with player names', async ({
+    client,
+    assert,
+  }) => {
     const organizer = await createUser('organizer@test.com')
     const simon = await User.create({
       email: 'simon@test.com',
@@ -139,14 +143,25 @@ test.group('Groups', (group) => {
       .first()
     assert.isNotNull(activeMatch)
 
+    const beforeFinalize = await client.get(`/grupos/${play.id}`).loginAs(organizer)
+    beforeFinalize.assertStatus(200)
+    const beforeProps = inertiaPropsFromHtml<{ recentMatches: unknown[] }>(beforeFinalize.text())
+    assert.lengthOf(beforeProps.recentMatches, 0)
+
+    await client
+      .post(`/partidas/${activeMatch!.id}/finalizar`)
+      .loginAs(organizer)
+      .json(finalizePayload(1))
+
     const response = await client.get(`/grupos/${play.id}`).loginAs(organizer)
     response.assertStatus(200)
 
-    const props = inertiaPropsFromHtml<{ matches: { playersLabel: string; arenaName: string }[] }>(
-      response.text()
-    )
-    assert.lengthOf(props.matches, 1)
-    assert.equal(props.matches[0].playersLabel, 'Simon & Paula vs Jennifer & Maria')
-    assert.equal(props.matches[0].arenaName, 'Arena Teste')
+    const props = inertiaPropsFromHtml<{
+      recentMatches: { playersLabel: string; arenaName: string; scoreLabel: string | null }[]
+    }>(response.text())
+    assert.lengthOf(props.recentMatches, 1)
+    assert.equal(props.recentMatches[0].playersLabel, 'Simon & Paula vs Jennifer & Maria')
+    assert.equal(props.recentMatches[0].arenaName, 'Arena Teste')
+    assert.equal(props.recentMatches[0].scoreLabel, '6-4')
   })
 })

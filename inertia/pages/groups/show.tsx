@@ -1,8 +1,7 @@
 import { Form, Link } from '@adonisjs/inertia/react'
-import { Calendar, Pencil, Plus, X } from 'lucide-react'
+import { Pencil, Plus, Trophy, X } from 'lucide-react'
 import { useState } from 'react'
 import BackLink from '~/components/BackLink'
-import Badge from '~/components/Badge'
 import Card from '~/components/Card'
 import CopyInviteLink from '~/components/CopyInviteLink'
 import EmptyState from '~/components/EmptyState'
@@ -10,24 +9,32 @@ import Input from '~/components/Input'
 import RankingList, { type RankingEntry } from '~/components/RankingList'
 import { buttonClassName } from '~/lib/button_styles'
 
-type MatchItem = {
+type RecentMatchItem = {
   id: number
-  status: string
-  arenaName: string
   playersLabel: string
+  arenaName: string
+  scoreLabel: string | null
+  playedAt: string
 }
 
 type Props = {
   group: { id: number; name: string; inviteUrl: string }
-  matches: MatchItem[]
+  recentMatches: RecentMatchItem[]
   ranking: RankingEntry[]
   currentUserId: number
   canManageGroup: boolean
 }
 
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+  })
+}
+
 export default function GroupShow({
   group,
-  matches,
+  recentMatches,
   ranking,
   currentUserId,
   canManageGroup,
@@ -107,34 +114,45 @@ export default function GroupShow({
       </div>
 
       <div className="space-y-6">
-        <Card title="Partidas ativas">
-          {matches.length === 0 ? (
+        <Card title="Histórico recente">
+          {recentMatches.length === 0 ? (
             <EmptyState
-              icon={Calendar}
-              title="Nenhuma partida ativa"
-              description="Crie uma partida para começar a registrar resultados."
+              icon={Trophy}
+              title="Nenhuma partida finalizada ainda"
+              description="Crie e finalize uma partida para ver o histórico aqui."
             />
           ) : (
-            <ul className="space-y-2">
-              {matches.map((match) => (
-                <li key={match.id}>
-                  <Link
-                    route="matches.show"
-                    routeParams={{ id: match.id }}
-                    className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-3 transition hover:border-brand-200 hover:bg-brand-50/50"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-stone-900">{match.playersLabel}</p>
-                      <p className="truncate text-sm text-stone-500">{match.arenaName}</p>
-                      <div className="mt-1">
-                        <Badge status={match.status} />
+            <>
+              <ul className="space-y-2">
+                {recentMatches.map((match) => (
+                  <li key={match.id}>
+                    <Link
+                      route="matches.show"
+                      routeParams={{ id: match.id }}
+                      className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-3 transition hover:border-brand-200 hover:bg-brand-50/50"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-stone-900">{match.playersLabel}</p>
+                        <p className="truncate text-sm text-stone-500">
+                          {match.arenaName}
+                          {match.scoreLabel ? ` · ${match.scoreLabel}` : ''}
+                          {` · ${formatDate(match.playedAt)}`}
+                        </p>
                       </div>
-                    </div>
-                    <span className="text-stone-400">→</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+                      <span className="text-stone-400">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-center text-sm">
+                <Link
+                  href={`/historico?groupId=${group.id}`}
+                  className="font-medium text-brand-600 hover:underline"
+                >
+                  Ver meu histórico nesta Play
+                </Link>
+              </p>
+            </>
           )}
         </Card>
 

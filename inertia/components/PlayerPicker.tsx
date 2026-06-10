@@ -90,15 +90,7 @@ function SlotPicker({
 }) {
   const isGuestMode = slot.playerType !== 'member'
   const selectedName = slot.displayName?.trim().toLowerCase() ?? ''
-  const nameTaken =
-    selectedName.length >= 2 &&
-    usedDisplayNames.has(selectedName) &&
-    !(
-      slot.guestInviteId &&
-      pendingGuestInvites
-        .find((invite) => invite.id === slot.guestInviteId)
-        ?.displayName.toLowerCase() === selectedName
-    )
+  const nameTaken = selectedName.length >= 2 && usedDisplayNames.has(selectedName)
 
   function selectMember(userId: number | null) {
     onChange({
@@ -248,17 +240,25 @@ function SlotPicker({
   )
 }
 
+function usedDisplayNamesFromOtherSlots(slots: Slot[], excludeSlotIndex: number) {
+  return new Set(
+    slots
+      .filter(
+        (slot) =>
+          slot.slotIndex !== excludeSlotIndex &&
+          slot.playerType !== 'member' &&
+          slot.displayName
+      )
+      .map((slot) => slot.displayName!.trim().toLowerCase())
+  )
+}
+
 export default function PlayerPicker({ members, pendingGuestInvites, slots, onChange }: Props) {
   const selectedUserIds = new Set(
     slots.map((slot) => slot.userId).filter((id): id is number => id !== null)
   )
   const selectedGuestInviteIds = new Set(
     slots.map((slot) => slot.guestInviteId).filter((id): id is number => id !== null)
-  )
-  const usedDisplayNames = new Set(
-    slots
-      .filter((slot) => slot.playerType !== 'member' && slot.displayName)
-      .map((slot) => slot.displayName!.trim().toLowerCase())
   )
 
   const side1Slots = slots.filter((slot) => slot.side === 1)
@@ -278,7 +278,7 @@ export default function PlayerPicker({ members, pendingGuestInvites, slots, onCh
               pendingGuestInvites={pendingGuestInvites}
               selectedUserIds={selectedUserIds}
               selectedGuestInviteIds={selectedGuestInviteIds}
-              usedDisplayNames={usedDisplayNames}
+              usedDisplayNames={usedDisplayNamesFromOtherSlots(slots, slot.slotIndex)}
               onChange={(patch) => onChange(slot.slotIndex, patch)}
             />
           ))}
@@ -296,7 +296,7 @@ export default function PlayerPicker({ members, pendingGuestInvites, slots, onCh
               pendingGuestInvites={pendingGuestInvites}
               selectedUserIds={selectedUserIds}
               selectedGuestInviteIds={selectedGuestInviteIds}
-              usedDisplayNames={usedDisplayNames}
+              usedDisplayNames={usedDisplayNamesFromOtherSlots(slots, slot.slotIndex)}
               onChange={(patch) => onChange(slot.slotIndex, patch)}
             />
           ))}
