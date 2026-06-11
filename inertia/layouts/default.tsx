@@ -1,26 +1,27 @@
 import { Data } from '@generated/data'
 import { Form, Link } from '@adonisjs/inertia/react'
 import { usePage } from '@inertiajs/react'
-import { Home, Trophy, Users, LogOut } from 'lucide-react'
+import { History, Trophy, Users, LogOut } from 'lucide-react'
 import { ReactElement, useEffect, useRef } from 'react'
 import { toast, Toaster } from 'sonner'
 import Avatar from '~/components/Avatar'
+import Logo from '~/components/Logo'
 import { APP_NAME } from '~/lib/app_name'
 import { cn } from '~/lib/match'
 
-type NavKey = 'home' | 'plays' | 'ranking' | 'profile'
+type NavKey = 'plays' | 'ranking' | 'history' | 'profile'
 
 function isNavActive(url: string, key: NavKey) {
   const path = url.split('?')[0]
   switch (key) {
-    case 'home':
-      return path === '/'
     case 'plays':
       return path.startsWith('/grupos') || path.startsWith('/partidas')
     case 'ranking':
       return path.startsWith('/ranking')
+    case 'history':
+      return path.startsWith('/historico') || (path.startsWith('/perfil') && url.includes('section=history'))
     case 'profile':
-      return path.startsWith('/perfil') || path.startsWith('/historico')
+      return path.startsWith('/perfil')
   }
 }
 
@@ -60,13 +61,18 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
 
   const user = children.props.user
   const url = page.url
+  const profileActive = user ? isNavActive(url, 'profile') : false
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
       <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-white/90 px-4 py-3 backdrop-blur-md">
         <div className="flex items-center justify-between gap-3">
-          <Link route="home" className="text-lg font-bold tracking-tight text-brand-700">
-            {APP_NAME}
+          <Link
+            route="home"
+            className="flex min-w-0 items-center gap-2 text-lg font-bold tracking-tight text-brand-700"
+          >
+            <Logo className="h-7 w-7 shrink-0" />
+            <span className="truncate">{APP_NAME}</span>
           </Link>
           <nav className="flex items-center gap-2">
             {user ? (
@@ -77,13 +83,17 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
                 <Link route="ranking.index" className={desktopNavClass(isNavActive(url, 'ranking'))}>
                   Ranking
                 </Link>
+                <Link route="history.show" className={desktopNavClass(isNavActive(url, 'history'))}>
+                  Histórico
+                </Link>
                 <Link
                   route="profile.show"
+                  aria-label="Meu perfil"
                   className={cn(
-                    'inline-flex shrink-0 items-center gap-2 rounded-lg px-2 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
-                    isNavActive(url, 'profile')
-                      ? 'bg-brand-50 text-brand-700'
-                      : 'text-stone-600 hover:bg-stone-100'
+                    'inline-flex shrink-0 items-center gap-2 rounded-full p-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:rounded-lg sm:px-2 sm:py-1.5',
+                    profileActive
+                      ? 'ring-2 ring-brand-200 sm:bg-brand-50 sm:text-brand-700 sm:ring-0'
+                      : 'text-stone-600 sm:hover:bg-stone-100'
                   )}
                 >
                   <Avatar
@@ -92,10 +102,10 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
                     size="sm"
                     frameSrc={user.avatarFrameSrc}
                     photoInset={user.avatarFrameInset}
-                    reserveFrameSlot
+                    reserveFrameSlot={Boolean(user.avatarFrameSrc)}
                     slotInset={user.avatarFrameInset}
                   />
-                  <span className="text-sm font-medium">Perfil</span>
+                  <span className="hidden text-sm font-medium sm:inline">Perfil</span>
                 </Link>
                 <Form route="session.destroy">
                   <button
@@ -124,10 +134,6 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
       {user && (
         <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-lg -translate-x-1/2 border-t border-stone-200 bg-white/95 px-2 py-2 backdrop-blur-md sm:hidden">
           <div className="flex justify-around gap-0.5">
-            <Link route="home" className={mobileNavClass(isNavActive(url, 'home'))}>
-              <Home className="h-5 w-5 shrink-0" />
-              Início
-            </Link>
             <Link route="groups.index" className={mobileNavClass(isNavActive(url, 'plays'))}>
               <Users className="h-5 w-5 shrink-0" />
               Plays
@@ -136,22 +142,9 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
               <Trophy className="h-5 w-5 shrink-0" />
               Ranking
             </Link>
-            <Link
-              route="profile.show"
-              aria-label="Meu perfil"
-              className={mobileNavClass(isNavActive(url, 'profile'))}
-            >
-              <Avatar
-                initials={user.initials}
-                src={user.avatarUrl}
-                size="sm"
-                frameSrc={user.avatarFrameSrc}
-                photoInset={user.avatarFrameInset}
-                reserveFrameSlot
-                slotInset={user.avatarFrameInset}
-                className="shrink-0"
-              />
-              Perfil
+            <Link route="history.show" className={mobileNavClass(isNavActive(url, 'history'))}>
+              <History className="h-5 w-5 shrink-0" />
+              Histórico
             </Link>
           </div>
         </nav>

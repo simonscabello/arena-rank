@@ -5,5 +5,5 @@ type Props = {
 }
 
 export default function Logo({ className }: Props) {
-  return <img src="/logo-symbol.png" alt={APP_NAME} className={className} />
+  return <img src="/favicon.svg" alt={APP_NAME} className={className} />
 }

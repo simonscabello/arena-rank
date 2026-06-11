@@ -2,7 +2,6 @@ import { ChevronRight, History, Medal, Settings, Sparkles, TrendingUp, User } fr
 import Avatar from '~/components/Avatar'
 import { navigateProfileSection } from '~/components/profile/navigate_section'
 import type { ProfileData, ProfileProgression } from '~/components/profile/types'
-import { cn } from '~/lib/match'
 
 type HubCard = {
   section: 'progression' | 'achievements' | 'play' | 'account' | 'history'
@@ -94,20 +93,16 @@ export default function ProfileHub({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {cards.map((card, index) => {
+      <div className="flex flex-col gap-3">
+        {cards.map((card) => {
           const Icon = card.icon
-          const isLastOdd = cards.length % 2 !== 0 && index === cards.length - 1
 
           return (
             <button
               key={card.section}
               type="button"
               onClick={() => navigateProfileSection(card.section)}
-              className={cn(
-                'flex items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:border-brand-200 hover:bg-brand-50/30',
-                isLastOdd && 'col-span-2'
-              )}
+              className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:border-brand-200 hover:bg-brand-50/30"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
                 <Icon className="h-5 w-5" />
@@ -117,7 +112,7 @@ export default function ProfileHub({
                   <span className="font-semibold text-stone-900">{card.title}</span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-stone-400" />
                 </span>
-                <span className="mt-0.5 block truncate text-sm text-stone-500">{card.description}</span>
+                <span className="mt-0.5 block text-sm text-stone-500">{card.description}</span>
               </span>
             </button>
           )
