@@ -13,6 +13,7 @@ import ShareMatchResult from '~/components/ShareMatchResult'
 import RankingList, { type RankingEntry } from '~/components/RankingList'
 import { formatEloDelta, teamLabel } from '~/lib/match'
 import { parseCelebrationFlash } from '~/lib/match_celebration'
+import type { MatchShareCardPayload } from '~/lib/match_share_card'
 import type { PlayerType } from '~/lib/player_type'
 import { usePage } from '@inertiajs/react'
 
@@ -56,6 +57,7 @@ type Props = {
     manageWindowOpen: boolean
     manageWindowExpiresAt: string
     shareText: string | null
+    shareCard: MatchShareCardPayload | null
   }
   players: Player[]
   ranking: RankingEntry[]
@@ -169,9 +171,9 @@ export default function MatchShow({
         <GuestClaimReminder groupId={match.groupId} guests={pendingGuests} />
       )}
 
-      {match.status === 'finalizada' && match.shareText && (
+      {match.status === 'finalizada' && match.shareCard && match.shareText && (
         <div className="mb-6">
-          <ShareMatchResult shareText={match.shareText} />
+          <ShareMatchResult shareText={match.shareText} shareCard={match.shareCard} />
         </div>
       )}
 

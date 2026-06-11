@@ -51,20 +51,23 @@ export default function TeamCard({ groupId, side, players, isWinner }: Props) {
         {isWinner && <span className="ml-1 text-emerald-600">✓</span>}
       </p>
       <ul className="space-y-3">
-        {players.map((player) => (
+        {players.map((player) => {
+          const equippedTitle = player.equippedTitles?.[0]
+
+          return (
           <li key={player.id}>
             <div className="flex items-center gap-3">
               <Avatar
                 initials={player.initials}
                 src={player.avatarUrl}
-                size="sm"
+                size="md"
                 frameSrc={player.avatarFrameSrc}
                 photoInset={player.avatarFrameInset}
                 reserveFrameSlot
                 slotInset={frameSlotInset}
               />
               <span className="min-w-0 flex-1">
-                <span className="flex min-w-0 items-center gap-1">
+                <span className="flex min-w-0 items-center gap-1.5">
                   {player.playerType === 'guest_invite' &&
                   player.claimStatus === 'pending' &&
                   player.guestInviteId ? (
@@ -80,14 +83,14 @@ export default function TeamCard({ groupId, side, players, isWinner }: Props) {
                       {player.displayName}
                     </span>
                   )}
-                  {player.equippedTitles?.map((title) => (
+                  {equippedTitle && (
                     <ProfileBadge
-                      key={title.name}
-                      icon={title.icon}
-                      title={title.name}
+                      icon={equippedTitle.icon}
+                      title={equippedTitle.name}
                       showLabel={false}
+                      className="shrink-0"
                     />
-                  ))}
+                  )}
                 </span>
                 {player.funLabel && (
                   <span className="block truncate text-xs italic text-stone-500">
@@ -109,7 +112,8 @@ export default function TeamCard({ groupId, side, players, isWinner }: Props) {
               )}
             </div>
           </li>
-        ))}
+          )
+        })}
       </ul>
     </div>
   )

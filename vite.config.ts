@@ -20,6 +20,7 @@ export default defineConfig({
     alias: {
       '~/': `${import.meta.dirname}/inertia/`,
       '@generated': `${import.meta.dirname}/.adonisjs/client/`,
+      '#constants/': `${import.meta.dirname}/app/constants/`,
     },
   },
 

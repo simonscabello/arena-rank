@@ -19,7 +19,7 @@ import { resolveDisplayFunLabelsByUserIds } from '#helpers/fun_label_display'
 import { serializeMatchPlayer } from '#helpers/match_players'
 import { DEFAULT_FRAME_INSET, getEquippedDisplayByUserIds } from '#helpers/cosmetic_display'
 import { validateAndResolveMatchPlayers } from '#helpers/match_player_validation'
-import { buildMatchShareText } from '#helpers/match_share'
+import { buildMatchShareCard } from '#helpers/match_share_card'
 import {
   formatMatchScore,
   inferWinnerSideFromSets,
@@ -31,6 +31,7 @@ import {
 } from '#helpers/match_score'
 import { getGroupRanking, getMatchWithRelations, getRankContext } from '#helpers/ranking'
 import GameMatch from '#models/game_match'
+import Group from '#models/group'
 import { createMatchValidator, finalizeMatchValidator } from '#validators/match'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
@@ -98,6 +99,41 @@ export default class MatchesController {
       ])
     )
 
+    const playersPayload = serializedPlayers.map((player) => {
+      const rewards = player.userId ? equippedDisplayByUserId.get(player.userId) : null
+      const progression = player.userId ? rewardsByUserId.get(player.userId) : null
+
+      return {
+        ...player,
+        funLabel: player.userId
+          ? (funLabelByUserId.get(player.userId) ?? player.funLabel)
+          : player.funLabel,
+        equippedTitles: rewards?.equippedTitles ?? [],
+        avatarFrameSrc: rewards?.avatarFrameSrc ?? null,
+        avatarFrameInset: rewards?.avatarFrameInset ?? DEFAULT_FRAME_INSET,
+        xpAwarded: progression?.xpAwarded ?? null,
+        eloDelta: progression?.eloDelta ?? null,
+        eloAfter: progression?.eloAfter ?? null,
+      }
+    })
+
+    const play = await Group.findOrFail(match.groupId)
+    const shareCardPayload =
+      match.status === 'finalizada' && match.winnerSide
+        ? await buildMatchShareCard({
+            viewerUserId: user.id,
+            playName: play.name,
+            arenaName: match.arena.name,
+            scoreLabel: formatMatchScore(parsedScore) ?? '',
+            winnerSide: match.winnerSide,
+            score: parsedScore,
+            players: match.players,
+            serializedPlayers: playersPayload,
+            statusChangedAt: match.statusChangedAt,
+            rankPosition: rankContext.position,
+          })
+        : null
+
     return inertia.render('matches/show', {
       match: {
         id: match.id,
@@ -108,32 +144,10 @@ export default class MatchesController {
         groupId: match.groupId,
         manageWindowOpen: isManageWindowOpen(match.statusChangedAt),
         manageWindowExpiresAt: manageWindowExpiresAt(match.statusChangedAt).toISO() ?? '',
-        shareText:
-          match.status === 'finalizada' && match.winnerSide
-            ? buildMatchShareText({
-                score: parsedScore,
-                winnerSide: match.winnerSide,
-                players: match.players,
-              })
-            : null,
+        shareText: shareCardPayload?.shareText ?? null,
+        shareCard: shareCardPayload,
       },
-      players: serializedPlayers.map((player) => {
-        const rewards = player.userId ? equippedDisplayByUserId.get(player.userId) : null
-        const progression = player.userId ? rewardsByUserId.get(player.userId) : null
-
-        return {
-          ...player,
-          funLabel: player.userId
-            ? (funLabelByUserId.get(player.userId) ?? player.funLabel)
-            : player.funLabel,
-          equippedTitles: rewards?.equippedTitles ?? [],
-          avatarFrameSrc: rewards?.avatarFrameSrc ?? null,
-          avatarFrameInset: rewards?.avatarFrameInset ?? DEFAULT_FRAME_INSET,
-          xpAwarded: progression?.xpAwarded ?? null,
-          eloDelta: progression?.eloDelta ?? null,
-          eloAfter: progression?.eloAfter ?? null,
-        }
-      }),
+      players: playersPayload,
       ranking,
       rankContext,
       currentUserId: user.id,

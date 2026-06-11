@@ -86,6 +86,7 @@
     "@vinejs/vine": "^4.3.1",
     "better-sqlite3": "^12.9.0",
     "edge.js": "^6.5.0",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^1.16.0",
     "luxon": "^3.7.2",
     "mysql2": "^3.22.3",
