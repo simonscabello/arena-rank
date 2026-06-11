@@ -93,11 +93,13 @@ test.group('Match flow', (suite) => {
     const match = await GameMatch.findOrFail(matchId)
     assert.equal(match.createdByUserId, member.id)
 
-    const ownerFinalize = await client
-      .post(`/partidas/${matchId}/finalizar`)
-      .loginAs(owner)
-      .json(finalizePayload(1))
-    ownerFinalize.assertStatus(403)
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
+    await match.refresh()
+    assert.equal(match.status, 'finalizada')
+
+    await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(owner)
+    await match.refresh()
+    assert.equal(match.status, 'em_andamento')
 
     await client.post(`/partidas/${matchId}/finalizar`).loginAs(member).json(finalizePayload(1))
     await match.refresh()
@@ -248,9 +250,29 @@ test.group('Match flow', (suite) => {
     cancel.assertStatus(403)
   })
 
-  test('manage window blocks undo after expiry', async ({ client, assert }) => {
-    const { owner, player1, player2, player3, player4, group } = await createGroupWithMembers()
-    const matchId = await createMatchViaHttp(client, owner, group.id, [
+  test('manage window blocks creator undo after expiry', async ({ client, assert }) => {
+    const { member, player1, player2, player3, player4, group } = await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, member, group.id, [
+      { userId: player1.id, side: 1 },
+      { userId: player2.id, side: 1 },
+      { userId: player3.id, side: 2 },
+      { userId: player4.id, side: 2 },
+    ])
+
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(member).json(finalizePayload(1))
+    await expireManageWindow(matchId)
+
+    const undo = await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(member)
+    undo.assertStatus(403)
+
+    const match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'finalizada')
+  })
+
+  test('organizer can finalize match created by member', async ({ client, assert }) => {
+    const { owner, member, player1, player2, player3, player4, group } =
+      await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, member, group.id, [
       { userId: player1.id, side: 1 },
       { userId: player2.id, side: 1 },
       { userId: player3.id, side: 2 },
@@ -258,11 +280,27 @@ test.group('Match flow', (suite) => {
     ])
 
     await client.post(`/partidas/${matchId}/finalizar`).loginAs(owner).json(finalizePayload(1))
+
+    const match = await GameMatch.findOrFail(matchId)
+    assert.equal(match.status, 'finalizada')
+  })
+
+  test('organizer can undo after manage window expires', async ({ client, assert }) => {
+    const { owner, member, player1, player2, player3, player4, group } =
+      await createGroupWithMembers()
+    const matchId = await createMatchViaHttp(client, member, group.id, [
+      { userId: player1.id, side: 1 },
+      { userId: player2.id, side: 1 },
+      { userId: player3.id, side: 2 },
+      { userId: player4.id, side: 2 },
+    ])
+
+    await client.post(`/partidas/${matchId}/finalizar`).loginAs(member).json(finalizePayload(1))
     await expireManageWindow(matchId)
 
     await client.post(`/partidas/${matchId}/desfazer-resultado`).loginAs(owner)
 
     const match = await GameMatch.findOrFail(matchId)
-    assert.equal(match.status, 'finalizada')
+    assert.equal(match.status, 'em_andamento')
   })
 })

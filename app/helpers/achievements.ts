@@ -131,14 +131,21 @@ async function meetsCriteria(
   }
 }
 
+export type UnlockedAchievementSummary = {
+  id: number
+  name: string
+  icon: string
+}
+
 export async function evaluateAchievementsForUser(
   userId: number,
   trx: TransactionClientContract,
   context: EvaluationContext
-) {
+): Promise<UnlockedAchievementSummary[]> {
   const user = await User.findOrFail(userId, { client: trx })
   const achievements = await Achievement.query({ client: trx })
   const unlockedIds = await getUnlockedAchievementIds(userId, trx)
+  const newlyUnlocked: UnlockedAchievementSummary[] = []
 
   for (const achievement of achievements) {
     if (unlockedIds.has(achievement.id)) continue
@@ -156,7 +163,14 @@ export async function evaluateAchievementsForUser(
 
     await unlockAchievement(userId, achievement.id, trx)
     unlockedIds.add(achievement.id)
+    newlyUnlocked.push({
+      id: achievement.id,
+      name: achievement.name,
+      icon: achievement.icon,
+    })
   }
+
+  return newlyUnlocked
 }
 
 export async function getUserAchievements(userId: number) {

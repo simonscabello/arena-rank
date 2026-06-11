@@ -108,6 +108,10 @@ export function serializeMatchPlayer(player: MatchPlayer) {
       playerType === 'guest_invite' && invitePending ? ('pending' as const) : ('claimed' as const),
     guestInviteId:
       playerType === 'guest_invite' && invitePending && guestInvite ? guestInvite.id : null,
+    guestInviteUrl:
+      playerType === 'guest_invite' && invitePending && guestInvite
+        ? buildGuestInviteUrl(guestInvite.token)
+        : null,
   }
 }
 

@@ -15,7 +15,7 @@ Apply when creating or changing user-facing surfaces: `inertia/pages`, `inertia/
 
 ## Navigation
 
-* **Mobile-first**: primary sections must appear in the **bottom nav** (`default.tsx`). Desktop header and mobile bottom nav must expose the **same core areas** (Plays, Histórico, Loja, Perfil).
+* **Mobile-first**: primary sections must appear in the **bottom nav** (`default.tsx`). Desktop header and mobile bottom nav must expose the **same core areas** (Plays, Ranking, Histórico, Perfil).
 * **`/` for guests only**: authenticated users redirect to Plays (`groups.index`). Do not show marketing onboarding to logged-in users.
 * **One primary path** per feature. Avoid duplicate entry points (e.g. nav + card button + footer link to the same place).
 * **`BackLink`** must point to a meaningful parent (Plays, Play name, Perfil) — not a redirect-only route.
@@ -30,10 +30,10 @@ Apply when creating or changing user-facing surfaces: `inertia/pages`, `inertia/
 
 ## Actions and feedback
 
-* **Destructive or hard-to-undo actions** (palpite, cancelar, finalizar) require **`ConfirmDialog`** or equivalent confirmation.
+* **Destructive or hard-to-undo actions** (cancelar, finalizar, desfazer resultado) require **`ConfirmDialog`** or equivalent confirmation.
 * **Equal visual weight** for symmetric choices (e.g. both duplas neutral until one is selected; highlight only after choice).
 * Show **validation while typing** when rules are inferable (placar, datas, senha) — not only on submit.
-* Surface **business rules in context** (janela de 2 min, saldo negativo, "sem palpites") near the control they affect.
+* Surface **business rules in context** (janela de 2 min para criador, correção pelo organizador) near the control they affect.
 * Use **toasts/flash** for success/error; empty states explain the next step.
 
 ## Color semantics
@@ -47,7 +47,7 @@ Apply when creating or changing user-facing surfaces: `inertia/pages`, `inertia/
 * Labels must say **what to fill and why** when non-obvious.
 * Prefer **segmented toggles** over hidden mode switches (e.g. Membro / Convidado in `PlayerPicker`).
 * Required fields only when truly required; show constraints upfront (e.g. senha 8–32 chars).
-* Split **Perfil na Play** (identidade) from **Conta** (email/senha). Keep shop balance **outside** profile form.
+* Split **Perfil na Play** (identidade) from **Conta** (email/senha).
 
 ## Mobile layout
 

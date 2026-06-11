@@ -12,12 +12,37 @@ type Achievement = {
   categoryLabel: string
   unlockedAt?: string
   equipped?: boolean
+  criteriaLabel?: string | null
+  current?: number | null
+  target?: number | null
+  progressPercent?: number | null
 }
 
 type Props = {
   achievements: Achievement[]
   lockedAchievements: Achievement[]
   maxTitleSlots: number
+}
+
+function ProgressBar({ current, target }: { current: number; target: number }) {
+  const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0
+
+  return (
+    <div className="mt-2">
+      <div className="mb-1 flex justify-between text-xs text-stone-500">
+        <span>
+          {current}/{target}
+        </span>
+        <span>{percent}%</span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-stone-100">
+        <div
+          className="h-full rounded-full bg-brand-500 transition-all"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  )
 }
 
 export default function AchievementGrid({
@@ -76,18 +101,30 @@ export default function AchievementGrid({
       {lockedAchievements.length > 0 && (
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">
-            Ainda bloqueadas
+            Ainda bloqueadas ({lockedAchievements.length})
           </p>
           <div className="grid gap-2">
-            {lockedAchievements.slice(0, 6).map((achievement) => (
+            {lockedAchievements.map((achievement) => (
               <div
                 key={achievement.id}
-                className="rounded-xl border border-dashed border-stone-200 px-3 py-2.5 opacity-70"
+                className="rounded-xl border border-dashed border-stone-200 px-3 py-2.5 opacity-80"
               >
                 <p className="font-medium text-stone-700">
                   {achievement.icon} {achievement.name}
                 </p>
                 <p className="text-xs text-stone-500">{achievement.description}</p>
+                {achievement.criteriaLabel && (
+                  <p className="mt-1 text-xs font-medium text-brand-700">
+                    {achievement.criteriaLabel}
+                  </p>
+                )}
+                {achievement.current !== null &&
+                  achievement.current !== undefined &&
+                  achievement.target !== null &&
+                  achievement.target !== undefined &&
+                  achievement.target > 0 && (
+                    <ProgressBar current={achievement.current} target={achievement.target} />
+                  )}
               </div>
             ))}
           </div>

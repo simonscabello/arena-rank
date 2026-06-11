@@ -62,7 +62,7 @@ export default function GuestInviteShow({ groupName, displayName, claimed, inval
         </p>
         <p className="mt-3 text-sm text-stone-600">
           Ao entrar com Google, suas partidas registradas serão vinculadas automaticamente ao seu
-          perfil.
+          perfil — com XP e ELO retroativos.
         </p>
       </div>
 

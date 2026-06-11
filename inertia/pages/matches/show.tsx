@@ -1,7 +1,10 @@
 import BackLink from '~/components/BackLink'
 import Badge from '~/components/Badge'
 import Card from '~/components/Card'
+import EloRankingHint from '~/components/EloRankingHint'
+import GuestClaimReminder from '~/components/GuestClaimReminder'
 import MatchAdminSection from '~/components/MatchAdminSection'
+import MatchCelebrationCard from '~/components/MatchCelebrationCard'
 import MatchFinalizeCard from '~/components/MatchFinalizeCard'
 import MatchManageCard from '~/components/MatchManageCard'
 import MatchTeamsBlock from '~/components/MatchTeamsBlock'
@@ -9,7 +12,9 @@ import PageHeader from '~/components/PageHeader'
 import ShareMatchResult from '~/components/ShareMatchResult'
 import RankingList, { type RankingEntry } from '~/components/RankingList'
 import { formatEloDelta, teamLabel } from '~/lib/match'
+import { parseCelebrationFlash } from '~/lib/match_celebration'
 import type { PlayerType } from '~/lib/player_type'
+import { usePage } from '@inertiajs/react'
 
 type Player = {
   id: number
@@ -25,6 +30,7 @@ type Player = {
   equippedTitles?: { icon: string; name: string }[]
   claimStatus?: 'pending' | 'claimed'
   guestInviteId?: number | null
+  guestInviteUrl?: string | null
   xpAwarded?: number | null
   eloDelta?: number | null
   eloAfter?: number | null
@@ -55,7 +61,9 @@ type Props = {
   ranking: RankingEntry[]
   rankContext: RankContext
   currentUserId: number
-  canManageMatch: boolean
+  canFinalizeMatch: boolean
+  canManageMatchActions: boolean
+  isOrganizerOverride: boolean
 }
 
 function playersBySide(players: Player[], side: number) {
@@ -80,19 +88,36 @@ export default function MatchShow({
   ranking,
   rankContext,
   currentUserId,
-  canManageMatch,
+  canFinalizeMatch,
+  canManageMatchActions,
+  isOrganizerOverride,
 }: Props) {
+  const page = usePage()
+  const celebration = parseCelebrationFlash(
+    (page.props as { flash?: { celebration?: unknown } }).flash?.celebration
+  )
   const side1 = playersBySide(players, 1)
   const side2 = playersBySide(players, 2)
   const side1Label = teamLabel(side1)
   const side2Label = teamLabel(side2)
   const rankMessage = rankContextMessage(rankContext)
-  const showFinalizeCard = canManageMatch && match.status === 'em_andamento'
-  const showAdminSection =
-    canManageMatch &&
-    (showFinalizeCard ||
-      (match.manageWindowOpen &&
-        (match.status === 'em_andamento' || match.status === 'finalizada')))
+  const showFinalizeCard = canFinalizeMatch && match.status === 'em_andamento'
+  const hasManageActions =
+    canManageMatchActions &&
+    (match.status === 'em_andamento' || match.status === 'finalizada')
+  const showAdminSection = showFinalizeCard || hasManageActions
+  const pendingGuests = players
+    .filter(
+      (player) =>
+        player.playerType === 'guest_invite' &&
+        player.claimStatus === 'pending' &&
+        player.guestInviteUrl
+    )
+    .map((player) => ({
+      displayName: player.displayName,
+      guestInviteId: player.guestInviteId ?? null,
+      guestInviteUrl: player.guestInviteUrl ?? null,
+    }))
 
   if (match.status === 'cancelada') {
     return (
@@ -127,6 +152,12 @@ export default function MatchShow({
         title={match.arenaName}
         subtitle={<Badge status={match.status} />}
       />
+
+      {celebration && <MatchCelebrationCard celebration={celebration} />}
+
+      {pendingGuests.length > 0 && (
+        <GuestClaimReminder groupId={match.groupId} guests={pendingGuests} />
+      )}
 
       <Card className="mb-6">
         <MatchTeamsBlock
@@ -169,12 +200,15 @@ export default function MatchShow({
           {showFinalizeCard && (
             <MatchFinalizeCard matchId={match.id} side1Label={side1Label} side2Label={side2Label} />
           )}
-          <MatchManageCard
-            matchId={match.id}
-            status={match.status}
-            manageWindowOpen={match.manageWindowOpen}
-            manageWindowExpiresAt={match.manageWindowExpiresAt}
-          />
+          {hasManageActions && (
+            <MatchManageCard
+              matchId={match.id}
+              status={match.status}
+              manageWindowOpen={match.manageWindowOpen}
+              manageWindowExpiresAt={match.manageWindowExpiresAt}
+              isOrganizerOverride={isOrganizerOverride}
+            />
+          )}
         </MatchAdminSection>
       )}
 
@@ -186,6 +220,7 @@ export default function MatchShow({
         )}
 
         <Card title="Ranking da Play">
+          <EloRankingHint className="mb-3" />
           <RankingList entries={ranking} highlightUserId={currentUserId} groupId={match.groupId} />
         </Card>
       </div>

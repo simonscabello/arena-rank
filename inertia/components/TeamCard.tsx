@@ -96,8 +96,15 @@ export default function TeamCard({ groupId, side, players, isWinner }: Props) {
                 )}
               </span>
               {isGuestPlayerType(player.playerType) && (
-                <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">
-                  Convidado
+                <span
+                  className={cn(
+                    'shrink-0 rounded-full px-2 py-0.5 text-xs',
+                    player.claimStatus === 'pending'
+                      ? 'bg-amber-100 font-medium text-amber-800'
+                      : 'bg-stone-100 text-stone-600'
+                  )}
+                >
+                  {player.claimStatus === 'pending' ? 'Pendente' : 'Convidado'}
                 </span>
               )}
             </div>

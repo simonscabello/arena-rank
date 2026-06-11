@@ -1,13 +1,19 @@
+import { buildCelebrationPayload } from '#helpers/match_celebration'
 import { scoreMatchProgression } from '#helpers/match_progression'
 import { createMatchWithPlayers } from '#helpers/match_creation'
 import { assertGroupMember } from '#helpers/group_access'
-import { assertMatchCreator, isMatchCreator } from '#helpers/match_access'
+import {
+  assertCanFinalizeMatch,
+  assertCanUndoOrCancelMatch,
+  canFinalizeMatch,
+  canUndoOrCancelMatch,
+  isOrganizerOverride,
+} from '#helpers/match_access'
 import { clearMatchResult } from '#helpers/match_lifecycle'
 import {
   isManageWindowOpen,
   manageWindowExpiresAt,
   markStatusChanged,
-  rejectExpiredManageWindow,
 } from '#helpers/match_manage_window'
 import { serializeMatchPlayer } from '#helpers/match_players'
 import { DEFAULT_FRAME_INSET, getEquippedDisplayByUserIds } from '#helpers/cosmetic_display'
@@ -62,7 +68,9 @@ export default class MatchesController {
 
     const ranking = await getGroupRanking(match.groupId)
     const rankContext = getRankContext(ranking, user.id)
-    const canManageMatch = isMatchCreator(match, user.id)
+    const canFinalize = await canFinalizeMatch(match, user.id, match.groupId)
+    const canManageActions = await canUndoOrCancelMatch(match, user.id, match.groupId)
+    const organizerOverride = await isOrganizerOverride(match, user.id, match.groupId)
     const parsedScore = parseMatchScore(match.score)
     const serializedPlayers = match.players.map((player) => serializeMatchPlayer(player))
     const playerUserIdsForRewards = serializedPlayers
@@ -117,7 +125,9 @@ export default class MatchesController {
       ranking,
       rankContext,
       currentUserId: user.id,
-      canManageMatch,
+      canFinalizeMatch: canFinalize,
+      canManageMatchActions: canManageActions,
+      isOrganizerOverride: organizerOverride,
     })
   }
 
@@ -125,7 +135,7 @@ export default class MatchesController {
     const user = auth.user!
     const match = await GameMatch.findOrFail(Number(params.id))
     await assertGroupMember(match.groupId, user)
-    await assertMatchCreator(match, user)
+    await assertCanFinalizeMatch(match, user)
 
     if (match.status !== 'em_andamento') {
       session.flash('error', 'Partida precisa estar em andamento para finalizar')
@@ -158,9 +168,26 @@ export default class MatchesController {
 
     const score: MatchScore = { sets: sets! }
 
-    await db.transaction(async (trx) => {
-      await scoreMatchProgression(match, winnerSide, score, trx)
+    const rankingBefore = await getGroupRanking(match.groupId)
+    const rankBefore = getRankContext(rankingBefore, user.id).position
+
+    const progression = await db.transaction(async (trx) => {
+      return scoreMatchProgression(match, winnerSide, score, trx)
     })
+
+    const rankingAfter = await getGroupRanking(match.groupId)
+    const rankAfter = getRankContext(rankingAfter, user.id).position
+
+    const celebration = buildCelebrationPayload({
+      userId: user.id,
+      progression,
+      rankBefore,
+      rankAfter,
+    })
+
+    if (celebration) {
+      session.flash('celebration', JSON.stringify(celebration))
+    }
 
     session.flash('success', 'Partida finalizada')
     response.redirect().back()
@@ -170,8 +197,7 @@ export default class MatchesController {
     const user = auth.user!
     const match = await GameMatch.findOrFail(Number(params.id))
     await assertGroupMember(match.groupId, user)
-    await assertMatchCreator(match, user)
-    if (rejectExpiredManageWindow(match, { session, response })) return
+    await assertCanUndoOrCancelMatch(match, user)
 
     if (match.status !== 'finalizada') {
       session.flash('error', 'Só é possível desfazer resultado de partida finalizada')
@@ -195,8 +221,7 @@ export default class MatchesController {
     const user = auth.user!
     const match = await GameMatch.findOrFail(Number(params.id))
     await assertGroupMember(match.groupId, user)
-    await assertMatchCreator(match, user)
-    if (rejectExpiredManageWindow(match, { session, response })) return
+    await assertCanUndoOrCancelMatch(match, user)
 
     if (match.status === 'cancelada') {
       session.flash('error', 'Partida já está cancelada')

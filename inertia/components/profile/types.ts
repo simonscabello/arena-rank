@@ -33,6 +33,10 @@ export type LockedAchievement = {
   icon: string
   category: string
   categoryLabel: string
+  criteriaLabel: string | null
+  current: number | null
+  target: number | null
+  progressPercent: number | null
 }
 
 export type ProfileFrame = {

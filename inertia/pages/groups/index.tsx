@@ -12,10 +12,35 @@ import { cn } from '~/lib/match'
 type GroupItem = {
   id: number
   name: string
+  memberCount: number
+  matchesThisWeek: number
+  lastMatchAt: string | null
+  lastMatchLabel: string | null
+  userPosition: number | null
 }
 
 type Props = {
   groups: GroupItem[]
+}
+
+function formatRelativeDate(value: string) {
+  return new Date(value).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+  })
+}
+
+function groupMeta(group: GroupItem) {
+  const parts = [`${group.memberCount} membros`]
+  if (group.matchesThisWeek > 0) {
+    parts.push(
+      `${group.matchesThisWeek} partida${group.matchesThisWeek === 1 ? '' : 's'} esta semana`
+    )
+  }
+  if (group.userPosition) {
+    parts.push(`${group.userPosition}º no ranking`)
+  }
+  return parts.join(' · ')
 }
 
 export default function GroupsIndex({ groups }: Props) {
@@ -77,10 +102,18 @@ export default function GroupsIndex({ groups }: Props) {
               <Link
                 route="groups.show"
                 routeParams={{ id: group.id }}
-                className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-brand-300 hover:shadow-md active:scale-[0.99]"
+                className="flex flex-col gap-1 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-brand-300 hover:shadow-md active:scale-[0.99]"
               >
-                <p className="font-semibold text-stone-900">{group.name}</p>
-                <span className="text-brand-600">→</span>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-stone-900">{group.name}</p>
+                  <span className="text-brand-600">→</span>
+                </div>
+                <p className="text-sm text-stone-500">{groupMeta(group)}</p>
+                {group.lastMatchLabel && group.lastMatchAt && (
+                  <p className="truncate text-xs text-stone-400">
+                    Última: {group.lastMatchLabel} · {formatRelativeDate(group.lastMatchAt)}
+                  </p>
+                )}
               </Link>
             </li>
           ))}

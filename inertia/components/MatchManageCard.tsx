@@ -22,6 +22,7 @@ type Props = {
   status: string
   manageWindowOpen: boolean
   manageWindowExpiresAt: string
+  isOrganizerOverride: boolean
 }
 
 const actionConfigs: Record<ManageAction, Omit<ActionConfig, 'id' | 'buttonVariant'>> = {
@@ -87,14 +88,15 @@ export default function MatchManageCard({
   status,
   manageWindowOpen,
   manageWindowExpiresAt,
+  isOrganizerOverride,
 }: Props) {
   const windowedActions = buildWindowedActions(status)
   const [pendingAction, setPendingAction] = useState<ActionConfig | null>(null)
   const secondsLeft = useCountdown(manageWindowExpiresAt)
   const windowOpen = manageWindowOpen && secondsLeft > 0
-  const visibleWindowedActions = windowOpen ? windowedActions : []
+  const visibleActions = isOrganizerOverride ? windowedActions : windowOpen ? windowedActions : []
 
-  if (visibleWindowedActions.length === 0) return null
+  if (visibleActions.length === 0) return null
 
   function confirmAction() {
     if (!pendingAction) return
@@ -106,15 +108,23 @@ export default function MatchManageCard({
   return (
     <>
       <Card title="Gerenciar partida" className="mb-0">
-        <p className="mb-3 text-xs text-stone-500">
-          Após cada mudança de status, você tem 2 minutos para desfazer resultado ou cancelar.
-          Depois desse prazo, a partida fica travada.
-        </p>
-        <div className="flex flex-col gap-2.5">
-          <p className="text-sm text-stone-600">
-            Você tem {formatCountdown(secondsLeft)} para alterar. Depois disso, estas ações somem.
+        {isOrganizerOverride ? (
+          <p className="mb-3 text-xs text-stone-500">
+            Como organizador, você pode corrigir esta partida a qualquer momento.
           </p>
-          {visibleWindowedActions.map((action) => (
+        ) : (
+          <p className="mb-3 text-xs text-stone-500">
+            Após cada mudança de status, você tem 2 minutos para desfazer resultado ou cancelar.
+            Depois desse prazo, a partida fica travada.
+          </p>
+        )}
+        <div className="flex flex-col gap-2.5">
+          {!isOrganizerOverride && (
+            <p className="text-sm text-stone-600">
+              Você tem {formatCountdown(secondsLeft)} para alterar. Depois disso, estas ações somem.
+            </p>
+          )}
+          {visibleActions.map((action) => (
             <Button
               key={action.id}
               variant={action.buttonVariant}

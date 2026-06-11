@@ -9,6 +9,7 @@ import {
 } from '#enums/sport_profile'
 import { ACHIEVEMENT_CATEGORY_LABELS } from '#enums/achievement_criteria_type'
 import { MAX_TITLE_SLOTS } from '#enums/cosmetic_item_type'
+import { enrichLockedAchievements } from '#helpers/achievement_progress'
 import { getUnlockedFrames, getUserAchievements } from '#helpers/achievements'
 import { removeUserAvatar, saveUserAvatar } from '#helpers/avatar_storage'
 import {
@@ -137,6 +138,11 @@ export default class ProfileController {
       historySummary = historyOverview.summary
     }
 
+    const lockedRaw = allAchievements.filter(
+      (achievement) => !achievements.some((unlocked) => Number(unlocked.id) === achievement.id)
+    )
+    const enrichedLocked = await enrichLockedAchievements(user.id, lockedRaw)
+
     return inertia.render('profile/show', {
       section,
       maxTitleSlots: MAX_TITLE_SLOTS,
@@ -163,19 +169,19 @@ export default class ProfileController {
         unlockedAt: row.unlockedAt,
         equipped: equippedAchievementIds.has(Number(row.id)),
       })),
-      lockedAchievements: allAchievements
-        .filter(
-          (achievement) => !achievements.some((unlocked) => Number(unlocked.id) === achievement.id)
-        )
-        .map((achievement) => ({
-          id: achievement.id,
-          slug: achievement.slug,
-          name: achievement.name,
-          description: achievement.description ?? '',
-          icon: achievement.icon,
-          category: achievement.category,
-          categoryLabel: ACHIEVEMENT_CATEGORY_LABELS[achievement.category] ?? achievement.category,
-        })),
+      lockedAchievements: enrichedLocked.map((achievement) => ({
+        id: achievement.id,
+        slug: achievement.slug,
+        name: achievement.name,
+        description: achievement.description,
+        icon: achievement.icon,
+        category: achievement.category,
+        categoryLabel: ACHIEVEMENT_CATEGORY_LABELS[achievement.category] ?? achievement.category,
+        criteriaLabel: achievement.progress?.criteriaLabel ?? null,
+        current: achievement.progress?.current ?? null,
+        target: achievement.progress?.target ?? null,
+        progressPercent: achievement.progress?.progressPercent ?? null,
+      })),
       frames: frames.map((row) => ({
         id: Number(row.id),
         slug: String(row.slug),

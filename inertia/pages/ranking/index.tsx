@@ -1,4 +1,5 @@
 import BackLink from '~/components/BackLink'
+import EloRankingHint from '~/components/EloRankingHint'
 import PageHeader from '~/components/PageHeader'
 import RankingList, { type RankingEntry } from '~/components/RankingList'
 
@@ -19,8 +20,10 @@ export default function RankingIndex({ ranking, meta, currentUserId }: Props) {
       <PageHeader
         back={<BackLink route="groups.index" label="Plays" />}
         title="Ranking global"
-        subtitle="ELO de todos os jogadores do Amigos do BT"
+        subtitle="ELO de todos os jogadores — vale em todas as Plays"
       />
+
+      <EloRankingHint className="mb-4" />
 
       <RankingList entries={ranking} highlightUserId={currentUserId} />
 

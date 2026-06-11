@@ -8,6 +8,7 @@ import {
 } from '#enums/sport_profile'
 import { assertGroupMember, isGroupMember } from '#helpers/group_access'
 import ForbiddenException from '#exceptions/forbidden_exception'
+import { getHeadToHead } from '#helpers/player_head_to_head'
 import { getMemberDisplay, getPlayerStats } from '#helpers/player_stats'
 import { getGroupRanking } from '#helpers/ranking'
 import Group from '#models/group'
@@ -38,6 +39,8 @@ export default class MembersController {
             position: rankIndex + 1,
           }
 
+    const headToHead = viewer.id !== userId ? await getHeadToHead(groupId, viewer.id, userId) : null
+
     return inertia.render('members/show', {
       group: { id: group.id, name: group.name },
       member: {
@@ -53,6 +56,7 @@ export default class MembersController {
       stats,
       playRanking,
       isSelf: viewer.id === userId,
+      headToHead,
     })
   }
 }

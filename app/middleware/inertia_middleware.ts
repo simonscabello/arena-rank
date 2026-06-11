@@ -10,6 +10,7 @@ export default class InertiaMiddleware extends BaseInertiaMiddleware {
 
     const error = session?.flashMessages.get('error') as string
     const success = session?.flashMessages.get('success') as string
+    const celebrationRaw = session?.flashMessages.get('celebration')
 
     const frame = auth?.user ? await getEquippedAvatarFrame(auth.user.id) : undefined
 
@@ -18,6 +19,7 @@ export default class InertiaMiddleware extends BaseInertiaMiddleware {
       flash: ctx.inertia.always({
         error,
         success,
+        celebration: celebrationRaw ?? null,
       }),
       user: ctx.inertia.always(
         auth?.user ? UserTransformer.transform(auth.user, frame) : undefined

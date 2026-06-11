@@ -4,6 +4,7 @@ import { useState } from 'react'
 import BackLink from '~/components/BackLink'
 import Avatar from '~/components/Avatar'
 import AvatarPreviewModal from '~/components/AvatarPreviewModal'
+import EloRankingHint from '~/components/EloRankingHint'
 import EloTierBadge from '~/components/EloTierBadge'
 import ProfileBadge from '~/components/ProfileBadge'
 import Card from '~/components/Card'
@@ -73,19 +74,33 @@ type PlayRanking = {
   position?: number
 } | null
 
+type HeadToHead = {
+  played: number
+  winsForViewer: number
+  winsForOpponent: number
+  recentMatches: {
+    matchId: number
+    arenaName: string
+    scoreLabel: string | null
+    playedAt: string
+    viewerWon: boolean
+  }[]
+}
+
 type Props = {
   group: { id: number; name: string }
   member: Member
   stats: Stats
   playRanking: PlayRanking
   isSelf: boolean
+  headToHead: HeadToHead | null
 }
 
 function partnerName(partner: PartnerSummary) {
   return partner.nickname || partner.fullName || partner.email.split('@')[0]
 }
 
-export default function MemberShow({ group, member, stats, playRanking, isSelf }: Props) {
+export default function MemberShow({ group, member, stats, playRanking, isSelf, headToHead }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false)
   const winRate = stats.matchesPlayed > 0 ? Math.round((stats.wins / stats.matchesPlayed) * 100) : 0
 
@@ -202,7 +217,8 @@ export default function MemberShow({ group, member, stats, playRanking, isSelf }
           </Card>
         </div>
 
-        <Card title="Ranking global">
+        <Card title="ELO global">
+          <EloRankingHint className="mb-3" />
           <p className="text-2xl font-bold text-brand-700">{member.elo} ELO</p>
           <p className="text-sm text-stone-500">
             Nível {member.level} · {member.xp} XP ·{' '}
@@ -216,6 +232,46 @@ export default function MemberShow({ group, member, stats, playRanking, isSelf }
             </p>
           )}
         </Card>
+
+        {headToHead && headToHead.played > 0 && (
+          <Card title={`Você vs ${displayName(member)}`}>
+            <p className="text-sm text-stone-600">
+              {headToHead.winsForViewer} vitória{headToHead.winsForViewer === 1 ? '' : 's'} ·{' '}
+              {headToHead.winsForOpponent} derrota{headToHead.winsForOpponent === 1 ? '' : 's'} ·{' '}
+              {headToHead.played} confronto{headToHead.played === 1 ? '' : 's'}
+            </p>
+            {headToHead.recentMatches.length > 0 && (
+              <ul className="mt-3 space-y-2">
+                {headToHead.recentMatches.map((match) => (
+                  <li key={match.matchId}>
+                    <Link
+                      route="matches.show"
+                      routeParams={{ id: match.matchId }}
+                      className="flex items-center justify-between rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-2 text-sm transition hover:border-brand-200"
+                    >
+                      <div>
+                        <p className="font-medium text-stone-900">{match.arenaName}</p>
+                        <p className="text-xs text-stone-500">
+                          {match.scoreLabel ?? '—'} ·{' '}
+                          {new Date(match.playedAt).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                      <span
+                        className={
+                          match.viewerWon
+                            ? 'text-xs font-medium text-emerald-700'
+                            : 'text-xs font-medium text-stone-500'
+                        }
+                      >
+                        {match.viewerWon ? 'Vitória' : 'Derrota'}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        )}
 
         {stats.bestPartner && (
           <Card title="Melhor parceiro">

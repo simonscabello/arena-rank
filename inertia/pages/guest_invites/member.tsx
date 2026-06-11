@@ -23,7 +23,8 @@ export default function GuestInviteMember({ group, guest }: Props) {
           <span className="block space-y-1">
             <span className="block text-sm text-amber-700">Convidado · Aguardando cadastro</span>
             <span className="block text-xs text-stone-500">
-              Envie o link abaixo para a pessoa criar conta e vincular o histórico na Play.
+              Envie o link para a pessoa criar conta. Partidas já registradas entram no histórico com
+              XP e ELO retroativos.
             </span>
           </span>
         }
@@ -33,8 +34,8 @@ export default function GuestInviteMember({ group, guest }: Props) {
         <Avatar initials={guest.initials} size="2xl" />
         <div className="min-w-0 flex-1 pt-1 text-sm text-stone-600">
           <p>
-            Este jogador ainda não tem conta. Qualquer membro da Play pode copiar e enviar o link de
-            convite.
+            Este jogador ainda não tem conta. Envie o link — ao entrar com Google, as partidas já
+            registradas vinculam ao perfil com XP e ELO retroativos.
           </p>
         </div>
       </div>

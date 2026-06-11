@@ -5,6 +5,7 @@ import BackLink from '~/components/BackLink'
 import Card from '~/components/Card'
 import CopyInviteLink from '~/components/CopyInviteLink'
 import EmptyState from '~/components/EmptyState'
+import EloRankingHint from '~/components/EloRankingHint'
 import Input from '~/components/Input'
 import RankingList, { type RankingEntry } from '~/components/RankingList'
 import { buttonClassName } from '~/lib/button_styles'
@@ -19,6 +20,13 @@ type RecentMatchItem = {
 
 type Props = {
   group: { id: number; name: string; inviteUrl: string }
+  activitySummary: {
+    matchesThisWeek: number
+    activePlayersThisWeek: number
+    leaderName: string | null
+    leaderElo: number | null
+  }
+  members: RankingEntry[]
   recentMatches: RecentMatchItem[]
   ranking: RankingEntry[]
   currentUserId: number
@@ -34,6 +42,8 @@ function formatDate(value: string) {
 
 export default function GroupShow({
   group,
+  activitySummary,
+  members,
   recentMatches,
   ranking,
   currentUserId,
@@ -114,6 +124,31 @@ export default function GroupShow({
       </div>
 
       <div className="space-y-6">
+        <Card title="Esta semana">
+          <div className="grid grid-cols-2 gap-3 text-center">
+            <div>
+              <p className="text-2xl font-bold text-brand-700">{activitySummary.matchesThisWeek}</p>
+              <p className="text-xs text-stone-500">Partidas</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-stone-900">
+                {activitySummary.activePlayersThisWeek}
+              </p>
+              <p className="text-xs text-stone-500">Jogadores ativos</p>
+            </div>
+          </div>
+          {activitySummary.leaderName && activitySummary.leaderElo !== null && (
+            <p className="mt-3 text-sm text-stone-600">
+              Líder: <span className="font-medium text-stone-900">{activitySummary.leaderName}</span>{' '}
+              · {activitySummary.leaderElo} ELO
+            </p>
+          )}
+        </Card>
+
+        <Card title="Membros">
+          <RankingList entries={members} highlightUserId={currentUserId} groupId={group.id} />
+        </Card>
+
         <Card title="Histórico recente">
           {recentMatches.length === 0 ? (
             <EmptyState
@@ -157,6 +192,7 @@ export default function GroupShow({
         </Card>
 
         <Card title="Ranking">
+          <EloRankingHint className="mb-3" />
           <RankingList entries={ranking} highlightUserId={currentUserId} groupId={group.id} />
         </Card>
       </div>

@@ -1,7 +1,7 @@
 import { Data } from '@generated/data'
 import { Form, Link } from '@adonisjs/inertia/react'
 import { usePage } from '@inertiajs/react'
-import { History, Trophy, Users, LogOut } from 'lucide-react'
+import { History, Trophy, User, Users, LogOut } from 'lucide-react'
 import { ReactElement, useEffect, useRef } from 'react'
 import { toast, Toaster } from 'sonner'
 import Avatar from '~/components/Avatar'
@@ -145,6 +145,10 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
             <Link route="history.show" className={mobileNavClass(isNavActive(url, 'history'))}>
               <History className="h-5 w-5 shrink-0" />
               Histórico
+            </Link>
+            <Link route="profile.show" className={mobileNavClass(isNavActive(url, 'profile'))}>
+              <User className="h-5 w-5 shrink-0" />
+              Perfil
             </Link>
           </div>
         </nav>

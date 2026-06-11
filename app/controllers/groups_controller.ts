@@ -1,4 +1,7 @@
+import { getGroupActivitySummary } from '#helpers/group_activity_summary'
 import { getGroupRecentMatches } from '#helpers/group_history'
+import { getGroupMembersList } from '#helpers/group_members'
+import { getGroupListSummaries, getUserGroupMemberships } from '#helpers/group_list_summary'
 import { listPendingGuestInvites } from '#helpers/guest_player_invite'
 import {
   assertGroupMember,
@@ -21,16 +24,23 @@ import db from '@adonisjs/lucid/services/db'
 export default class GroupsController {
   async index({ inertia, auth }: HttpContext) {
     const user = auth.user!
-    const memberships = await GroupMember.query()
-      .where('user_id', user.id)
-      .preload('group')
-      .orderBy('created_at', 'desc')
+    const memberships = await getUserGroupMemberships(user.id)
+    const groupIds = memberships.map((m) => m.group.id)
+    const summaries = await getGroupListSummaries(user.id, groupIds)
 
     return inertia.render('groups/index', {
-      groups: memberships.map((m) => ({
-        id: m.group.id,
-        name: m.group.name,
-      })),
+      groups: memberships.map((m) => {
+        const summary = summaries.find((s) => s.id === m.group.id)
+        return {
+          id: m.group.id,
+          name: m.group.name,
+          memberCount: summary?.memberCount ?? 0,
+          matchesThisWeek: summary?.matchesThisWeek ?? 0,
+          lastMatchAt: summary?.lastMatchAt ?? null,
+          lastMatchLabel: summary?.lastMatchLabel ?? null,
+          userPosition: summary?.userPosition ?? null,
+        }
+      }),
     })
   }
 
@@ -101,6 +111,8 @@ export default class GroupsController {
     const recentMatches = await getGroupRecentMatches(groupId)
     const ranking = await getGroupRanking(groupId)
     const canManageGroup = await isGroupOrganizer(groupId, user.id)
+    const activitySummary = await getGroupActivitySummary(groupId)
+    const members = await getGroupMembersList(groupId)
 
     return inertia.render('groups/show', {
       group: {
@@ -108,6 +120,8 @@ export default class GroupsController {
         name: group.name,
         inviteUrl: buildInviteUrl(group.inviteCode),
       },
+      activitySummary,
+      members,
       recentMatches,
       ranking,
       currentUserId: user.id,

@@ -1,4 +1,4 @@
-import { evaluateAchievementsForUser } from '#helpers/achievements'
+import { evaluateAchievementsForUser, type UnlockedAchievementSummary } from '#helpers/achievements'
 import { averageElo, calculateEloDelta } from '#helpers/elo'
 import { markStatusChanged } from '#helpers/match_manage_window'
 import { realPlayerUserIds } from '#helpers/match_players'
@@ -21,12 +21,29 @@ export type PlayerReward = {
   level: number
 }
 
+export type LevelUpSummary = {
+  userId: number
+  previousLevel: number
+  newLevel: number
+}
+
+export type NewAchievementSummary = {
+  userId: number
+  achievement: UnlockedAchievementSummary
+}
+
+export type MatchProgressionResult = {
+  rewards: PlayerReward[]
+  levelUps: LevelUpSummary[]
+  newAchievements: NewAchievementSummary[]
+}
+
 export async function scoreMatchProgression(
   match: GameMatch,
   winnerSide: number,
   score: MatchScore,
   trx: TransactionClientContract
-): Promise<PlayerReward[]> {
+): Promise<MatchProgressionResult> {
   match.useTransaction(trx)
   match.status = 'finalizada'
   match.winnerSide = winnerSide
@@ -44,7 +61,7 @@ export async function scoreMatchProgression(
   const allUserIds = [...side1UserIds, ...side2UserIds]
 
   if (allUserIds.length === 0) {
-    return []
+    return { rewards: [], levelUps: [], newAchievements: [] }
   }
 
   const users = await User.query({ client: trx }).whereIn('id', allUserIds)
@@ -67,6 +84,8 @@ export async function scoreMatchProgression(
   const winXp = calculateWinXp(margin)
   const lossXp = calculateLossXp(margin)
   const rewards: PlayerReward[] = []
+  const levelUps: LevelUpSummary[] = []
+  const newAchievements: NewAchievementSummary[] = []
   const now = DateTime.now()
 
   async function applyReward(userId: number, xpAwarded: number, eloDelta: number) {
@@ -80,6 +99,7 @@ export async function scoreMatchProgression(
 
     if (user.level > previousLevel) {
       await unlockFramesUpToLevel(userId, user.level, trx)
+      levelUps.push({ userId, previousLevel, newLevel: user.level })
     }
 
     await MatchReward.create(
@@ -112,13 +132,16 @@ export async function scoreMatchProgression(
   }
 
   for (const userId of allUserIds) {
-    await evaluateAchievementsForUser(userId, trx, {
+    const unlocked = await evaluateAchievementsForUser(userId, trx, {
       margin,
       won: winnerUserIds.includes(userId),
     })
+    for (const achievement of unlocked) {
+      newAchievements.push({ userId, achievement })
+    }
   }
 
-  return rewards
+  return { rewards, levelUps, newAchievements }
 }
 
 export async function getMatchPlayerUserIds(matchId: number): Promise<number[]> {
