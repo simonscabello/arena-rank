@@ -30,6 +30,7 @@ export type ScannedRoutes = {
     'profile.equip': { paramsTuple?: []; params?: {} }
     'profile.unequip': { paramsTuple?: []; params?: {} }
     'history.show': { paramsTuple?: []; params?: {} }
+    'players.history.show': { paramsTuple: [ParamValue]; params: {'userId': ParamValue} }
     'members.show': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'userId': ParamValue} }
     'guest_invites.member': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'inviteId': ParamValue} }
   }
@@ -49,6 +50,7 @@ export type ScannedRoutes = {
     'ranking.index': { paramsTuple?: []; params?: {} }
     'profile.show': { paramsTuple?: []; params?: {} }
     'history.show': { paramsTuple?: []; params?: {} }
+    'players.history.show': { paramsTuple: [ParamValue]; params: {'userId': ParamValue} }
     'members.show': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'userId': ParamValue} }
     'guest_invites.member': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'inviteId': ParamValue} }
   }
@@ -68,6 +70,7 @@ export type ScannedRoutes = {
     'ranking.index': { paramsTuple?: []; params?: {} }
     'profile.show': { paramsTuple?: []; params?: {} }
     'history.show': { paramsTuple?: []; params?: {} }
+    'players.history.show': { paramsTuple: [ParamValue]; params: {'userId': ParamValue} }
     'members.show': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'userId': ParamValue} }
     'guest_invites.member': { paramsTuple: [ParamValue,ParamValue]; params: {'groupId': ParamValue,'inviteId': ParamValue} }
   }

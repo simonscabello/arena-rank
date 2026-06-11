@@ -15,6 +15,7 @@ import {
   manageWindowExpiresAt,
   markStatusChanged,
 } from '#helpers/match_manage_window'
+import { resolveDisplayFunLabelsByUserIds } from '#helpers/fun_label_display'
 import { serializeMatchPlayer } from '#helpers/match_players'
 import { DEFAULT_FRAME_INSET, getEquippedDisplayByUserIds } from '#helpers/cosmetic_display'
 import { validateAndResolveMatchPlayers } from '#helpers/match_player_validation'
@@ -77,6 +78,14 @@ export default class MatchesController {
       .map((player) => player.userId)
       .filter((userId): userId is number => userId !== null)
     const equippedDisplayByUserId = await getEquippedDisplayByUserIds(playerUserIdsForRewards)
+    const funLabelByUserId = await resolveDisplayFunLabelsByUserIds(
+      serializedPlayers
+        .filter((player) => player.userId !== null)
+        .map((player) => ({
+          userId: player.userId!,
+          funLabel: player.funLabel,
+        }))
+    )
 
     const rewardsByUserId = new Map(
       match.rewards.map((reward) => [
@@ -114,6 +123,9 @@ export default class MatchesController {
 
         return {
           ...player,
+          funLabel: player.userId
+            ? (funLabelByUserId.get(player.userId) ?? player.funLabel)
+            : player.funLabel,
           equippedTitles: rewards?.equippedTitles ?? [],
           avatarFrameSrc: rewards?.avatarFrameSrc ?? null,
           avatarFrameInset: rewards?.avatarFrameInset ?? DEFAULT_FRAME_INSET,

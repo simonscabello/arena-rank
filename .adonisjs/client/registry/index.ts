@@ -162,6 +162,12 @@ const routes = {
     tokens: [{"old":"/historico","type":0,"val":"historico","end":""}],
     types: placeholder as Registry['history.show']['types'],
   },
+  'players.history.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/jogadores/:userId/historico',
+    tokens: [{"old":"/jogadores/:userId/historico","type":0,"val":"jogadores","end":""},{"old":"/jogadores/:userId/historico","type":1,"val":"userId","end":""},{"old":"/jogadores/:userId/historico","type":0,"val":"historico","end":""}],
+    types: placeholder as Registry['players.history.show']['types'],
+  },
   'members.show': {
     methods: ["GET","HEAD"],
     pattern: '/grupos/:groupId/membros/:userId',

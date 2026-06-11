@@ -2,6 +2,7 @@ export const ACHIEVEMENT_CRITERIA_TYPES = [
   'match_count',
   'win_streak',
   'loss_streak',
+  'recent_form',
   'shutout_win',
   'elo_tier',
   'level',

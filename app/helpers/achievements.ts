@@ -1,6 +1,6 @@
 import type { AchievementCriteriaType } from '#enums/achievement_criteria_type'
 import { eloTierFromRating, type EloTier } from '#enums/elo_tier'
-import { getLossStreak, getWinStreak } from '#helpers/match_streaks'
+import { getLossStreak, getRecentWindowForm, getWinStreak } from '#helpers/match_streaks'
 import Achievement from '#models/achievement'
 import User from '#models/user'
 import UserAchievement from '#models/user_achievement'
@@ -12,6 +12,8 @@ type CriteriaValue = {
   count?: number
   tier?: EloTier
   level?: number
+  window?: number
+  minLosses?: number
 }
 
 type EvaluationContext = {
@@ -94,6 +96,13 @@ async function meetsCriteria(
       if (required <= 0) return false
       const streak = await getLossStreak(user.id, trx)
       return streak >= required
+    }
+    case 'recent_form': {
+      const window = criteriaValue.window ?? 0
+      const minLosses = criteriaValue.minLosses ?? 0
+      if (window <= 0 || minLosses <= 0) return false
+      const form = await getRecentWindowForm(user.id, window, trx)
+      return form.played >= window && form.losses >= minLosses
     }
     case 'shutout_win': {
       if (!context.won) return false

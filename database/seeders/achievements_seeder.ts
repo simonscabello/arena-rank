@@ -294,12 +294,12 @@ const ACHIEVEMENTS = [
   },
   {
     slug: 'title-bola-fora',
-    name: 'Especialista em Bola Fora',
-    description: 'Dez partidas — nem sempre a culpa é da rede.',
+    name: 'Azar Tenaz',
+    description: 'Jogou 5, perdeu 4. A conta fecha.',
     icon: '👀',
     category: 'troll',
-    criteriaType: 'match_count',
-    criteriaValue: { count: 10 },
+    criteriaType: 'recent_form',
+    criteriaValue: { window: 5, minLosses: 4 },
     sortOrder: 44,
   },
   {
@@ -314,8 +314,27 @@ const ACHIEVEMENTS = [
   },
 ] as const
 
+const DEPRECATED_ACHIEVEMENT_SLUGS = [
+  'title-10-bolas-rede',
+  'title-perdendo-5x0',
+  'title-atrasado-ganhou',
+  'title-pediu-tempo-piorou',
+  'title-caibra-match-point',
+  'title-ganhou-vento',
+  'title-tiltou-adversario',
+  'title-vitoria-culposa',
+  'title-sobreviveu-tiebreak',
+  'title-ultimo-jogo',
+] as const
+
 export default class extends BaseSeeder {
   async run() {
+    if (DEPRECATED_ACHIEVEMENT_SLUGS.length > 0) {
+      await Achievement.query()
+        .whereIn('slug', [...DEPRECATED_ACHIEVEMENT_SLUGS])
+        .delete()
+    }
+
     for (const achievement of ACHIEVEMENTS) {
       await Achievement.updateOrCreate({ slug: achievement.slug }, achievement)
     }

@@ -55,3 +55,45 @@ export async function getLossStreak(
   const rows = await getRecentMatchOutcomes(userId, trx)
   return countStreak(rows, false)
 }
+
+export type RecentWindowForm = {
+  wins: number
+  losses: number
+  played: number
+}
+
+export async function getRecentWindowForm(
+  userId: number,
+  window: number,
+  trx?: TransactionClientContract
+): Promise<RecentWindowForm> {
+  const rows = await getRecentMatchOutcomes(userId, trx)
+  const slice = rows.slice(0, window)
+
+  let wins = 0
+  let losses = 0
+  for (const row of slice) {
+    if (Number(row.side) === Number(row.winnerSide)) {
+      wins++
+    } else {
+      losses++
+    }
+  }
+
+  return {
+    wins,
+    losses,
+    played: slice.length,
+  }
+}
+
+export async function getStreaksForUser(
+  userId: number,
+  trx?: TransactionClientContract
+): Promise<{ winStreak: number; lossStreak: number }> {
+  const rows = await getRecentMatchOutcomes(userId, trx)
+  return {
+    winStreak: countStreak(rows, true),
+    lossStreak: countStreak(rows, false),
+  }
+}

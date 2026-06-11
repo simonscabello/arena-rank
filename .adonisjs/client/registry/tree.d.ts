@@ -51,6 +51,11 @@ export interface ApiDefinition {
   history: {
     show: typeof routes['history.show']
   }
+  players: {
+    history: {
+      show: typeof routes['players.history.show']
+    }
+  }
   members: {
     show: typeof routes['members.show']
   }

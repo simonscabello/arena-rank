@@ -1,6 +1,6 @@
 import type { AchievementCriteriaType } from '#enums/achievement_criteria_type'
 import { ELO_TIER_LABELS, eloTierFromRating, type EloTier } from '#enums/elo_tier'
-import { getLossStreak, getWinStreak } from '#helpers/match_streaks'
+import { getLossStreak, getRecentWindowForm, getWinStreak } from '#helpers/match_streaks'
 import type Achievement from '#models/achievement'
 import User from '#models/user'
 import db from '@adonisjs/lucid/services/db'
@@ -9,6 +9,8 @@ type CriteriaValue = {
   count?: number
   tier?: EloTier
   level?: number
+  window?: number
+  minLosses?: number
 }
 
 export type AchievementProgress = {
@@ -55,6 +57,8 @@ export function getAchievementTarget(
       return criteriaValue.count ?? 0
     case 'loss_streak':
       return criteriaValue.count ?? 0
+    case 'recent_form':
+      return criteriaValue.minLosses ?? 0
     case 'shutout_win':
       return 1
     case 'elo_tier':
@@ -77,11 +81,16 @@ export function formatAchievementCriteriaLabel(
     }
     case 'win_streak': {
       const count = criteriaValue.count ?? 0
-      return count === 1 ? '1 vitória seguida' : `${count} vitórias seguidas`
+      return count === 1 ? 'Ganhe 1 partida seguida' : `Ganhe ${count} partidas seguidas`
     }
     case 'loss_streak': {
       const count = criteriaValue.count ?? 0
-      return count === 1 ? '1 derrota seguida' : `${count} derrotas seguidas`
+      return count === 1 ? 'Perdeu 1 partida seguida' : `Perdeu ${count} partidas seguidas`
+    }
+    case 'recent_form': {
+      const window = criteriaValue.window ?? 0
+      const minLosses = criteriaValue.minLosses ?? 0
+      return `Jogou ${window}, perdeu ${minLosses}`
     }
     case 'shutout_win':
       return 'Vença sem games do adversário em nenhum set'
@@ -99,6 +108,26 @@ export function formatAchievementCriteriaLabel(
   }
 }
 
+export function formatAchievementProgressHint(
+  criteriaType: AchievementCriteriaType,
+  criteriaValue: CriteriaValue,
+  current: number,
+  target: number
+): string | null {
+  if (criteriaType === 'loss_streak' && current > 0 && current < target) {
+    return `Perdeu ${current} de ${target} seguidas`
+  }
+  if (criteriaType === 'win_streak' && current > 0 && current < target) {
+    return `Ganhou ${current} de ${target} seguidas`
+  }
+  if (criteriaType === 'recent_form') {
+    const window = criteriaValue.window ?? 0
+    if (window <= 0) return null
+    return `Últimas ${window} partidas`
+  }
+  return null
+}
+
 export async function getAchievementCurrentValue(
   user: User,
   criteriaType: AchievementCriteriaType,
@@ -111,6 +140,12 @@ export async function getAchievementCurrentValue(
       return getWinStreak(user.id)
     case 'loss_streak':
       return getLossStreak(user.id)
+    case 'recent_form': {
+      const window = criteriaValue.window ?? 0
+      if (window <= 0) return 0
+      const form = await getRecentWindowForm(user.id, window)
+      return form.losses
+    }
     case 'shutout_win':
       return 0
     case 'elo_tier': {
@@ -133,14 +168,32 @@ export async function getAchievementProgress(
   const target = getAchievementTarget(criteriaType, criteriaValue)
   if (target <= 0 && criteriaType !== 'shutout_win') return null
 
-  const criteriaLabel = formatAchievementCriteriaLabel(criteriaType, criteriaValue)
+  let criteriaLabel = formatAchievementCriteriaLabel(criteriaType, criteriaValue)
   const current = await getAchievementCurrentValue(user, criteriaType, criteriaValue)
   const effectiveTarget = criteriaType === 'shutout_win' ? 1 : target
+
+  if (criteriaType === 'recent_form') {
+    const window = criteriaValue.window ?? 0
+    const form = await getRecentWindowForm(user.id, window)
+    criteriaLabel = `Jogou ${form.played}, perdeu ${form.losses} (meta: ${window} jogos, ${target} derrotas)`
+  }
+
+  const progressHint = formatAchievementProgressHint(
+    criteriaType,
+    criteriaValue,
+    current,
+    effectiveTarget
+  )
+  if (progressHint && criteriaType !== 'recent_form') {
+    criteriaLabel = `${criteriaLabel} · ${progressHint}`
+  }
+
   const cappedCurrent =
     criteriaType === 'level' ||
     criteriaType === 'match_count' ||
     criteriaType === 'win_streak' ||
-    criteriaType === 'loss_streak'
+    criteriaType === 'loss_streak' ||
+    criteriaType === 'recent_form'
       ? Math.min(current, effectiveTarget)
       : current >= effectiveTarget
         ? effectiveTarget

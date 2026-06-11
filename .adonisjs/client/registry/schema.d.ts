@@ -254,9 +254,9 @@ export interface Registry {
       body: {}
       paramsTuple: []
       params: {}
-      query: ExtractQueryForGet<InferInput<(typeof import('#validators/history').historyFiltersValidator)>>
+      query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['show']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['show']>>> | { status: 422; response: { errors: SimpleError[] } }
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/profile_controller').default['show']>>>
     }
   }
   'profile.update': {
@@ -317,6 +317,18 @@ export interface Registry {
       query: ExtractQueryForGet<InferInput<(typeof import('#validators/history').historyFiltersValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/history_controller').default['show']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/history_controller').default['show']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'players.history.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/jogadores/:userId/historico'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { userId: ParamValue }
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/history').historyFiltersValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/player_history_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/player_history_controller').default['show']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'members.show': {

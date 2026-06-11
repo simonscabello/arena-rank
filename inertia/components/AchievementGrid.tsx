@@ -100,11 +100,6 @@ export default function AchievementGrid({
                     <span className="ml-2">{achievement.name}</span>
                   </p>
                   <p className="text-xs text-stone-500">{achievement.description}</p>
-                  {troll && (
-                    <p className="mt-0.5 text-xs font-medium text-amber-800">
-                      {achievement.categoryLabel}
-                    </p>
-                  )}
                 </div>
                 {achievement.equipped ? (
                   <Form route="profile.unequip" className="shrink-0">
@@ -147,22 +142,20 @@ export default function AchievementGrid({
                   <p className="font-medium text-stone-700">
                     {achievement.icon} {achievement.name}
                   </p>
-                  <p className="text-xs text-stone-500">{achievement.description}</p>
-                  {troll && (
-                    <p className="mt-0.5 text-xs font-medium text-amber-800">
-                      {achievement.categoryLabel}
-                    </p>
-                  )}
-                  {achievement.criteriaLabel && (
+                  {achievement.criteriaLabel ? (
                     <p
                       className={cn(
                         'mt-1 text-xs font-medium',
-                        troll ? 'text-amber-800' : 'text-brand-700'
+                        troll ? 'text-amber-900' : 'text-brand-700'
                       )}
                     >
                       {achievement.criteriaLabel}
                     </p>
-                  )}
+                  ) : null}
+                  {achievement.description &&
+                    achievement.description !== achievement.criteriaLabel && (
+                      <p className="mt-1 text-xs text-stone-500">{achievement.description}</p>
+                    )}
                   {achievement.current !== null &&
                     achievement.current !== undefined &&
                     achievement.target !== null &&

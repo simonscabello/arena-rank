@@ -1,4 +1,5 @@
 import { eloTierFromRating, ELO_TIER_LABELS } from '#enums/elo_tier'
+import { resolveUserDisplayFunLabel } from '#helpers/fun_label_display'
 import { levelFromXp, xpProgressInLevel, xpToNextLevel } from '#helpers/level'
 import User from '#models/user'
 import db from '@adonisjs/lucid/services/db'
@@ -246,13 +247,14 @@ export async function enrichRankingEntries<T extends { userId: number; avatarUrl
 export async function getMemberDisplayWithCosmetics(userId: number) {
   const user = await User.findOrFail(userId)
   const cosmetics = await getEquippedCosmetics(userId)
+  const funLabel = await resolveUserDisplayFunLabel(userId, user.funLabel)
 
   return {
     id: user.id,
     fullName: user.fullName,
     email: user.email,
     nickname: user.nickname,
-    funLabel: user.funLabel,
+    funLabel,
     avatarUrl: user.avatarUrl,
     initials: user.initials,
     dominantHand: user.dominantHand,

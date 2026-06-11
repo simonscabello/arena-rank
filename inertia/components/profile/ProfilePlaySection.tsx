@@ -210,7 +210,8 @@ export default function ProfilePlaySection({ profile, statusSuggestions, options
                 maxLength={MAX_FUN_LABEL_LENGTH}
               />
               <p className="text-xs text-stone-500">
-                Frase curta sobre como você joga ou encara a Play. {funLabel.length}/
+                Frase curta sobre como você joga. Com 3+ seguidas (vitória ou derrota), um
+                status automático aparece nas partidas. {funLabel.length}/
                 {MAX_FUN_LABEL_LENGTH} caracteres
               </p>
               <div className="flex flex-wrap gap-2">
