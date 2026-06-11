@@ -1,20 +1,61 @@
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, Share2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import Button from '~/components/Button'
+import { APP_NAME } from '~/lib/app_name'
+import { buttonClassName } from '~/lib/button_styles'
 
 type Props = {
   url: string
+  groupName?: string
+  variant?: 'full' | 'compact'
 }
 
-export default function CopyInviteLink({ url }: Props) {
+export default function CopyInviteLink({ url, groupName, variant = 'full' }: Props) {
   const [copied, setCopied] = useState(false)
+
+  function buildShareText() {
+    const target = groupName ? `na Play "${groupName}"` : 'na minha Play'
+    return `Bora jogar? Entra ${target} no ${APP_NAME}: ${url}`
+  }
 
   async function copy() {
     await navigator.clipboard.writeText(url)
     setCopied(true)
     toast.success('Link copiado!')
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function share() {
+    const text = buildShareText()
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ text })
+        return
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return
+        }
+      }
+    }
+
+    await navigator.clipboard.writeText(text)
+    toast.success('Convite copiado!')
+  }
+
+  if (variant === 'compact') {
+    return (
+      <button
+        type="button"
+        onClick={share}
+        className={buttonClassName('ghost', 'sm')}
+        aria-label="Convidar jogadores"
+      >
+        <Share2 className="h-4 w-4" />
+        Convidar
+      </button>
+    )
   }
 
   return (

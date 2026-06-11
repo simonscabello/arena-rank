@@ -85,6 +85,7 @@ export default function MatchCreate({
   const [arenaCity, setArenaCity] = useState('')
   const [useNewArena, setUseNewArena] = useState(arenas.length === 0)
   const [slots, setSlots] = useState<Slot[]>(createInitialSlots)
+  const [submitting, setSubmitting] = useState(false)
 
   function updateSlot(slotIndex: number, patch: Partial<Slot>) {
     setSlots((prev) =>
@@ -93,6 +94,8 @@ export default function MatchCreate({
   }
 
   function submit() {
+    if (submitting) return
+
     const players = slots.filter(isSlotFilled).map((slot) => ({
       userId: slot.playerType === 'member' ? (slot.userId ?? undefined) : undefined,
       displayName:
@@ -104,12 +107,19 @@ export default function MatchCreate({
 
     if (players.length !== 4) return
 
-    router.post(`/grupos/${group.id}/partidas`, {
-      arenaId: useNewArena ? undefined : Number(arenaId),
-      arenaName: useNewArena ? arenaName : undefined,
-      arenaCity: useNewArena && arenaCity.trim() ? arenaCity.trim() : undefined,
-      players,
-    })
+    router.post(
+      `/grupos/${group.id}/partidas`,
+      {
+        arenaId: useNewArena ? undefined : Number(arenaId),
+        arenaName: useNewArena ? arenaName : undefined,
+        arenaCity: useNewArena && arenaCity.trim() ? arenaCity.trim() : undefined,
+        players,
+      },
+      {
+        onStart: () => setSubmitting(true),
+        onFinish: () => setSubmitting(false),
+      }
+    )
   }
 
   const canSubmit = slots.every(isSlotFilled) && (!useNewArena || arenaName.trim().length > 0)
@@ -183,12 +193,12 @@ export default function MatchCreate({
       <div className="fixed bottom-16 left-1/2 z-30 w-full max-w-lg -translate-x-1/2 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur-md sm:bottom-0">
         <button
           type="button"
-          disabled={!canSubmit}
+          disabled={!canSubmit || submitting}
           onClick={submit}
           className={buttonClassName('primary', 'lg', true)}
         >
           <MapPin className="h-5 w-5" />
-          Criar partida
+          {submitting ? 'Criando…' : 'Criar partida'}
         </button>
       </div>
     </>

@@ -69,6 +69,7 @@ type Props = {
 export default function MatchFinalizeCard({ matchId, side1Label, side2Label }: Props) {
   const [setRows, setSetRows] = useState<SetRow[]>([{ side1: '', side2: '' }])
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   function updateSetRow(index: number, field: 'side1' | 'side2', value: string) {
     setSetRows((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)))
@@ -89,6 +90,8 @@ export default function MatchFinalizeCard({ matchId, side1Label, side2Label }: P
   )
 
   function submit() {
+    if (submitting) return
+
     if (liveError) {
       setError(liveError)
       return
@@ -100,7 +103,14 @@ export default function MatchFinalizeCard({ matchId, side1Label, side2Label }: P
     }
 
     setError('')
-    router.post(`/partidas/${matchId}/finalizar`, { sets })
+    router.post(
+      `/partidas/${matchId}/finalizar`,
+      { sets },
+      {
+        onStart: () => setSubmitting(true),
+        onFinish: () => setSubmitting(false),
+      }
+    )
   }
 
   return (
@@ -162,10 +172,10 @@ export default function MatchFinalizeCard({ matchId, side1Label, side2Label }: P
       <button
         type="button"
         onClick={submit}
-        disabled={Boolean(liveError) || !sets}
+        disabled={Boolean(liveError) || !sets || submitting}
         className={buttonClassName('primary', 'md', true)}
       >
-        Finalizar partida
+        {submitting ? 'Finalizando…' : 'Finalizar partida'}
       </button>
     </Card>
   )

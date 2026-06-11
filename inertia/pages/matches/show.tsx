@@ -155,10 +155,6 @@ export default function MatchShow({
 
       {celebration && <MatchCelebrationCard celebration={celebration} />}
 
-      {pendingGuests.length > 0 && (
-        <GuestClaimReminder groupId={match.groupId} guests={pendingGuests} />
-      )}
-
       <Card className="mb-6">
         <MatchTeamsBlock
           groupId={match.groupId}
@@ -168,6 +164,10 @@ export default function MatchShow({
           scoreLabel={match.scoreLabel}
         />
       </Card>
+
+      {pendingGuests.length > 0 && (
+        <GuestClaimReminder groupId={match.groupId} guests={pendingGuests} />
+      )}
 
       {match.status === 'finalizada' && match.shareText && (
         <div className="mb-6">

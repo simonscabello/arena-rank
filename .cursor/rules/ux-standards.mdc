@@ -1,9 +1,9 @@
 ---
-description: UX and usability standards for Palpiteiro (navigation, forms, labels, mobile-first)
+description: UX and usability standards for ArenaRank (navigation, forms, labels, mobile-first)
 alwaysApply: true
 ---
 
-# UX Standards — Palpiteiro
+# UX Standards — ArenaRank
 
 Apply when creating or changing user-facing surfaces: `inertia/pages`, `inertia/components`, `inertia/layouts`, and backend payloads consumed by them.
 

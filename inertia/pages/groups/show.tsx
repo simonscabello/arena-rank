@@ -110,7 +110,7 @@ export default function GroupShow({
       </div>
 
       <div className="mb-6 space-y-4">
-        <CopyInviteLink url={group.inviteUrl} />
+        <CopyInviteLink url={group.inviteUrl} groupName={group.name} />
         <Link
           route="groups.matches.create"
           routeParams={{ id: group.id }}
