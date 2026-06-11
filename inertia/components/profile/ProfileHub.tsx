@@ -1,10 +1,10 @@
-import { ChevronRight, History, Medal, Settings, Sparkles, TrendingUp, User } from 'lucide-react'
+import { ChevronRight, Medal, Settings, Sparkles, TrendingUp, User } from 'lucide-react'
 import Avatar from '~/components/Avatar'
 import { navigateProfileSection } from '~/components/profile/navigate_section'
 import type { ProfileData, ProfileProgression } from '~/components/profile/types'
 
 type HubCard = {
-  section: 'progression' | 'achievements' | 'play' | 'account' | 'history'
+  section: 'progression' | 'achievements' | 'play' | 'account'
   title: string
   description: string
   icon: typeof TrendingUp
@@ -15,7 +15,6 @@ type Props = {
   progression: ProfileProgression
   achievementsUnlocked: number
   accountEmail: string
-  historyMatchesPlayed: number
 }
 
 function truncateEmail(email: string) {
@@ -31,7 +30,6 @@ export default function ProfileHub({
   progression,
   achievementsUnlocked,
   accountEmail,
-  historyMatchesPlayed,
 }: Props) {
   const displayName = profile.nickname || profile.initials
 
@@ -62,15 +60,6 @@ export default function ProfileHub({
       title: 'Conta',
       description: truncateEmail(accountEmail),
       icon: Settings,
-    },
-    {
-      section: 'history',
-      title: 'Histórico',
-      description:
-        historyMatchesPlayed > 0
-          ? `${historyMatchesPlayed} partida${historyMatchesPlayed === 1 ? '' : 's'}`
-          : 'Suas partidas finalizadas',
-      icon: History,
     },
   ]
 

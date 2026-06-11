@@ -3,16 +3,10 @@ import BackLink from '~/components/BackLink'
 import PageHeader from '~/components/PageHeader'
 import ProfileAccountSection from '~/components/profile/ProfileAccountSection'
 import ProfileAchievementsSection from '~/components/profile/ProfileAchievementsSection'
-import ProfileHistorySection from '~/components/profile/ProfileHistorySection'
 import ProfileHub from '~/components/profile/ProfileHub'
 import ProfilePlaySection from '~/components/profile/ProfilePlaySection'
 import ProfileProgressionSection from '~/components/profile/ProfileProgressionSection'
 import type {
-  HistoryFilterOptions,
-  HistoryFilters,
-  HistoryMatchItem,
-  HistoryPagination,
-  HistorySummary,
   LockedAchievement,
   Option,
   ProfileAchievement,
@@ -40,15 +34,6 @@ type Props = {
     courtSides: Option[]
     skillLevels: Option[]
   }
-  historySummary: HistorySummary
-  history: {
-    filters: HistoryFilters
-    filterOptions: HistoryFilterOptions
-    items: HistoryMatchItem[]
-    summary: HistorySummary
-    pagination: HistoryPagination
-    currentUserId: number
-  } | null
 }
 
 const SECTION_META: Record<
@@ -71,10 +56,6 @@ const SECTION_META: Record<
     title: 'Conta',
     subtitle: 'Dados vinculados ao Google',
   },
-  history: {
-    title: 'Histórico',
-    subtitle: 'Partidas em todas as suas Plays',
-  },
 }
 
 function isProfileSection(value: unknown): value is ProfileSection {
@@ -82,8 +63,7 @@ function isProfileSection(value: unknown): value is ProfileSection {
     value === 'progression' ||
     value === 'achievements' ||
     value === 'play' ||
-    value === 'account' ||
-    value === 'history'
+    value === 'account'
   )
 }
 
@@ -98,8 +78,6 @@ export default function ProfileShow({
   profile,
   statusSuggestions,
   options,
-  historySummary,
-  history,
 }: Props) {
   const page = usePage()
   const urlSection = new URLSearchParams(page.url.split('?')[1] ?? '').get('section')
@@ -127,7 +105,6 @@ export default function ProfileShow({
           progression={progression}
           achievementsUnlocked={achievements.length}
           accountEmail={account.email}
-          historyMatchesPlayed={historySummary.matchesPlayed}
         />
       )}
 
@@ -155,17 +132,6 @@ export default function ProfileShow({
       )}
 
       {activeSection === 'account' && <ProfileAccountSection account={account} />}
-
-      {activeSection === 'history' && history && (
-        <ProfileHistorySection
-          filters={history.filters}
-          filterOptions={history.filterOptions}
-          items={history.items}
-          summary={history.summary}
-          pagination={history.pagination}
-          currentUserId={history.currentUserId}
-        />
-      )}
     </>
   )
 }

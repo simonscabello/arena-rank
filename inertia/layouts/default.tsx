@@ -19,7 +19,7 @@ function isNavActive(url: string, key: NavKey) {
     case 'ranking':
       return path.startsWith('/ranking')
     case 'history':
-      return path.startsWith('/historico') || (path.startsWith('/perfil') && url.includes('section=history'))
+      return path.startsWith('/historico')
     case 'profile':
       return path.startsWith('/perfil')
   }

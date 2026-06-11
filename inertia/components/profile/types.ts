@@ -1,4 +1,4 @@
-export type ProfileSection = 'progression' | 'achievements' | 'play' | 'account' | 'history'
+export type ProfileSection = 'progression' | 'achievements' | 'play' | 'account'
 
 export type Option = { value: string; label: string }
 

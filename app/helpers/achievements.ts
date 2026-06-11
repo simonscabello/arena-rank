@@ -1,5 +1,6 @@
 import type { AchievementCriteriaType } from '#enums/achievement_criteria_type'
 import { eloTierFromRating, type EloTier } from '#enums/elo_tier'
+import { getLossStreak, getWinStreak } from '#helpers/match_streaks'
 import Achievement from '#models/achievement'
 import User from '#models/user'
 import UserAchievement from '#models/user_achievement'
@@ -52,30 +53,6 @@ async function getMatchCount(userId: number, trx: TransactionClientContract): Pr
   return Number(row?.total ?? 0)
 }
 
-async function getWinStreak(userId: number, trx: TransactionClientContract): Promise<number> {
-  const rows = await db
-    .from('match_players as mp')
-    .innerJoin('matches as m', 'mp.match_id', 'm.id')
-    .where('mp.user_id', userId)
-    .where('m.status', 'finalizada')
-    .whereNotNull('m.winner_side')
-    .select('m.winner_side as winnerSide', 'mp.side as side', 'm.created_at as playedAt')
-    .orderBy('m.created_at', 'desc')
-    .orderBy('m.id', 'desc')
-    .useTransaction(trx)
-
-  let streak = 0
-  for (const row of rows) {
-    if (Number(row.side) === Number(row.winnerSide)) {
-      streak++
-      continue
-    }
-    break
-  }
-
-  return streak
-}
-
 async function unlockAchievement(
   userId: number,
   achievementId: number,
@@ -112,6 +89,12 @@ async function meetsCriteria(
       const streak = await getWinStreak(user.id, trx)
       return streak >= required
     }
+    case 'loss_streak': {
+      const required = criteriaValue.count ?? 0
+      if (required <= 0) return false
+      const streak = await getLossStreak(user.id, trx)
+      return streak >= required
+    }
     case 'shutout_win': {
       if (!context.won) return false
       return context.margin >= 1
@@ -135,6 +118,7 @@ export type UnlockedAchievementSummary = {
   id: number
   name: string
   icon: string
+  category: string
 }
 
 export async function evaluateAchievementsForUser(
@@ -167,6 +151,7 @@ export async function evaluateAchievementsForUser(
       id: achievement.id,
       name: achievement.name,
       icon: achievement.icon,
+      category: achievement.category,
     })
   }
 

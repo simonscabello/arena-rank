@@ -9,6 +9,7 @@ type Achievement = {
   name: string
   description: string
   icon: string
+  category: string
   categoryLabel: string
   unlockedAt?: string
   equipped?: boolean
@@ -24,7 +25,19 @@ type Props = {
   maxTitleSlots: number
 }
 
-function ProgressBar({ current, target }: { current: number; target: number }) {
+function isTrollAchievement(achievement: Achievement) {
+  return achievement.category === 'troll'
+}
+
+function ProgressBar({
+  current,
+  target,
+  troll,
+}: {
+  current: number
+  target: number
+  troll?: boolean
+}) {
   const percent = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0
 
   return (
@@ -37,7 +50,10 @@ function ProgressBar({ current, target }: { current: number; target: number }) {
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-stone-100">
         <div
-          className="h-full rounded-full bg-brand-500 transition-all"
+          className={cn(
+            'h-full rounded-full transition-all',
+            troll ? 'bg-amber-400' : 'bg-brand-500'
+          )}
           style={{ width: `${percent}%` }}
         />
       </div>
@@ -61,40 +77,53 @@ export default function AchievementGrid({
 
       {achievements.length > 0 && (
         <div className="grid gap-2">
-          {achievements.map((achievement) => (
-            <div
-              key={achievement.id}
-              className={cn(
-                'flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5',
-                achievement.equipped
-                  ? 'border-brand-200 bg-brand-50/50'
-                  : 'border-stone-200 bg-white'
-              )}
-            >
-              <div className="min-w-0">
-                <p className="font-medium text-stone-800">
-                  <ProfileBadge icon={achievement.icon} title={achievement.name} />
-                  <span className="ml-2">{achievement.name}</span>
-                </p>
-                <p className="text-xs text-stone-500">{achievement.description}</p>
+          {achievements.map((achievement) => {
+            const troll = isTrollAchievement(achievement)
+
+            return (
+              <div
+                key={achievement.id}
+                className={cn(
+                  'flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5',
+                  troll
+                    ? achievement.equipped
+                      ? 'border-dashed border-amber-300 bg-amber-50/50'
+                      : 'border-dashed border-amber-200 bg-amber-50/30'
+                    : achievement.equipped
+                      ? 'border-brand-200 bg-brand-50/50'
+                      : 'border-stone-200 bg-white'
+                )}
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-stone-800">
+                    <ProfileBadge icon={achievement.icon} title={achievement.name} />
+                    <span className="ml-2">{achievement.name}</span>
+                  </p>
+                  <p className="text-xs text-stone-500">{achievement.description}</p>
+                  {troll && (
+                    <p className="mt-0.5 text-xs font-medium text-amber-800">
+                      {achievement.categoryLabel}
+                    </p>
+                  )}
+                </div>
+                {achievement.equipped ? (
+                  <Form route="profile.unequip" className="shrink-0">
+                    <input type="hidden" name="achievementId" value={achievement.id} />
+                    <button type="submit" className={buttonClassName('secondary', 'sm')}>
+                      Desequipar
+                    </button>
+                  </Form>
+                ) : (
+                  <Form route="profile.equip" className="shrink-0">
+                    <input type="hidden" name="achievementId" value={achievement.id} />
+                    <button type="submit" className={buttonClassName('primary', 'sm')}>
+                      Equipar
+                    </button>
+                  </Form>
+                )}
               </div>
-              {achievement.equipped ? (
-                <Form route="profile.unequip" className="shrink-0">
-                  <input type="hidden" name="achievementId" value={achievement.id} />
-                  <button type="submit" className={buttonClassName('secondary', 'sm')}>
-                    Desequipar
-                  </button>
-                </Form>
-              ) : (
-                <Form route="profile.equip" className="shrink-0">
-                  <input type="hidden" name="achievementId" value={achievement.id} />
-                  <button type="submit" className={buttonClassName('primary', 'sm')}>
-                    Equipar
-                  </button>
-                </Form>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -104,29 +133,50 @@ export default function AchievementGrid({
             Ainda bloqueadas ({lockedAchievements.length})
           </p>
           <div className="grid gap-2">
-            {lockedAchievements.map((achievement) => (
-              <div
-                key={achievement.id}
-                className="rounded-xl border border-dashed border-stone-200 px-3 py-2.5 opacity-80"
-              >
-                <p className="font-medium text-stone-700">
-                  {achievement.icon} {achievement.name}
-                </p>
-                <p className="text-xs text-stone-500">{achievement.description}</p>
-                {achievement.criteriaLabel && (
-                  <p className="mt-1 text-xs font-medium text-brand-700">
-                    {achievement.criteriaLabel}
-                  </p>
-                )}
-                {achievement.current !== null &&
-                  achievement.current !== undefined &&
-                  achievement.target !== null &&
-                  achievement.target !== undefined &&
-                  achievement.target > 0 && (
-                    <ProgressBar current={achievement.current} target={achievement.target} />
+            {lockedAchievements.map((achievement) => {
+              const troll = isTrollAchievement(achievement)
+
+              return (
+                <div
+                  key={achievement.id}
+                  className={cn(
+                    'rounded-xl border border-dashed px-3 py-2.5 opacity-80',
+                    troll ? 'border-amber-200 bg-amber-50/20' : 'border-stone-200'
                   )}
-              </div>
-            ))}
+                >
+                  <p className="font-medium text-stone-700">
+                    {achievement.icon} {achievement.name}
+                  </p>
+                  <p className="text-xs text-stone-500">{achievement.description}</p>
+                  {troll && (
+                    <p className="mt-0.5 text-xs font-medium text-amber-800">
+                      {achievement.categoryLabel}
+                    </p>
+                  )}
+                  {achievement.criteriaLabel && (
+                    <p
+                      className={cn(
+                        'mt-1 text-xs font-medium',
+                        troll ? 'text-amber-800' : 'text-brand-700'
+                      )}
+                    >
+                      {achievement.criteriaLabel}
+                    </p>
+                  )}
+                  {achievement.current !== null &&
+                    achievement.current !== undefined &&
+                    achievement.target !== null &&
+                    achievement.target !== undefined &&
+                    achievement.target > 0 && (
+                      <ProgressBar
+                        current={achievement.current}
+                        target={achievement.target}
+                        troll={troll}
+                      />
+                    )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

@@ -78,7 +78,8 @@ function applyDateFilters(
 function applyMatchFilters(
   query: DatabaseQueryBuilderContract,
   filters: HistoryFilters,
-  userId: number
+  userId: number,
+  visibleGroupIds?: number[]
 ) {
   query
     .innerJoin('matches as m', 'mp.match_id', 'm.id')
@@ -89,6 +90,10 @@ function applyMatchFilters(
     .innerJoin('arenas as a', 'a.id', 'm.arena_id')
     .where('m.status', 'finalizada')
     .where('mp.user_id', userId)
+
+  if (visibleGroupIds && visibleGroupIds.length > 0) {
+    query.whereIn('m.group_id', visibleGroupIds)
+  }
 
   if (filters.groupId) {
     query.where('m.group_id', filters.groupId)
@@ -110,18 +115,23 @@ function applyMatchFilters(
   applyDateFilters(query, filters, 'm.created_at')
 }
 
-export async function getHistoryFilterOptions(userId: number): Promise<HistoryFilterOptions> {
-  const memberships = await GroupMember.query()
-    .where('user_id', userId)
-    .preload('group')
-    .orderBy('created_at', 'desc')
+export async function getHistoryFilterOptions(
+  userId: number,
+  visibleGroupIds?: number[]
+): Promise<HistoryFilterOptions> {
+  let membershipsQuery = GroupMember.query().where('user_id', userId).preload('group')
+  if (visibleGroupIds && visibleGroupIds.length > 0) {
+    membershipsQuery = membershipsQuery.whereIn('group_id', visibleGroupIds)
+  }
+
+  const memberships = await membershipsQuery.orderBy('created_at', 'desc')
 
   const groups = memberships.map((membership) => ({
     id: membership.group.id,
     name: membership.group.name,
   }))
 
-  const arenaRows = await db
+  const arenaQuery = db
     .from('match_players as mp')
     .innerJoin('matches as m', 'mp.match_id', 'm.id')
     .innerJoin('group_members as gm', (join: Knex.JoinClause) => {
@@ -130,10 +140,16 @@ export async function getHistoryFilterOptions(userId: number): Promise<HistoryFi
     .innerJoin('arenas as a', 'a.id', 'm.arena_id')
     .where('m.status', 'finalizada')
     .where('mp.user_id', userId)
+
+  if (visibleGroupIds && visibleGroupIds.length > 0) {
+    arenaQuery.whereIn('m.group_id', visibleGroupIds)
+  }
+
+  const arenaRows = await arenaQuery
     .groupBy('a.id', 'a.name', 'a.city', 'm.group_id')
     .select('a.id as id', 'a.name as name', 'a.city as city', 'm.group_id as groupId')
 
-  const partnerRows = await db
+  const partnerQuery = db
     .from('match_players as mp')
     .innerJoin('matches as m', 'mp.match_id', 'm.id')
     .innerJoin('group_members as gm', (join: Knex.JoinClause) => {
@@ -148,6 +164,12 @@ export async function getHistoryFilterOptions(userId: number): Promise<HistoryFi
     .innerJoin('users as partner', 'teammate.user_id', 'partner.id')
     .where('m.status', 'finalizada')
     .where('mp.user_id', userId)
+
+  if (visibleGroupIds && visibleGroupIds.length > 0) {
+    partnerQuery.whereIn('m.group_id', visibleGroupIds)
+  }
+
+  const partnerRows = await partnerQuery
     .groupBy('partner.id', 'partner.full_name', 'partner.email', 'partner.nickname', 'm.group_id')
     .select(
       'partner.id as userId',
@@ -184,18 +206,19 @@ export async function getHistoryFilterOptions(userId: number): Promise<HistoryFi
 
 export async function getMatchHistory(
   userId: number,
-  filters: HistoryFilters
+  filters: HistoryFilters,
+  visibleGroupIds?: number[]
 ): Promise<PaginatedResult<MatchHistoryItem, MatchHistorySummary>> {
   const page = pageNumber(filters)
   const offset = (page - 1) * HISTORY_PAGE_SIZE
 
   const countQuery = db.from('match_players as mp')
-  applyMatchFilters(countQuery, filters, userId)
+  applyMatchFilters(countQuery, filters, userId, visibleGroupIds)
   const countRow = await countQuery.count('* as total').first()
   const total = Number(countRow?.total ?? 0)
 
   const summaryQuery = db.from('match_players as mp')
-  applyMatchFilters(summaryQuery, filters, userId)
+  applyMatchFilters(summaryQuery, filters, userId, visibleGroupIds)
   const summaryRow = await summaryQuery
     .select(
       db.raw('SUM(CASE WHEN mp.side = m.winner_side THEN 1 ELSE 0 END) as wins'),
@@ -210,7 +233,7 @@ export async function getMatchHistory(
 
   const listQuery = db.from('match_players as mp')
   joinTeammateForUser(listQuery, userId)
-  applyMatchFilters(listQuery, filters, userId)
+  applyMatchFilters(listQuery, filters, userId, visibleGroupIds)
 
   const rows = await listQuery
     .select(

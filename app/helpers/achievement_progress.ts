@@ -1,5 +1,6 @@
 import type { AchievementCriteriaType } from '#enums/achievement_criteria_type'
 import { ELO_TIER_LABELS, eloTierFromRating, type EloTier } from '#enums/elo_tier'
+import { getLossStreak, getWinStreak } from '#helpers/match_streaks'
 import type Achievement from '#models/achievement'
 import User from '#models/user'
 import db from '@adonisjs/lucid/services/db'
@@ -43,29 +44,6 @@ async function getMatchCount(userId: number): Promise<number> {
   return Number(row?.total ?? 0)
 }
 
-async function getWinStreak(userId: number): Promise<number> {
-  const rows = await db
-    .from('match_players as mp')
-    .innerJoin('matches as m', 'mp.match_id', 'm.id')
-    .where('mp.user_id', userId)
-    .where('m.status', 'finalizada')
-    .whereNotNull('m.winner_side')
-    .select('m.winner_side as winnerSide', 'mp.side as side')
-    .orderBy('m.created_at', 'desc')
-    .orderBy('m.id', 'desc')
-
-  let streak = 0
-  for (const row of rows) {
-    if (Number(row.side) === Number(row.winnerSide)) {
-      streak++
-      continue
-    }
-    break
-  }
-
-  return streak
-}
-
 export function getAchievementTarget(
   criteriaType: AchievementCriteriaType,
   criteriaValue: CriteriaValue
@@ -74,6 +52,8 @@ export function getAchievementTarget(
     case 'match_count':
       return criteriaValue.count ?? 0
     case 'win_streak':
+      return criteriaValue.count ?? 0
+    case 'loss_streak':
       return criteriaValue.count ?? 0
     case 'shutout_win':
       return 1
@@ -98,6 +78,10 @@ export function formatAchievementCriteriaLabel(
     case 'win_streak': {
       const count = criteriaValue.count ?? 0
       return count === 1 ? '1 vitória seguida' : `${count} vitórias seguidas`
+    }
+    case 'loss_streak': {
+      const count = criteriaValue.count ?? 0
+      return count === 1 ? '1 derrota seguida' : `${count} derrotas seguidas`
     }
     case 'shutout_win':
       return 'Vença sem games do adversário em nenhum set'
@@ -125,6 +109,8 @@ export async function getAchievementCurrentValue(
       return getMatchCount(user.id)
     case 'win_streak':
       return getWinStreak(user.id)
+    case 'loss_streak':
+      return getLossStreak(user.id)
     case 'shutout_win':
       return 0
     case 'elo_tier': {
@@ -151,7 +137,10 @@ export async function getAchievementProgress(
   const current = await getAchievementCurrentValue(user, criteriaType, criteriaValue)
   const effectiveTarget = criteriaType === 'shutout_win' ? 1 : target
   const cappedCurrent =
-    criteriaType === 'level' || criteriaType === 'match_count' || criteriaType === 'win_streak'
+    criteriaType === 'level' ||
+    criteriaType === 'match_count' ||
+    criteriaType === 'win_streak' ||
+    criteriaType === 'loss_streak'
       ? Math.min(current, effectiveTarget)
       : current >= effectiveTarget
         ? effectiveTarget

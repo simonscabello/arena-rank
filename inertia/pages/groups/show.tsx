@@ -28,7 +28,6 @@ type Props = {
   }
   members: RankingEntry[]
   recentMatches: RecentMatchItem[]
-  ranking: RankingEntry[]
   currentUserId: number
   canManageGroup: boolean
 }
@@ -45,7 +44,6 @@ export default function GroupShow({
   activitySummary,
   members,
   recentMatches,
-  ranking,
   currentUserId,
   canManageGroup,
 }: Props) {
@@ -145,7 +143,8 @@ export default function GroupShow({
           )}
         </Card>
 
-        <Card title="Membros">
+        <Card title="Membros da Play">
+          <EloRankingHint className="mb-3" />
           <RankingList entries={members} highlightUserId={currentUserId} groupId={group.id} />
         </Card>
 
@@ -189,11 +188,6 @@ export default function GroupShow({
               </p>
             </>
           )}
-        </Card>
-
-        <Card title="Ranking">
-          <EloRankingHint className="mb-3" />
-          <RankingList entries={ranking} highlightUserId={currentUserId} groupId={group.id} />
         </Card>
       </div>
     </>

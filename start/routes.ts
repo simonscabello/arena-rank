@@ -52,6 +52,9 @@ router
     router.post('perfil/equipar', [controllers.Profile, 'equip']).as('profile.equip')
     router.post('perfil/desequipar', [controllers.Profile, 'unequip']).as('profile.unequip')
     router.get('historico', [controllers.History, 'show']).as('history.show')
+    router
+      .get('jogadores/:userId/historico', [controllers.PlayerHistory, 'show'])
+      .as('players.history.show')
     router.get('grupos/:groupId/membros/:userId', [controllers.Members, 'show']).as('members.show')
     router
       .get('grupos/:groupId/convidados/:inviteId', [controllers.GuestInvites, 'member'])

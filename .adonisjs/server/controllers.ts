@@ -12,6 +12,7 @@ export const controllers = {
   Home: () => import('#controllers/home_controller'),
   Matches: () => import('#controllers/matches_controller'),
   Members: () => import('#controllers/members_controller'),
+  PlayerHistory: () => import('#controllers/player_history_controller'),
   Profile: () => import('#controllers/profile_controller'),
   Ranking: () => import('#controllers/ranking_controller'),
   Session: () => import('#controllers/session_controller'),

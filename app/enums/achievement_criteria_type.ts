@@ -1,6 +1,7 @@
 export const ACHIEVEMENT_CRITERIA_TYPES = [
   'match_count',
   'win_streak',
+  'loss_streak',
   'shutout_win',
   'elo_tier',
   'level',
@@ -13,5 +14,5 @@ export const ACHIEVEMENT_CATEGORY_LABELS: Record<string, string> = {
   competitive: 'Competitivo',
   meme: 'Meme / Resenha',
   skill: 'Skill',
-  troll: 'Troll / Raras',
+  troll: 'Resenha / Azar',
 }

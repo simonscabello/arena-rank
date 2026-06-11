@@ -1,7 +1,7 @@
 import { X } from 'lucide-react'
 import { useState } from 'react'
 import Card from '~/components/Card'
-import { formatEloDelta } from '~/lib/match'
+import { formatEloDelta, cn } from '~/lib/match'
 import type { MatchCelebrationPayload } from '~/lib/match_celebration'
 
 type Props = {
@@ -26,9 +26,19 @@ export default function MatchCelebrationCard({ celebration }: Props) {
   if (dismissed) return null
 
   const rankChange = rankMessage(celebration.rankPosition, celebration.previousRankPosition)
+  const hasTrollAchievement = celebration.achievements.some(
+    (achievement) => achievement.category === 'troll'
+  )
 
   return (
-    <Card className="relative mb-6 border-brand-200 bg-gradient-to-br from-brand-50 to-white">
+    <Card
+      className={cn(
+        'relative mb-6',
+        hasTrollAchievement
+          ? 'border-amber-200 bg-gradient-to-br from-amber-50/80 to-stone-50'
+          : 'border-brand-200 bg-gradient-to-br from-brand-50 to-white'
+      )}
+    >
       <button
         type="button"
         onClick={() => setDismissed(true)}
@@ -37,7 +47,14 @@ export default function MatchCelebrationCard({ celebration }: Props) {
       >
         <X className="h-4 w-4" />
       </button>
-      <p className="mb-2 text-sm font-semibold text-brand-800">Progressão registrada!</p>
+      <p
+        className={cn(
+          'mb-2 text-sm font-semibold',
+          hasTrollAchievement ? 'text-amber-900' : 'text-brand-800'
+        )}
+      >
+        Progressão registrada!
+      </p>
       <p className="text-lg font-bold text-stone-900">
         +{celebration.xpAwarded} XP · {formatEloDelta(celebration.eloDelta)} ELO
       </p>
@@ -48,12 +65,25 @@ export default function MatchCelebrationCard({ celebration }: Props) {
       )}
       {celebration.achievements.length > 0 && (
         <ul className="mt-3 space-y-1">
-          {celebration.achievements.map((achievement) => (
-            <li key={achievement.name} className="text-sm text-stone-700">
-              {achievement.icon} Conquista desbloqueada:{' '}
-              <span className="font-medium">{achievement.name}</span>
-            </li>
-          ))}
+          {celebration.achievements.map((achievement) => {
+            const isTroll = achievement.category === 'troll'
+            return (
+              <li key={achievement.name} className="text-sm text-stone-700">
+                {achievement.icon}{' '}
+                {isTroll ? (
+                  <>
+                    Novo título (sem orgulho):{' '}
+                    <span className="font-medium text-amber-900">{achievement.name}</span>
+                  </>
+                ) : (
+                  <>
+                    Conquista desbloqueada:{' '}
+                    <span className="font-medium">{achievement.name}</span>
+                  </>
+                )}
+              </li>
+            )
+          })}
         </ul>
       )}
       {rankChange && <p className="mt-2 text-sm font-medium text-brand-700">{rankChange}</p>}

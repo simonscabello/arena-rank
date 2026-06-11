@@ -2,7 +2,7 @@ export type MatchCelebrationPayload = {
   xpAwarded: number
   eloDelta: number
   levelUp: { previousLevel: number; newLevel: number } | null
-  achievements: { name: string; icon: string }[]
+  achievements: { name: string; icon: string; category: string }[]
   rankPosition: number | null
   previousRankPosition: number | null
 }
@@ -27,7 +27,10 @@ export function buildCelebrationPayload(params: {
   progression: {
     rewards: { userId: number; xpAwarded: number; eloDelta: number }[]
     levelUps: { userId: number; previousLevel: number; newLevel: number }[]
-    newAchievements: { userId: number; achievement: { name: string; icon: string } }[]
+    newAchievements: {
+      userId: number
+      achievement: { name: string; icon: string; category: string }
+    }[]
   }
   rankBefore: number | null
   rankAfter: number | null

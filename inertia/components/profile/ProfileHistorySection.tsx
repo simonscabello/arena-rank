@@ -5,7 +5,7 @@ import Card from '~/components/Card'
 import EmptyState from '~/components/EmptyState'
 import Input from '~/components/Input'
 import Select from '~/components/Select'
-import { navigateProfileHistory } from '~/components/profile/navigate_section'
+import { navigateHistory, navigatePlayerHistory } from '~/components/profile/navigate_section'
 import type {
   HistoryFilterOptions,
   HistoryFilters,
@@ -22,6 +22,7 @@ type Props = {
   summary: HistorySummary
   pagination: HistoryPagination
   currentUserId: number
+  playerUserId?: number
 }
 
 function formatDate(value: string) {
@@ -38,9 +39,18 @@ export default function ProfileHistorySection({
   summary,
   pagination,
   currentUserId,
+  playerUserId,
 }: Props) {
   const [draftFrom, setDraftFrom] = useState(filters.from ?? '')
   const [draftTo, setDraftTo] = useState(filters.to ?? '')
+
+  function navigate(next: HistoryFilters) {
+    if (playerUserId !== undefined) {
+      navigatePlayerHistory(playerUserId, next)
+      return
+    }
+    navigateHistory(next)
+  }
 
   const arenaOptions = useMemo(() => {
     if (!filters.groupId) return filterOptions.arenas
@@ -53,13 +63,13 @@ export default function ProfileHistorySection({
   }, [filterOptions.partners, filters.groupId])
 
   function updateFilters(patch: Partial<HistoryFilters>) {
-    navigateProfileHistory({ ...filters, ...patch, page: 1 })
+    navigate({ ...filters, ...patch, page: 1 })
   }
 
   function clearFilters() {
     setDraftFrom('')
     setDraftTo('')
-    navigateProfileHistory({ page: 1 })
+    navigate({ page: 1 })
   }
 
   function applyPeriod() {
@@ -236,7 +246,7 @@ export default function ProfileHistorySection({
           <button
             type="button"
             disabled={pagination.page <= 1}
-            onClick={() => navigateProfileHistory({ ...filters, page: pagination.page - 1 })}
+            onClick={() => navigate({ ...filters, page: pagination.page - 1 })}
             className={buttonClassName('secondary', 'md', false, 'disabled:opacity-40')}
           >
             Anterior
@@ -247,7 +257,7 @@ export default function ProfileHistorySection({
           <button
             type="button"
             disabled={pagination.page >= pagination.lastPage}
-            onClick={() => navigateProfileHistory({ ...filters, page: pagination.page + 1 })}
+            onClick={() => navigate({ ...filters, page: pagination.page + 1 })}
             className={buttonClassName('secondary', 'md', false, 'disabled:opacity-40')}
           >
             Próxima

@@ -3,6 +3,7 @@ import { getGroupRanking, getRankContext } from '#helpers/ranking'
 import Group from '#models/group'
 import GroupMember from '#models/group_member'
 import User from '#models/user'
+import { inertiaPropsFromHtml } from '#tests/helpers/inertia_page'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
 
@@ -51,5 +52,30 @@ test.group('Ranking', (group) => {
     assert.isNull(leaderContext.eloToNext)
     assert.equal(chaserContext.eloToNext, 100)
     assert.equal(chaserContext.nextRankPosition, 1)
+  })
+
+  test('includes historyPath for self and shared play members', async ({ client, assert }) => {
+    const viewer = await createUser('viewer-rank@test.com', 1050)
+    const shared = await createUser('shared-rank@test.com', 1100)
+    const stranger = await createUser('stranger-rank@test.com', 1150)
+
+    const play = await Group.create({ name: 'Play Ranking', inviteCode: generateInviteCode() })
+    await GroupMember.create({ groupId: play.id, userId: viewer.id, role: 'membro' })
+    await GroupMember.create({ groupId: play.id, userId: shared.id, role: 'membro' })
+
+    const response = await client.get('/ranking').loginAs(viewer)
+    response.assertStatus(200)
+
+    const props = inertiaPropsFromHtml<{
+      ranking: { userId: number; historyPath: string | null }[]
+    }>(response.text())
+
+    const selfEntry = props.ranking.find((entry) => entry.userId === viewer.id)
+    const sharedEntry = props.ranking.find((entry) => entry.userId === shared.id)
+    const strangerEntry = props.ranking.find((entry) => entry.userId === stranger.id)
+
+    assert.equal(selfEntry?.historyPath, '/historico')
+    assert.equal(sharedEntry?.historyPath, `/jogadores/${shared.id}/historico`)
+    assert.isNull(strangerEntry?.historyPath)
   })
 })

@@ -19,6 +19,7 @@ export type RankingEntry = {
   equippedTitles?: { icon: string; name: string }[]
   avatarFrameSrc?: string | null
   avatarFrameInset?: number
+  historyPath?: string | null
 }
 
 type Props = {
@@ -64,11 +65,12 @@ export default function RankingList({
                 .toUpperCase()
             : entry.email.slice(0, 2).toUpperCase())
 
+        const isClickable = Boolean(entry.historyPath || groupId)
         const rowClassName = cn(
           'flex items-center gap-3 rounded-xl border px-3 py-2.5',
           index < 3 ? podiumStyles[index] : 'border-stone-100 bg-stone-50/50',
           isMe && 'ring-2 ring-brand-500/30',
-          groupId ? 'transition hover:border-brand-200 hover:bg-brand-50/30' : undefined
+          isClickable ? 'transition hover:border-brand-200 hover:bg-brand-50/30' : undefined
         )
 
         const content = (
@@ -113,7 +115,11 @@ export default function RankingList({
 
         return (
           <li key={entry.userId}>
-            {groupId ? (
+            {entry.historyPath ? (
+              <Link href={entry.historyPath} className={rowClassName}>
+                {content}
+              </Link>
+            ) : groupId ? (
               <Link
                 route="members.show"
                 routeParams={{ groupId, userId: entry.userId }}

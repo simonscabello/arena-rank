@@ -13,7 +13,6 @@ import {
   joinGroupByCode,
   PENDING_INVITE_SESSION_KEY,
 } from '#helpers/group_access'
-import { getGroupRanking } from '#helpers/ranking'
 import Arena from '#models/arena'
 import Group from '#models/group'
 import GroupMember from '#models/group_member'
@@ -109,7 +108,6 @@ export default class GroupsController {
     const group = await Group.findOrFail(groupId)
 
     const recentMatches = await getGroupRecentMatches(groupId)
-    const ranking = await getGroupRanking(groupId)
     const canManageGroup = await isGroupOrganizer(groupId, user.id)
     const activitySummary = await getGroupActivitySummary(groupId)
     const members = await getGroupMembersList(groupId)
@@ -123,7 +121,6 @@ export default class GroupsController {
       activitySummary,
       members,
       recentMatches,
-      ranking,
       currentUserId: user.id,
       canManageGroup,
     })
